@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+
+*::-webkit-scrollbar{
+    display: none;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+    -webkit-text-fill-color: white !important; /* Text color ko white force karega */
+    -webkit-box-shadow: 0 0 0px 1000px #080808 inset !important; /* Background ko aapke UI color se match karega */
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Caret/Cursor color */
+input {
+    caret-color: #c8ff00 !important;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 2px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #222;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ccff00;
+}
+
+/* Hide Number Arrows */
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
+}
