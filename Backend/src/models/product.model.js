@@ -12,7 +12,7 @@ const productSchema = new mongoose.Schema({
     },
     seller: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',    
+        ref: 'user',
         required: true
     },
     price: {
@@ -22,15 +22,47 @@ const productSchema = new mongoose.Schema({
         },
         currency: {
             type: String,
-            enum: [ "USD", "EUR", "GBP", "JPY", "INR" ],
+            enum: ["USD", "EUR", "GBP", "JPY", "INR"],
             default: "INR"
         }
     },
     images: [
-  {
-    url: { type: String, required: true }
-  }
-]
+        {
+            url: { type: String, required: true }
+        }
+    ],
+    varinate: [
+        {
+            images: [
+                {
+                    url: {
+                        type: String,
+                        required: true
+                    },
+                },
+
+            ],
+            stock: {
+                type: Number,
+                default: 0
+            },
+            attributes: {
+                type: Map,
+                of: String
+            },
+            price: {
+                amount: {
+                    type: Number,
+                    required: true
+                },
+                currency: {
+                    type: String,
+                    enum: ["USD", "EUR", "GBP", "JPY", "INR"],
+                    default: "INR"
+                },
+            }
+        }
+    ]
 }, { timestamps: true })
 
 

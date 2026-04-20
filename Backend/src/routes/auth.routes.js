@@ -4,11 +4,13 @@ import { validateLoginUser, validateRegisterUser } from "../validator/auth.valid
 import passport from "passport";
 import { config } from "../config/config.js";
 import {isAuthenticated} from "../middleware/auth.middleware.js"
+import { refreshToken } from "../controllers/refresh.controller.js";
 
 const router = Router();
 
 router.post("/register", validateRegisterUser, register);
 router.post("/login", validateLoginUser, login);
+router.post('/refresh-token' ,refreshToken)
 router.get("/google/", passport.authenticate("google", { scope: ["profile", "email"] }))
 router.get("/google/callback",
     passport.authenticate("google", { session: false,

@@ -3,7 +3,9 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../features/auth/hook/useAuth';
 
 const ProtectedSellerRoute = () => {
-const { currentUser, isLoading, isAuthChecked } = useAuth();
+const { currentUser, 
+  // isLoading,
+   isAuthChecked } = useAuth();
 
 if (!isAuthChecked) {
   return (

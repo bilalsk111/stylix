@@ -7,6 +7,7 @@ import Register from "../features/auth/pages/Register";
 import AllProducts from "../features/products/pages/AllProducts";
 import ProductDetail from "../features/products/pages/ProductDetail";
 import Layout from "../components/Layout";
+import SellerProductDetails from "../features/products/pages/SellerProductDeatails";
 
 export const routes = createBrowserRouter([
   {
@@ -18,11 +19,11 @@ export const routes = createBrowserRouter([
     ],
   },
   {
-    // Protected Seller Routes
     element: <ProtectedSellerRoute />,
     children: [
       { path: "/seller/dashboard", element: <SellerDashboard /> },
       { path: "/seller/create-product", element: <CreateProduct /> },
+      { path: "/seller/productdetail/:id", element: <SellerProductDetails /> },
     ],
   },
   { 

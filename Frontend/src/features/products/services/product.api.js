@@ -23,3 +23,22 @@ export async function  getProductDetail(productId) {
     return res.data
 }
 
+export async function addProductVariant(productId, newProductVariant) {
+    const formData = new FormData();
+
+    // ✅ prevent crash
+    if (newProductVariant.images && newProductVariant.images.length > 0) {
+        newProductVariant.images.forEach((img) => {
+            formData.append("images", img.file);
+        });
+    }
+
+    formData.append("stock", newProductVariant.stock);
+    formData.append("priceAmount", newProductVariant.price.amount);
+    formData.append("priceCurrency", newProductVariant.price.currency);
+    formData.append("attributes", JSON.stringify(newProductVariant.attributes));
+
+    const res = await productApi.post(`/${productId}/variant`, formData);;
+    return res.data;
+}
+

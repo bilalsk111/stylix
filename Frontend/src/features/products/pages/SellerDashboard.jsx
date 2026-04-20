@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useProduct } from "../hook/useProduct";
-import { useAuth } from "../../auth/hook/useAuth"; // Import your auth hook
+import { useAuth } from "../../auth/hook/useAuth";
 import { useSelector } from "react-redux";
-import { Plus, Package, ExternalLink, Trash2, Edit3, ArrowLeft, LogOut, Store, ShieldCheck } from "lucide-react";
+import { Plus, Package, ExternalLink, Trash2, Edit3, ArrowLeft, LogOut, Store, ShieldCheck, LayoutGrid } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const SellerDashboard = () => {
   const { handleGetSellerProduct } = useProduct();
-  const { currentUser } = useAuth(); // Get seller details (name, etc.)
+  const { currentUser } = useAuth();
   const sellerProduct = useSelector((state) => state.product.sellerProducts);
   const [loading, setLoading] = useState(true);
   
@@ -25,141 +25,144 @@ const SellerDashboard = () => {
     fetchProducts();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="h-screen bg-[#050505] flex items-center justify-center">
-        <div className="text-[#ccff00] text-[10px] font-black uppercase tracking-[0.4em] animate-pulse">
-          Accessing Secure Vault...
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="h-screen bg-[#050505] flex items-center justify-center">
+      <div className="text-[#ccff00] text-[10px] font-black uppercase tracking-[0.4em] animate-pulse">Initializing Vault...</div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen w-full bg-[#050505] text-white font-sans selection:bg-[#ccff00] selection:text-black">
       
-      <div className="w-full border-b border-white/5 fixed top-15 z-50 px-6 py-4 flex justify-between items-center">
+      {/* FIXED NAVIGATION - HEIGHT ADJUSTED TO PREVENT CUTOFF */}
+      <nav className="fixed top-0 left-0 right-0 z-[100] bg-black/80 backdrop-blur-xl border-b border-white/[0.05] px-6 lg:px-10 h-20 flex items-center justify-between">
         <button 
-         onClick={() => navigate("/")}
-          className="flex items-center gap-2 text-neutral-500 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest"
+          onClick={() => navigate("/")}
+          className="flex items-center gap-3 text-neutral-500 hover:text-white transition-all group"
         >
-          <ArrowLeft size={14} /> Back
+          <div className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center group-hover:border-[#ccff00]/50 group-hover:bg-[#ccff00]/5">
+            <ArrowLeft size={16} />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden sm:block">Exit Dashboard</span>
         </button>
 
-        <div className="flex items-center gap-4">
-           <div className="hidden md:flex flex-col items-end">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#ccff00]">Authorized Access</span>
-              <span className="text-[9px] text-neutral-500 font-medium lowercase italic">{currentUser?.email}</span>
-           </div>
-           <button 
+        <div className="flex items-center gap-6">
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-black uppercase tracking-widest text-[#ccff00]">Authorized Merchant</span>
+            <span className="text-[10px] text-white/40 font-bold lowercase italic truncate max-w-[150px]">{currentUser?.email}</span>
+          </div>
+          <div className="h-8 w-[1px] bg-white/10"></div>
+          <button 
             onClick={() => navigate("/")}
-            className="p-2 hover:bg-red-500/10 hover:text-red-500 transition-all rounded-lg text-neutral-500"
-            title="Exit Dashboard"
-           >
-            <LogOut size={18} />
-           </button>
+            className="p-2.5 bg-white/5 hover:bg-red-500/20 hover:text-red-500 transition-all rounded-full border border-white/5"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
-      </div>
+      </nav>
 
-      <div className="p-6 lg:p-12 max-w-[1600px] mx-auto">
+      <div className="p-6 lg:p-12 max-w-[1600px] mx-auto pt-32"> {/* pt-32 ensures content starts below nav */}
         
-        {/* SELLER PROFILE SECTION */}
-        <header className="mb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-end">
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-[#ccff00]/10 rounded-xl">
-                <Store className="text-[#ccff00]" size={24} />
-              </div>
-              <div>
-                <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Official Merchant</h2>
-                <h1 className="text-4xl font-black uppercase tracking-tighter italic">
-                  {currentUser?.fullname || "Vault Member"}
-                </h1>
-              </div>
+        {/* MERCHANT PROFILE - REMOVED 'SNITCH' HEADER AS REQUESTED */}
+        <header className="mb-20 flex flex-col lg:flex-row lg:items-center justify-between gap-10 bg-white/[0.02] p-8 rounded-sm border border-white/5">
+          <div className="flex items-center gap-6">
+            <div className="w-20 h-20 bg-[#ccff00] rounded-sm flex items-center justify-center shadow-[0_0_40px_rgba(204,255,0,0.15)] shrink-0">
+              <Store className="text-black" size={32} />
             </div>
-            
-            <div className="flex gap-6 items-center">
-              <div className="flex flex-col">
-                <span className="text-2xl font-black text-white">{displayProducts.length}</span>
-                <span className="text-[8px] font-bold uppercase tracking-widest text-neutral-600">Active Assets</span>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={14} className="text-[#ccff00]" />
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ccff00]">Verified Status</span>
               </div>
-              <div className="h-10 w-[1px] bg-white/5"></div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1 text-[#ccff00]">
-                  <ShieldCheck size={14} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Verified</span>
-                </div>
-                <span className="text-[8px] font-bold uppercase tracking-widest text-neutral-600">Account Status</span>
+              <h1 className="text-4xl lg:text-6xl font-black uppercase tracking-tighter italic leading-none">
+                {currentUser?.fullname || "Jack Ali"}
+              </h1>
+              <div className="flex gap-4 pt-2">
+                 <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">{displayProducts.length} Active Assets</span>
+                 <span className="text-white/10">|</span>
+                 <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">Premium Tier 01</span>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-start lg:justify-end">
-            <button
-              onClick={() => navigate("/seller/create-product")}
-              className="group relative bg-white text-black px-12 py-6 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[#ccff00] transition-all overflow-hidden"
-            >
-              <div className="relative z-10 flex items-center gap-3">
-                <Plus size={16} strokeWidth={3} /> Register New Piece
-              </div>
-              <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white/40 opacity-40 group-hover:animate-shine" />
-            </button>
-          </div>
+          <button
+            onClick={() => navigate("/seller/create-product")}
+            className="group relative bg-[#ccff00] text-black px-10 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-white transition-all overflow-hidden shrink-0"
+          >
+            <div className="relative z-10 flex items-center gap-3">
+              <Plus size={18} strokeWidth={4} /> Register New Piece
+            </div>
+            <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white/60 opacity-40 group-hover:animate-[shine_1s_ease-in-out]" />
+          </button>
         </header>
 
-        {/* INVENTORY TITLE */}
-        <div className="flex items-center gap-4 mb-8">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400 whitespace-nowrap">Current Inventory</span>
-            <div className="h-[1px] w-full bg-white/5"></div>
-        </div>
-
-        {displayProducts.length === 0 ? (
-          <div className="h-[40vh] flex flex-col items-center justify-center border border-dashed border-white/5 bg-[#080808]/50 rounded-3xl">
-            <Package className="text-neutral-800 mb-6" size={48} strokeWidth={1} />
-            <p className="text-neutral-600 text-[10px] uppercase tracking-[0.5em] font-bold">The vault is currently empty</p>
+        {/* INVENTORY ARCHIVE SECTION */}
+        <section className="space-y-10">
+          <div className="flex items-center gap-4">
+            <LayoutGrid size={18} className="text-[#ccff00]" />
+            <h2 className="text-[12px] font-black uppercase tracking-[0.5em] text-white/80">Inventory Archive</h2>
+            <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {displayProducts.map((product) => (
-              <div key={product._id} className="group relative bg-[#080808] border border-white/5 hover:border-[#ccff00]/30 transition-all duration-500 rounded-sm">
-                <div className="aspect-[3/4] overflow-hidden relative bg-[#111]">
-                  <img
-                    src={product.images?.[0]?.url || "https://via.placeholder.com/400x500"}
-                    alt={product.title}
-                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
-                  />
-                  <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1 border border-white/10">
-                    <span className="text-[#ccff00] text-[10px] font-black uppercase">
-                      {product.price?.currency} {product.price?.amount}
-                    </span>
+
+          {displayProducts.length === 0 ? (
+            <div className="h-[40vh] flex flex-col items-center justify-center border-2 border-dashed border-white/5 bg-white/[0.01]">
+              <Package className="text-white/5 mb-6" size={64} strokeWidth={1} />
+              <p className="text-white/20 text-[10px] uppercase tracking-[0.5em] font-black italic">Vault currently empty</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {displayProducts.map((product) => (
+                <div 
+                  key={product._id} 
+                  className="group relative bg-white/[0.02] border border-white/5 hover:border-[#ccff00]/40 transition-all duration-500 cursor-pointer overflow-hidden"
+                  onClick={() => navigate(`/seller/productdetail/${product._id}`)}
+                >
+                  <div className="aspect-[4/5] overflow-hidden relative bg-[#0a0a0a]">
+                    <img
+                      src={product.images?.[0]?.url}
+                      alt={product.title}
+                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+                    />
+                    
+                    <div className="absolute top-4 right-4 bg-black/90 backdrop-blur-md border border-white/10 px-3 py-1.5">
+                       <span className="text-[#ccff00] text-[12px] font-black italic">
+                        {product.price?.currency} {product.price?.amount}
+                      </span>
+                    </div>
+
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-3">
+                      <button className="p-4 bg-white text-black hover:bg-[#ccff00] transition-transform active:scale-90"><Edit3 size={20} /></button>
+                      <button className="p-4 bg-black text-white hover:bg-red-600 border border-white/10 transition-transform active:scale-90"><Trash2 size={20} /></button>
+                    </div>
                   </div>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
-                    <button className="p-4 bg-white text-black hover:bg-[#ccff00] transition-all">
-                      <Edit3 size={18} />
-                    </button>
-                    <button className="p-4 bg-white text-black hover:bg-red-500 hover:text-white transition-all">
-                      <Trash2 size={18} />
-                    </button>
+
+                  <div className="p-6 space-y-4">
+                    <div className="space-y-1">
+                      <h3 className="text-[11px] font-black uppercase tracking-widest truncate text-white/90 group-hover:text-[#ccff00] transition-colors">
+                        {product.title}
+                      </h3>
+                      <p className="text-[10px] text-white/30 line-clamp-2 italic leading-relaxed font-medium">
+                        {product.description}
+                      </p>
+                    </div>
+                    <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                      <span className="text-[9px] font-black uppercase text-white/20">Ref: {product._id?.slice(-8)}</span>
+                      <ExternalLink size={14} className="text-white/10 group-hover:text-[#ccff00]" />
+                    </div>
                   </div>
                 </div>
-
-                <div className="p-6">
-                  <h3 className="text-xs font-black uppercase tracking-widest mb-2 truncate group-hover:text-[#ccff00] transition-colors">
-                    {product.title}
-                  </h3>
-                  <p className="text-[10px] text-neutral-500 line-clamp-2 mb-6 italic leading-relaxed">
-                    {product.description}
-                  </p>
-                  <div className="pt-4 border-t border-white/5 flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-neutral-600">
-                    <span>ID: {product._id?.slice(-6)}</span>
-                    <ExternalLink size={12} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </section>
       </div>
+
+      <style jsx>{`
+        @keyframes shine {
+          0% { left: -100%; }
+          100% { left: 125%; }
+        }
+      `}</style>
     </div>
   );
 };

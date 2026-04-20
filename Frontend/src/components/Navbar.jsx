@@ -64,18 +64,16 @@ const Navbar = () => {
 
   return (
     <>
-      {/* ── Main bar ── */}
       <nav
         className={[
           "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
           scrolled
-            ? "py-3 bg-[#050505]/95 backdrop-blur-xl border-b border-white/[0.06] shadow-[0_1px_0_rgba(255,255,255,0.04)]"
-            : "py-5 bg-transparent",
+            ? "py-3 bg-[#050505] backdrop-blur-xl border-b border-white/[0.06] shadow-[0_1px_0_rgba(255,255,255,0.04)]"
+            : "py-5 bg-black",
         ].join(" ")}
       >
         <div className="max-w-[1800px] mx-auto px-5 lg:px-10 flex items-center justify-between gap-8">
 
-          {/* ── Logo ── */}
           <Link
             to="/"
             className="text-[18px] font-black italic tracking-tighter uppercase leading-none
@@ -83,8 +81,6 @@ const Navbar = () => {
           >
             Stylix.
           </Link>
-
-          {/* ── Center links (desktop) ── */}
           <div className="hidden md:flex items-center gap-10">
             {NAV_LINKS.map(({ label, to }) => (
               <Link
@@ -96,7 +92,6 @@ const Navbar = () => {
                 ].join(" ")}
               >
                 {label}
-                {/* active underline */}
                 <span
                   className={[
                     "absolute -bottom-1 left-0 h-px bg-[#ccff00] transition-all duration-300",
@@ -107,10 +102,7 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* ── Right cluster ── */}
           <div className="flex items-center gap-4 flex-shrink-0">
-
-            {/* Search */}
             <div className="flex items-center">
               {searchOpen ? (
                 <form onSubmit={handleSearch} className="flex items-center gap-2">
@@ -161,7 +153,6 @@ const Navbar = () => {
             {/* Divider */}
             <span className="hidden md:block h-4 w-px bg-white/10" />
 
-            {/* Auth zone */}
             {currentUser ? (
               /* Avatar + dropdown */
               <div className="relative" ref={avatarRef}>

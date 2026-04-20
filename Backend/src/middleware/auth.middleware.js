@@ -3,6 +3,7 @@ import { config } from "../config/config.js";
 import userModel from "../models/user.model.js";
 
 export const isAuthenticated = async (req, res, next) => {
+   console.log("👉 Cookies:", req.cookies);
   try {
     const token = req.cookies.accessToken;
 
@@ -24,7 +25,6 @@ export const isAuthenticated = async (req, res, next) => {
     if (err.name === "TokenExpiredError") {
       return res.status(401).json({ message: "TOKEN_EXPIRED" });
     }
-
     return res.status(401).json({ message: "INVALID_TOKEN" });
   }
 };
