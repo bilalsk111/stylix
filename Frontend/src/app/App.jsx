@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { setUser, setLoading, setAuthChecked } from '../features/auth/state/auth.slice';
 import { getMe } from '../features/auth/services/auth.api';
 import Navbar from "../components/Navbar";
+import { Toaster } from "react-hot-toast";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -19,7 +20,7 @@ useEffect(() => {
       dispatch(setUser(null));
     } finally {
       dispatch(setLoading(false));
-      dispatch(setAuthChecked(true)); // ✅ THIS IS CRITICAL
+      dispatch(setAuthChecked(true)); 
     }
   };
 
@@ -27,6 +28,7 @@ useEffect(() => {
 }, []);
   return (
     <div className="w-full min-h-screen">
+      <Toaster position="top-right" reverseOrder={false} />
        <RouterProvider router={routes} />
     </div>
   )

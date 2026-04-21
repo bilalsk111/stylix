@@ -3,29 +3,52 @@ import { uploadFile } from "../services/storage.service.js";
 
 export async function createProduct(req, res) {
   try {
-    const { title, description, priceAmount, priceCurrency } = req.body;
-    const seller = req.user;
+    const { title, description, priceAmount, priceCurrency, stock, attributes } = req.body;
+
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized. Seller not found." });
+    }
 
     const images = await Promise.all(
       req.files.map(async (file) => {
         const url = await uploadFile({
           buffer: file.buffer,
-          fileName: file.originalname,
+          fileName: `product-${Date.now()}-${file.originalname}`,
         });
         return { url };
       })
     );
 
-    const product = await productModel.create({
+    let parsedAttributes = {};
+    try {
+      parsedAttributes = typeof attributes === 'string' ? JSON.parse(attributes) : attributes;
+    } catch (e) {
+      parsedAttributes = { error: "Parse Failed" };
+    }
+
+    const priceData = {
+      amount: Number(priceAmount) || 0,
+      currency: priceCurrency || "INR",
+    };
+
+    const productData = {
       title,
       description,
-      price: {
-        amount: priceAmount,
-        currency: priceCurrency || "INR",
-      },
-      images,
-      seller: seller._id,
-    });
+      seller: req.user._id,
+      stock: Number(stock) || 0,
+      attributes: parsedAttributes,
+      price: priceData,
+      images: images,
+      variants: [{
+        title: "Default", 
+        images: images,
+        stock: Number(stock) || 0,
+        attributes: parsedAttributes,
+        price: priceData,
+      }]
+    };
+
+    const product = await productModel.create(productData);
 
     return res.status(201).json({
       message: "Product created successfully",
@@ -38,19 +61,19 @@ export async function createProduct(req, res) {
   }
 }
 
-export async function EditProduct(req, res) {
-  const { id } = req.params
+// export async function EditProduct(req, res) {
+//   const { id } = req.params
 
-  const product = productModel.findById(id)
-  if (!product) {
-    return res.status(401).json({
-      message: "Product not found",
-      success: false,
-      product
-    })
-  }
-  const editproduct = productModel.findByIdAndUpdate()
-}
+//   const product = productModel.findById(id)
+//   if (!product) {
+//     return res.status(401).json({
+//       message: "Product not found",
+//       success: false,
+//       product
+//     })
+//   }
+//   const editproduct = productModel.findByIdAndUpdate()
+// }
 export async function getSellerProducts(req, res) {
   try {
     const products = await productModel.find({ seller: req.user._id })  // ✅ _id pass karo
@@ -102,17 +125,12 @@ export async function getProductDetail(req, res) {
 export const addProductVariant = async (req, res) => {
   try {
     const productId = req.params.productId;
-
-    const product = await productModel.findOne({
-      _id: productId,
-      seller: req.user._id,
-    });
+    const product = await productModel.findOne({ _id: productId, seller: req.user._id });
 
     if (!product) {
       return res.status(404).json({ message: "Product not found", success: false });
     }
 
-    // ── Upload images (if any) ─────────────────────────────────────
     const files = req.files || [];
     const images = [];
 
@@ -120,17 +138,16 @@ export const addProductVariant = async (req, res) => {
       const uploaded = await Promise.all(
         files.map(async (file) => {
           const url = await uploadFile({ buffer: file.buffer, fileName: file.originalname });
-          return { url }; // ← this is what Mongoose expects
+          return { url };
         })
       );
       images.push(...uploaded);
     }
 
-    // ── Parse body fields ──────────────────────────────────────────
+    const variantTitle = req.body.title || `Variant ${product.varinate.length + 1}`;
     const stock = Number(req.body.stock) || 0;
     const priceAmt = Number(req.body.priceAmount) || product.price.amount;
     const priceCurr = req.body.priceCurrency || product.price.currency;
-
 
     let attributes = {};
     try {
@@ -139,11 +156,11 @@ export const addProductVariant = async (req, res) => {
       return res.status(400).json({ message: "Invalid attributes JSON", success: false });
     }
 
-    // ── FIX: schema field is `varinate`, NOT `variants` ───────────
-    product.varinate.push({
-      images,
+    product.variants.push({
+      title: variantTitle, // Use the provided title
+      images: images.length > 0 ? images : product.images, // Fallback to main images if none uploaded
       stock,
-      attributes,          // Mongoose Map accepts a plain object here
+      attributes,
       price: {
         amount: priceAmt,
         currency: priceCurr,

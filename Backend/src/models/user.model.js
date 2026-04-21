@@ -53,7 +53,7 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // 🔐 Hash password
@@ -66,5 +66,5 @@ userSchema.pre("save", async function () {
 userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
-const userModel =  mongoose.model("user", userSchema);
+const userModel = mongoose.model("user", userSchema);
 export default userModel;

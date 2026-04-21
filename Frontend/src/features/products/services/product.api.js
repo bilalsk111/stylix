@@ -26,19 +26,23 @@ export async function  getProductDetail(productId) {
 export async function addProductVariant(productId, newProductVariant) {
     const formData = new FormData();
 
-    // ✅ prevent crash
+    // ✅ Image Handling
     if (newProductVariant.images && newProductVariant.images.length > 0) {
         newProductVariant.images.forEach((img) => {
-            formData.append("images", img.file);
+            // Check if it's a new file or existing url
+            if (img.file) {
+                formData.append("images", img.file);
+            }
         });
     }
 
-    formData.append("stock", newProductVariant.stock);
-    formData.append("priceAmount", newProductVariant.price.amount);
-    formData.append("priceCurrency", newProductVariant.price.currency);
-    formData.append("attributes", JSON.stringify(newProductVariant.attributes));
+    // ✅ Map fields to match Backend expectations
+    formData.append("title", newProductVariant.title || "");
+    formData.append("stock", newProductVariant.stock || 0);
+    formData.append("priceAmount", newProductVariant.price?.amount || 0);
+    formData.append("priceCurrency", newProductVariant.price?.currency || "INR");
+    formData.append("attributes", JSON.stringify(newProductVariant.attributes || {}));
 
-    const res = await productApi.post(`/${productId}/variant`, formData);;
+    const res = await productApi.post(`/${productId}/variant`, formData);
     return res.data;
 }
-

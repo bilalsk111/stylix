@@ -21,7 +21,6 @@ const AllProducts = () => {
     fetchAllProducts();
   }, []);
 
-  // Skeleton Loader for better UX
   const SkeletonCard = () => (
     <div className="flex flex-col gap-6 animate-pulse">
       <div className="aspect-[4/5] bg-neutral-900 rounded-sm" />

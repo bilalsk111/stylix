@@ -1,314 +1,316 @@
-import React, { useState, useEffect, useCallback, memo } from "react";
+import React, { useState, useEffect, memo, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  Plus, Trash2, Edit3, X, Package,
-  Upload, ArrowLeft, ShieldCheck, Info
+import { 
+  Plus, X, ArrowLeft, Edit3, Fingerprint, Box, 
+  ShieldCheck, ShoppingBag, Globe, Cpu, MoveRight, Layers, Zap,
+  ImagePlus
 } from "lucide-react";
 import { useProduct } from "../hook/useProduct";
+import toast, { Toaster } from "react-hot-toast";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "JPY"];
 const DEFAULT_VARIANT_FORM = {
-  attributes: { Size: "", Color: "" },
+  title: "",
+  attributes: { SIZE: "", COLOR: "" },
   stock: "",
   price: { amount: "", currency: "INR" },
-  images: [],
+  images: [], 
 };
 
-const normaliseVariant = (v) => ({
-  ...v,
-  attributes: {
-    Size: v.attributes?.Size ?? "",
-    Color: v.attributes?.Color ?? "",
-  },
-});
+const globalStyles = `
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .glass-input { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
+  .glass-input:focus { border-color: #ccff00; background: rgba(204, 255, 0, 0.03); }
+  .editorial-title { line-height: 0.8; letter-spacing: -0.05em; font-style: italic; }
+`;
 
-// ─────────────────────────────────────────────
-// Optimized Sub-components (Memoized)
-// ─────────────────────────────────────────────
 const Navbar = memo(({ productId }) => {
   const navigate = useNavigate();
   return (
-    <nav className="sticky top-0 z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-white/[0.05] px-8 py-4 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/[0.03] px-8 py-5 flex items-center justify-between">
       <div className="flex items-center gap-6">
-        <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/5 rounded-full transition-all active:scale-90">
-          <ArrowLeft size={18} />
+        <button onClick={() => navigate(-1)} className="p-2 border border-white/10 rounded-full hover:border-[#ccff00] transition-all">
+          <ArrowLeft size={14} />
         </button>
-        <div className="h-4 w-[1px] bg-white/10" />
-        <span className="text-[10px] font-black uppercase tracking-widest text-white/40">
-          Master Panel / <span className="text-white/80">{productId}</span>
-        </span>
+        <div className="flex flex-col">
+          <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20">Registry Control</span>
+          <span className="text-[10px] font-mono text-white/60">NODE_{productId?.slice(-6).toUpperCase()}</span>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-[#ccff00] animate-pulse" />
-        <span className="text-[9px] font-black uppercase text-[#ccff00]">Live Sync</span>
+      <div className="flex gap-8">
+        {['Overview', 'Analytics', 'Logistics'].map(item => (
+          <span key={item} className="text-[9px] font-black uppercase tracking-widest text-white/20 hover:text-[#ccff00] cursor-pointer transition-colors">{item}</span>
+        ))}
       </div>
     </nav>
   );
 });
 
-const ProductGallery = ({ images, activeImg, setActiveImg }) => (
-  <div className="lg:col-span-5 flex gap-4">
-    <div className="flex flex-col gap-3 shrink-0">
-      {images?.map((img, i) => (
-        <button
-          key={i}
-          onClick={() => setActiveImg(i)}
-          className={`w-14 h-18 border transition-all duration-500 ${
-            activeImg === i ? "border-[#ccff00] scale-105" : "border-white/5 opacity-30 hover:opacity-100"
-          }`}
-        >
-          <img src={img.url} className="w-full h-full object-cover" alt="" />
-        </button>
-      ))}
+const VariantCard = memo(({ variant, index, onEdit }) => (
+  <div className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl hover:border-white/10 transition-all">
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex gap-3">
+        <div className="w-12 h-14 bg-neutral-900 rounded-md overflow-hidden border border-white/5">
+          {variant.images?.[0] && <img src={variant.images[0].url} className="w-full h-full object-cover grayscale" alt="" />}
+        </div>
+        <div>
+          <span className="text-[8px] font-black text-[#ccff00] uppercase tracking-tighter opacity-50">NODE_0{index + 1}</span>
+          <h4 className="text-xs font-bold uppercase text-white/90">{variant.title || "Standard SKU"}</h4>
+        </div>
+      </div>
+      <button onClick={() => onEdit(index)} className="p-2 text-white/10 hover:text-[#ccff00]"><Edit3 size={12} /></button>
     </div>
-    <div className="flex-1 aspect-[3/4] bg-white/[0.02] border border-white/5 overflow-hidden relative group">
-      <img src={images?.[activeImg]?.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
-      <div className="absolute top-4 right-4 bg-black/80 px-3 py-1 border border-[#ccff00]/30 backdrop-blur-md">
-        <span className="text-[8px] font-black uppercase text-[#ccff00]">Base Asset</span>
+    <div className="flex justify-between items-end border-t border-white/5 pt-3">
+      <div>
+        <span className="text-[7px] font-black text-white/20 uppercase block">Stock</span>
+        <span className="text-[10px] font-mono text-white/80">{variant.stock} Units</span>
+      </div>
+      <div className="text-right">
+        <span className="text-[7px] font-black text-white/20 uppercase block">Price</span>
+        <span className="text-[10px] font-mono text-[#ccff00]">{variant.price?.currency} {variant.price?.amount}</span>
       </div>
     </div>
   </div>
-);
+));
 
-const VariantRow = memo(({ variant, index, onEdit }) => {
-  const { attributes, stock, price, images } = variant;
-  return (
-    <div className="group bg-white/[0.02] border border-white/5 p-5 hover:border-[#ccff00]/40 hover:bg-white/[0.04] transition-all duration-300 flex items-center gap-8">
-      <div className="w-14 h-18 bg-neutral-900 border border-white/10 overflow-hidden shrink-0 group-hover:border-[#ccff00]/30">
-        {images?.[0] && <img src={images[0].url} className="w-full h-full object-cover" alt="" />}
-      </div>
-      <div className="flex-1 grid grid-cols-3 gap-6">
-        <div className="flex flex-col">
-          <span className="text-[8px] font-black uppercase text-white/20 mb-1 tracking-widest">Attributes</span>
-          <span className="text-xs font-black uppercase italic">{attributes.Size || "—"} / {attributes.Color || "—"}</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[8px] font-black uppercase text-white/20 mb-1 tracking-widest">Availability</span>
-          <span className={`text-xs font-black uppercase ${stock < 10 ? "text-red-500" : "text-white/80"}`}>{stock} Units</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[8px] font-black uppercase text-white/20 mb-1 tracking-widest">Valuation</span>
-          <span className="text-xs font-black text-[#ccff00] uppercase italic">{price.currency} {price.amount}</span>
-        </div>
-      </div>
-      <button onClick={() => onEdit(index)} className="p-4 bg-white/5 group-hover:bg-[#ccff00] group-hover:text-black transition-all duration-300 active:scale-90">
-        <Edit3 size={16} />
-      </button>
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────
-// Main Seller Page
-// ─────────────────────────────────────────────
 const SellerProductDetails = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { handleGetProductById, handleAddProductVariant } = useProduct();
-
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [variantForm, setVariantForm] = useState(DEFAULT_VARIANT_FORM);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchProduct = useCallback(async () => {
-    try {
-      const data = await handleGetProductById(id);
-      setProduct({
-        ...data,
-        varinate: (data.varinate || []).map(normaliseVariant),
-      });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    let isMounted = true;
+    handleGetProductById(id).then(data => { 
+      if(isMounted) {
+        setProduct(data); 
+        setLoading(false); 
+      }
+    });
+    return () => { isMounted = false; };
   }, [id, handleGetProductById]);
-
-  useEffect(() => { fetchProduct(); }, [fetchProduct]);
 
   const toggleModal = (index = null) => {
     setEditingIndex(index);
-    setVariantForm(index !== null ? product.varinate[index] : DEFAULT_VARIANT_FORM);
+    setVariantForm(index !== null ? product.variants[index] : DEFAULT_VARIANT_FORM);
     setIsModalOpen(!isModalOpen);
   };
 
-  const handleSaveVariant = async () => {
-    const { Size, Color } = variantForm.attributes;
-    if (!Size && !Color) return alert("Attributes Required");
 
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const currentImages = variantForm.images || [];
+
+    if (currentImages.length + files.length > 7) {
+      toast.error("Max 7 imagery assets allowed.", { style: { background: '#0a0a0a', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0px', fontSize: '10px', textTransform: 'uppercase', fontWeight: '900' }});
+    }
+
+    const allowedSlots = 7 - currentImages.length;
+    
+    // Yahan hum img object create kar rahe hain exact us format mein jo aapka backend maang raha hai
+    // { file: FileObject, url: PreviewURL }
+    const filesToAdd = files.slice(0, allowedSlots).map(file => ({
+      file: file, 
+      url: URL.createObjectURL(file) // For live preview
+    }));
+
+    setVariantForm(prev => ({
+      ...prev,
+      images: [...currentImages, ...filesToAdd]
+    }));
+  };
+
+  const removeImage = (indexToRemove) => {
+    setVariantForm(prev => ({
+      ...prev,
+      images: prev.images.filter((_, idx) => idx !== indexToRemove)
+    }));
+  };
+
+  const handleSaveVariant = async () => {
     try {
-      const response = await handleAddProductVariant(id, variantForm);
-      setProduct(prev => ({
-        ...prev,
-        varinate: (response.product?.varinate || []).map(normaliseVariant)
-      }));
+      setIsSubmitting(true);
+      const payload = {
+        title: variantForm.title,
+        stock: Number(variantForm.stock),
+        price: {
+          amount: Number(variantForm.price.amount),
+          currency: variantForm.price.currency
+        },
+        attributes: variantForm.attributes,
+        images: variantForm.images // Yeh array ab object `{file: ..., url: ...}` hold karta hai
+      };
+
+      const response = await handleAddProductVariant(id, payload);
+      
+      setProduct(response?.product || response?.data || response);
+      setVariantForm(DEFAULT_VARIANT_FORM);
       setIsModalOpen(false);
-      // Optional: Refresh or Navigate if needed
-    } catch (err) {
-      alert("Sync Failed");
+      toast.success("Node Cluster Deployed.", { style: { background: '#0a0a0a', color: '#ccff00', border: '1px solid rgba(204,255,0,0.2)', borderRadius: '0px', fontSize: '10px', textTransform: 'uppercase', fontWeight: '900' }});
+      
+    } catch (error) {
+      console.error("Deploy Node Failed:", error);
+      toast.error("Deployment failed. Check console.", { style: { background: '#0a0a0a', color: '#ff4444', border: '1px solid rgba(255,68,68,0.2)', borderRadius: '0px', fontSize: '10px', textTransform: 'uppercase', fontWeight: '900' }}); 
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (loading) return (
-    <div className="h-screen bg-[#050505] flex flex-col items-center justify-center gap-4">
-      <div className="w-12 h-12 border-2 border-[#ccff00]/20 border-t-[#ccff00] rounded-full animate-spin" />
-      <span className="text-[#ccff00] text-[9px] font-black tracking-[0.4em] uppercase">Syncing Nexus...</span>
-    </div>
-  );
+  if (loading) return <div className="h-screen bg-black flex items-center justify-center text-[#ccff00] font-black text-[10px] tracking-[1em] animate-pulse">LOADING_NEXUS</div>;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-[#ccff00] selection:text-black">
+    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#ccff00] selection:text-black">
+      <style>{globalStyles}</style>
+      <Toaster position="top-right" />
       <Navbar productId={product?._id} />
 
-      <div className="max-w-[1400px] mx-auto p-6 lg:p-12 space-y-20">
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-          <ProductGallery images={product?.images} activeImg={activeImg} setActiveImg={setActiveImg} />
+      <main className="max-w-[1400px] mx-auto px-8 py-12">
+        <div className="grid lg:grid-cols-12 gap-16">
           
-          <div className="lg:col-span-7 flex flex-col justify-center space-y-8">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-[#ccff00] opacity-80">
-                <ShieldCheck size={14} />
-                <span className="text-[9px] font-black uppercase tracking-widest">Verified Seller Asset</span>
+          <div className="lg:col-span-7 flex gap-4 h-[700px]">
+            <div className="flex flex-col gap-2 w-16 no-scrollbar overflow-y-auto">
+              {product?.images?.map((img, i) => (
+                <button key={i} onClick={() => setActiveImg(i)} className={`aspect-[3/4] w-full rounded-md overflow-hidden border transition-all ${activeImg === i ? "border-[#ccff00]" : "border-white/5 opacity-40"}`}>
+                  <img src={img.url} className="w-full h-full object-cover" alt="" />
+                </button>
+              ))}
+            </div>
+            <div className="flex-1 bg-neutral-900 rounded-2xl overflow-hidden relative group">
+              <img src={product?.images?.[activeImg]?.url} className="w-full h-full object-cover" alt="" />
+              <div className="absolute bottom-6 left-6">
+                <span className="bg-[#ccff00] text-black px-3 py-1 text-[8px] font-black uppercase tracking-widest">MASTER_VIEW_0{activeImg + 1}</span>
               </div>
-              <h1 className="text-4xl lg:text-6xl font-black italic uppercase tracking-tighter leading-none">
+            </div>
+          </div>
+
+          <div className="lg:col-span-5">
+            <header className="mb-10">
+              <div className="flex gap-4 mb-4">
+                <span className="text-[#ccff00] text-[8px] font-black uppercase tracking-[0.3em] bg-[#ccff00]/5 px-2 py-1 border border-[#ccff00]/10 rounded-sm flex items-center gap-2">
+                  <ShieldCheck size={10} /> ASSET_ENCRYPTED
+                </span>
+              </div>
+              
+              <h1 className="text-7xl font-black uppercase editorial-title mb-8">
                 {product?.title}
               </h1>
-              <p className="text-white/40 text-lg font-medium italic leading-relaxed max-w-xl">
-                {product?.description}
-              </p>
-            </div>
 
-            <div className="grid grid-cols-2 gap-8 py-8 border-y border-white/5">
-              <div>
-                <span className="text-[9px] font-black uppercase text-white/20 tracking-widest block mb-2">Base Valuation</span>
-                <span className="text-4xl font-black italic text-[#ccff00]">{product?.price?.currency} {product?.price?.amount}</span>
-              </div>
-              <div className="border-l border-white/10 pl-8">
-                <span className="text-[9px] font-black uppercase text-white/20 tracking-widest block mb-2">Registry Date</span>
-                <span className="text-sm font-bold text-white/60 tracking-tighter">{new Date(product?.createdAt).toDateString()}</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="space-y-10">
-          <header className="flex justify-between items-end border-b border-white/5 pb-8">
-            <div className="space-y-1">
-              <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#ccff00]">Inventory Node</h2>
-              <p className="text-[10px] text-white/30 uppercase font-black tracking-[0.3em]">Configure variants and stock distribution</p>
-            </div>
-            <button onClick={() => toggleModal()} className="bg-white text-black px-12 py-5 text-[10px] font-black uppercase tracking-widest hover:bg-[#ccff00] transition-all active:scale-95 shadow-xl">
-              Add New Variant
-            </button>
-          </header>
-
-          <div className="grid grid-cols-1 gap-4">
-            {product?.varinate?.length > 0 ? (
-              product.varinate.map((v, idx) => <VariantRow key={idx} variant={v} index={idx} onEdit={toggleModal} />)
-            ) : (
-              <div className="py-32 border border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-white/10 uppercase font-black tracking-[0.5em] text-[10px]">
-                <Package size={40} className="mb-6 opacity-5" />
-                No Active Variants Found
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
-
-      {/* Modal Overlay */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-xl shadow-2xl scale-in-center transition-transform">
-            <div className="p-6 border-b border-white/5 flex justify-between items-center">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ccff00] italic">
-                {editingIndex !== null ? "Modify Variant" : "Deploy New Variant"}
-              </h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-white/20 hover:text-white transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-8 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                {["Size", "Color"].map((key) => (
-                  <div key={key} className="space-y-2">
-                    <label className="text-[8px] font-black uppercase text-white/30 tracking-widest">{key}</label>
-                    <input
-                      type="text"
-                      value={variantForm.attributes[key]}
-                      onChange={(e) => setVariantForm(prev => ({...prev, attributes: {...prev.attributes, [key]: e.target.value}}))}
-                      className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold uppercase outline-none focus:border-[#ccff00] transition-colors"
-                    />
+              <div className="grid grid-cols-3 gap-3 mb-10">
+                {[
+                  { label: "Season", val: "SS/26", icon: <Layers size={12}/> },
+                  { label: "Material", val: "Tech Silk", icon: <Cpu size={12}/> },
+                  { label: "Fit", val: "Boxy", icon: <MoveRight size={12}/> }
+                ].map(spec => (
+                  <div key={spec.label} className="border border-white/5 p-3 rounded-lg">
+                    <span className="text-[7px] font-black text-white/20 uppercase block mb-1">{spec.label}</span>
+                    <span className="text-[10px] font-bold uppercase text-white/70">{spec.val}</span>
                   </div>
                 ))}
               </div>
+            </header>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[8px] font-black uppercase text-white/30 tracking-widest">Units</label>
-                  <input
-                    type="number"
-                    value={variantForm.stock}
-                    onChange={(e) => setVariantForm(prev => ({...prev, stock: e.target.value}))}
-                    className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold outline-none focus:border-[#ccff00]"
-                  />
-                </div>
-                <div className="space-y-2 col-span-2">
-                  <label className="text-[8px] font-black uppercase text-white/30 tracking-widest">Market Price</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      value={variantForm.price.amount}
-                      onChange={(e) => setVariantForm(prev => ({...prev, price: {...prev.price, amount: e.target.value}}))}
-                      className="flex-1 bg-white/5 border border-white/10 p-4 text-xs font-bold outline-none focus:border-[#ccff00]"
-                    />
-                    <select
-                      value={variantForm.price.currency}
-                      onChange={(e) => setVariantForm(prev => ({...prev, price: {...prev.price, currency: e.target.value}}))}
-                      className="bg-[#111] border border-white/10 px-4 text-[10px] font-black text-[#ccff00]"
-                    >
-                      {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                </div>
+            <section className="bg-[#080808] border border-white/5 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-sm font-black uppercase tracking-tighter flex items-center gap-2">
+                  <ShoppingBag size={14} className="text-[#ccff00]" /> Node Clusters
+                </h2>
+                <button onClick={() => toggleModal()} className="bg-white text-black px-4 py-2 text-[8px] font-black uppercase tracking-widest rounded-sm hover:bg-[#ccff00] transition-colors">
+                  + Add Node
+                </button>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-[8px] font-black uppercase text-white/30 tracking-widest">Media Assets ({variantForm.images.length}/7)</label>
-                <div className="flex flex-wrap gap-3">
-                  {variantForm.images.map((img, i) => (
-                    <div key={i} className="relative w-16 h-20 border border-white/10 group overflow-hidden">
+              <div className="grid gap-3">
+                {product?.variants?.map((v, idx) => <VariantCard key={idx} variant={v} index={idx} onEdit={toggleModal} />)}
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm">
+          <div className="bg-[#0c0c0c] border border-white/10 w-full max-w-md rounded-3xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-white/5 flex justify-between items-center shrink-0">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">Deploy Node Cluster</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-white/20 hover:text-white"><X size={18} /></button>
+            </div>
+
+            <div className="p-8 space-y-6 overflow-y-auto no-scrollbar">
+              
+              {/* IMAGE UPLOADER SECTION (MAX 7) */}
+              <div className="space-y-3 p-1">
+                <div className="flex items-baseline justify-between">
+                  <label className="text-[8px] font-black uppercase text-white/20 tracking-widest block mb-1">Variant Asset Imagery (Max 7)</label>
+                  <span className="text-[8px] font-black text-[#ccff00]">{variantForm.images?.length || 0} / 7</span>
+                </div>
+                
+                <div className="flex gap-3 overflow-x-auto no-scrollbar py-1">
+                  {variantForm.images?.map((img, idx) => (
+                    <div key={idx} className="relative aspect-[3/4] w-16 h-20 shrink-0 border border-white/10 rounded-lg overflow-hidden group">
                       <img src={img.url} className="w-full h-full object-cover" alt="" />
-                      <button 
-                        onClick={() => setVariantForm(prev => ({...prev, images: prev.images.filter((_, idx) => idx !== i)}))}
-                        className="absolute inset-0 bg-red-600/80 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all"
-                      >
-                        <Trash2 size={12} />
+                      <button onClick={() => removeImage(idx)} className="absolute top-1.5 right-1.5 bg-black/80 backdrop-blur-sm p-1 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X size={10} className="text-white hover:text-red-500" />
                       </button>
                     </div>
                   ))}
-                  {variantForm.images.length < 7 && (
-                    <label className="w-16 h-20 border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer hover:border-[#ccff00]/50 transition-all">
-                      <Upload size={14} className="text-white/20" />
-                      <input type="file" multiple className="hidden" accept="image/*" onChange={(e) => {
-                         const files = Array.from(e.target.files).map(file => ({ file, url: URL.createObjectURL(file) }));
-                         setVariantForm(prev => ({ ...prev, images: [...prev.images, ...files].slice(0, 7) }));
-                      }} />
+                  
+                  {(variantForm.images?.length || 0) < 7 && (
+                    <label className="aspect-[3/4] w-16 h-20 shrink-0 border border-dashed border-white/10 rounded-lg flex flex-col gap-1 items-center justify-center cursor-pointer group hover:border-[#ccff00] transition-colors bg-[#080808]">
+                      <ImagePlus size={16} className="text-white/30 group-hover:text-[#ccff00] transition-colors" />
+                      <span className="text-[6px] font-black uppercase tracking-[0.3em] text-white/30 group-hover:text-[#ccff00] transition-colors">ADD</span>
+                      <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} />
                     </label>
                   )}
                 </div>
               </div>
+
+              <div className="space-y-1 p-1">
+                <label className="text-[8px] font-black uppercase text-white/20 tracking-widest">Title</label>
+                <input type="text" value={variantForm.title} onChange={(e) => setVariantForm(p => ({...p, title: e.target.value}))} className="w-full glass-input p-3 rounded-lg text-[10px] font-bold uppercase outline-none" placeholder=" Variant SKU Title " />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 p-1">
+                {["SIZE", "COLOR"].map((key) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-[8px] font-black uppercase text-white/20 tracking-widest">{key}</label>
+                    <input type="text" value={variantForm.attributes[key]} onChange={(e) => setVariantForm(p => ({...p, attributes: {...p.attributes, [key]: e.target.value.toUpperCase()}}))} className="w-full glass-input p-3 rounded-lg text-[10px] font-bold outline-none placeholder:text-white/20" placeholder={`Cluster ${key}`} />
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 p-1">
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase text-white/20 tracking-widest">Inventory Stock</label>
+                  <input type="number" value={variantForm.stock} onChange={(e) => setVariantForm(p => ({...p, stock: e.target.value}))} className="w-full glass-input p-3 rounded-lg text-[10px] font-mono outline-none" placeholder=" UNITS_IN_VAULT " />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase text-white/20 tracking-widest">Pricing Currency</label>
+                  <select value={variantForm.price.currency} onChange={(e) => setVariantForm(p => ({...p, price: {...p.price, currency: e.target.value}}))} className="w-full glass-input p-3 rounded-lg text-[10px] font-bold text-white outline-none appearance-none bg-black">
+                    {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1 p-1">
+                <label className="text-[8px] font-black uppercase text-white/20 tracking-widest">Registry Price</label>
+                <input type="number" value={variantForm.price.amount} onChange={(e) => setVariantForm(p => ({...p, price: {...p.price, amount: e.target.value}}))} className="w-full bg-[#ccff00]/5 border border-[#ccff00]/20 p-4 text-2xl font-black text-[#ccff00] italic outline-none rounded-xl" placeholder=" NEXUS_VALUATION " />
+              </div>
             </div>
 
-            <div className="p-8 bg-white/[0.02] border-t border-white/5">
-              <button
-                onClick={handleSaveVariant}
-                className="w-full bg-[#ccff00] text-black py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-white transition-all active:scale-[0.98] shadow-2xl"
+            <div className="p-6 border-t border-white/5 shrink-0 bg-[#0c0c0c]">
+              <button 
+                disabled={isSubmitting} 
+                onClick={handleSaveVariant} 
+                className={`w-full bg-[#ccff00] text-black py-4 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-transform ${isSubmitting ? "opacity-50 cursor-wait" : "hover:scale-[1.02]"}`}
               >
-                {editingIndex !== null ? "Commit Changes" : "Deploy Variant"}
+                {isSubmitting ? "Deploying Cluster Assets..." : "Deploy to Registry"}
               </button>
             </div>
           </div>

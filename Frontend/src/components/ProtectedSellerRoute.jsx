@@ -4,7 +4,6 @@ import { useAuth } from '../features/auth/hook/useAuth';
 
 const ProtectedSellerRoute = () => {
 const { currentUser, 
-  // isLoading,
    isAuthChecked } = useAuth();
 
 if (!isAuthChecked) {

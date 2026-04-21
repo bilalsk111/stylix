@@ -18,7 +18,7 @@ router.post(
       requireSeller,
     upload.array("images", 7),  
     ProductValidate,          
-    createProduct
+   createProduct
 );
 router.get(
   '/seller-products',
