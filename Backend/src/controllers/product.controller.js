@@ -3,10 +3,20 @@ import { uploadFile } from "../services/storage.service.js";
 
 export async function createProduct(req, res) {
   try {
-    const { title, description, priceAmount, priceCurrency, stock, attributes } = req.body;
+    const {
+      title,
+      description,
+      priceAmount,
+      priceCurrency,
+      stock,
+      attributes,
+      category,
+    } = req.body;
 
     if (!req.user) {
-      return res.status(401).json({ success: false, message: "Unauthorized. Seller not found." });
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized. Seller not found." });
     }
 
     const images = await Promise.all(
@@ -16,12 +26,13 @@ export async function createProduct(req, res) {
           fileName: `product-${Date.now()}-${file.originalname}`,
         });
         return { url };
-      })
+      }),
     );
 
     let parsedAttributes = {};
     try {
-      parsedAttributes = typeof attributes === 'string' ? JSON.parse(attributes) : attributes;
+      parsedAttributes =
+        typeof attributes === "string" ? JSON.parse(attributes) : attributes;
     } catch (e) {
       parsedAttributes = { error: "Parse Failed" };
     }
@@ -30,22 +41,35 @@ export async function createProduct(req, res) {
       amount: Number(priceAmount) || 0,
       currency: priceCurrency || "INR",
     };
-
+    if (!title || !priceAmount) {
+      return res
+        .status(400)
+        .json({ message: "Missing required fields", success: false });
+    }
+    const normalizeCategory = (cat) => {
+      if (!cat) return "MEN";
+      return cat.toUpperCase();
+    };
+    const categoryNormalized = normalizeCategory(category);
     const productData = {
       title,
       description,
+      category: categoryNormalized,
       seller: req.user._id,
       stock: Number(stock) || 0,
       attributes: parsedAttributes,
       price: priceData,
       images: images,
-      variants: [{
-        title: "Default", 
-        images: images,
-        stock: Number(stock) || 0,
-        attributes: parsedAttributes,
-        price: priceData,
-      }]
+      variants: [
+        {
+          title: "Default",
+          images: images,
+          stock: Number(stock) || 0,
+          attributes: parsedAttributes,
+          price: priceData,
+          category: categoryNormalized,
+        },
+      ],
     };
 
     const product = await productModel.create(productData);
@@ -76,7 +100,8 @@ export async function createProduct(req, res) {
 // }
 export async function getSellerProducts(req, res) {
   try {
-    const products = await productModel.find({ seller: req.user._id })  // ✅ _id pass karo
+    const products = await productModel
+      .find({ seller: req.user._id }) // ✅ _id pass karo
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -91,8 +116,22 @@ export async function getSellerProducts(req, res) {
 }
 export async function getAllProducts(req, res) {
   try {
-    const products = await productModel.find()
-      .populate("seller", "fullname email").sort({ createdAt: -1 })
+    const { category } = req.query;
+    let filter = {};
+    const normalizeCategory = (cat) => {
+      if (!cat) return "MEN";
+      return cat.toUpperCase();
+    };
+    const categoryNormalized = normalizeCategory(category);
+    if (category) {
+      filter.category = normalizeCategory(category);
+    }
+
+    const products = await productModel
+      .find(filter)
+      .populate("variants")
+      .populate("seller", "fullname email")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       message: "Products fetched successfully",
@@ -107,28 +146,33 @@ export async function getAllProducts(req, res) {
 }
 
 export async function getProductDetail(req, res) {
-  const { id } = req.params
-  const product = await productModel.findById(id)
+  const { id } = req.params;
+  const product = await productModel.findById(id);
   if (!product) {
     return res.status(400).json({
       message: "product not found",
-      success: false
-    })
+      success: false,
+    });
   }
   return res.status(200).json({
     message: "Product details fetched succeddfully",
     success: true,
-    product
-  })
+    product,
+  });
 }
 
 export const addProductVariant = async (req, res) => {
   try {
     const productId = req.params.productId;
-    const product = await productModel.findOne({ _id: productId, seller: req.user._id });
+    const product = await productModel.findOne({
+      _id: productId,
+      seller: req.user._id,
+    });
 
     if (!product) {
-      return res.status(404).json({ message: "Product not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Product not found", success: false });
     }
 
     const files = req.files || [];
@@ -137,15 +181,24 @@ export const addProductVariant = async (req, res) => {
     if (files.length > 0) {
       const uploaded = await Promise.all(
         files.map(async (file) => {
-          const url = await uploadFile({ buffer: file.buffer, fileName: file.originalname });
+          const url = await uploadFile({
+            buffer: file.buffer,
+            fileName: file.originalname,
+          });
           return { url };
-        })
+        }),
       );
       images.push(...uploaded);
     }
-
-    const variantTitle = req.body.title || `Variant ${product.varinate.length + 1}`;
+    const normalizeCategory = (cat) => {
+      if (!cat) return "MEN";
+      return cat.toUpperCase();
+    };
+    const categoryNormalized = normalizeCategory(category);
+    const variantTitle =
+      req.body.title || `Variant ${product.varinate.length + 1}`;
     const stock = Number(req.body.stock) || 0;
+    const category = req.body.category || "MEN";
     const priceAmt = Number(req.body.priceAmount) || product.price.amount;
     const priceCurr = req.body.priceCurrency || product.price.currency;
 
@@ -153,18 +206,21 @@ export const addProductVariant = async (req, res) => {
     try {
       attributes = JSON.parse(req.body.attributes || "{}");
     } catch {
-      return res.status(400).json({ message: "Invalid attributes JSON", success: false });
+      return res
+        .status(400)
+        .json({ message: "Invalid attributes JSON", success: false });
     }
 
     product.variants.push({
-      title: variantTitle, // Use the provided title
-      images: images.length > 0 ? images : product.images, // Fallback to main images if none uploaded
+      title: variantTitle, 
+      images: images.length > 0 ? images : product.images, 
       stock,
       attributes,
       price: {
         amount: priceAmt,
         currency: priceCurr,
       },
+      category: categoryNormalized,
     });
 
     await product.save();
@@ -176,6 +232,80 @@ export const addProductVariant = async (req, res) => {
     });
   } catch (err) {
     console.error("addProductVariant error:", err);
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+};
+export const editProductVariant = async (req, res) => {
+  try {
+    const { productId, variantId } = req.params;
+
+    const product = await productModel.findOne({
+      _id: productId,
+      seller: req.user._id,
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found", success: false });
+    }
+
+    const variant = product.variants.id(variantId);
+    if (!variant) {
+      return res.status(404).json({ message: "Variant not found", success: false });
+    }
+
+    // 📦 Images update logic (same as before)
+    const files = req.files || [];
+    if (files.length > 0) {
+      const uploaded = await Promise.all(
+        files.map(async (file) => {
+          const url = await uploadFile({ buffer: file.buffer, fileName: file.originalname });
+          return { url };
+        })
+      );
+      variant.images = uploaded;
+    }
+
+    // 🧠 Attributes parse
+    if (req.body.attributes) {
+      try {
+        variant.attributes = JSON.parse(req.body.attributes);
+      } catch {
+        return res.status(400).json({ message: "Invalid attributes JSON" });
+      }
+    }
+
+    // ✏️ Update Variant Fields
+    variant.title = req.body.title || variant.title;
+    variant.stock = req.body.stock ? Number(req.body.stock) : variant.stock;
+
+    const newPriceAmount = req.body.priceAmount ? Number(req.body.priceAmount) : variant.price.amount;
+    const newCurrency = req.body.priceCurrency || variant.price.currency;
+
+    variant.price = {
+      amount: newPriceAmount,
+      currency: newCurrency,
+    };
+
+    // 🔥 SYNC LOGIC: Agar ye "Default" variant hai, toh Main Product ka price bhi update karo
+    if (variant.title.toLowerCase() === "default") {
+        product.price = {
+            amount: newPriceAmount,
+            currency: newCurrency
+        };
+        // Option: Agar main title bhi update karna chahte ho toh:
+        // product.title = variant.title === "Default" ? product.title : variant.title;
+    }
+
+    // 💾 Save Product (Parent document save hote hi variant bhi save ho jayega)
+    await product.save();
+
+    return res.status(200).json({
+      message: "Variant and Main Price updated successfully",
+      success: true,
+      product,
+    });
+  } catch (err) {
+    console.error("editProductVariant error:", err);
     return res.status(500).json({ message: "Server error", success: false });
   }
 };

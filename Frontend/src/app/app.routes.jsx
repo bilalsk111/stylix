@@ -8,6 +8,7 @@ import AllProducts from "../features/products/pages/AllProducts";
 import ProductDetail from "../features/products/pages/ProductDetail";
 import Layout from "../components/Layout";
 import SellerProductDetails from "../features/products/pages/SellerProductDeatails";
+import Cart from "../features/cart/pages/Cart";
 
 export const routes = createBrowserRouter([
   {
@@ -17,6 +18,10 @@ export const routes = createBrowserRouter([
       { path: "/", element: <AllProducts /> },
       { path: "/product/:id", element: <ProductDetail /> },
     ],
+  },
+  {
+    path:"/bag",
+    element:<Cart />
   },
   {
     element: <ProtectedSellerRoute />,

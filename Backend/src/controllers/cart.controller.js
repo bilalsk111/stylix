@@ -83,3 +83,84 @@ export const getCart = async (req, res) => {
         cart
     })
 }
+
+
+export const updateCartItemQuantity = async (req, res) => {
+  try {
+    const { productId, variantId } = req.params;
+    const { quantity } = req.body;
+
+    // 1. Safety check
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({ message: "Quantity must be at least 1", success: false });
+    }
+
+    // 2. Seedha Product dhundho (getStock function ki zaroorat nahi hai, error yahi aa raha hoga)
+    const product = await productModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found", success: false });
+    }
+
+    // 3. Product ke andar se specific variant dhundho jiska stock check karna hai
+    const variant = product.variants.find(v => v._id.toString() === variantId);
+    if (!variant) {
+      return res.status(404).json({ message: "Variant not found", success: false });
+    }
+
+    // 4. Stock limit check karo directly variant object se!
+    const stock = variant.stock;
+    if (quantity > stock) {
+      return res.status(400).json({ message: `Not enough stock, only ${stock} left`, success: false });
+    }
+
+    // 5. Cart dhundho
+    const cart = await cartModel.findOne({ user: req.user._id });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found", success: false });
+    }
+
+    // 6. Cart ke andar wo specific item dhundho
+    const itemIndex = cart.items.findIndex(
+      (item) => item.product.toString() === productId && item.variant?.toString() === variantId
+    );
+
+    if (itemIndex === -1) {
+      return res.status(404).json({ message: "Item not in cart", success: false });
+    }
+
+    // 7. Quantity update karo aur save kar do
+    cart.items[itemIndex].quantity = quantity;
+    await cart.save();
+
+    return res.status(200).json({ message: "Quantity updated successfully", success: true, cart });
+
+  } catch (error) {
+    // 🔥 YAHAN CONSOLE.LOG LAGAYA HAI: Agar backend ab bhi fitega, toh aapke VS Code/Terminal me exact error dikhega
+    console.error("🔥 UPDATE QTY ERROR:", error);
+    return res.status(500).json({ message: error.message || "Server error", success: false });
+  }
+};
+
+export const removeCartItem = async (req, res) => {
+  try {
+    const { productId, variantId } = req.params;
+
+    let cart = await cartModel.findOne({ user: req.user._id });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found", success: false });
+    }
+
+    // Fix: Proper filter logic -> UN items ko rakho jo current item se match NAHI karte
+    cart.items = cart.items.filter(
+      (item) => !(item.product.toString() === productId && item.variant?.toString() === variantId)
+    );
+
+    await cart.save();
+
+    return res.status(200).json({ message: "Item removed successfully", success: true, cart });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+};

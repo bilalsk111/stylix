@@ -5,6 +5,7 @@ import {
   User,
   LogOut,
   ArrowUpRight,
+  X // Added X for closing mobile search
 } from "lucide-react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hook/useAuth";
@@ -19,10 +20,10 @@ const NAV_LINKS = [
 ];
 
 const SUGGESTIONS = [
-  { text: "maroon Dresses For Women", count: "32.9K" },
-  { text: "marvel Merchandise", count: "243" },
-  { text: "marvel", count: "147" },
-  { text: "marvel Oversized T-Shirts", count: "108" },
+  { text: "Maroon Dresses For Women", count: "32.9K" },
+  { text: "Marvel Merchandise", count: "243" },
+  { text: "Marvel", count: "147" },
+  { text: "Marvel Oversized T-Shirts", count: "108" },
 ];
 
 const Navbar = () => {
@@ -35,10 +36,14 @@ const Navbar = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  
+  // NEW STATE FOR MOBILE SEARCH TOGGLE
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const searchRef = useRef(null);
   const dropdownRef = useRef(null);
   const avatarRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
 
   // Safe fallback for cartItems to prevent crashes
   const cartItems = useSelector((state) => state.cart?.items);
@@ -68,7 +73,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Prevent body scrolling when mobile menu is open
   useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = "hidden";
@@ -80,10 +84,17 @@ const Navbar = () => {
     };
   }, [mobileOpen]);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
+    setMobileSearchOpen(false); // Close search on route change too
   }, [location.pathname]);
+
+  // Focus mobile input automatically when opened
+  useEffect(() => {
+    if (mobileSearchOpen && mobileSearchInputRef.current) {
+      mobileSearchInputRef.current.focus();
+    }
+  }, [mobileSearchOpen]);
 
   const getInitials = (name) => (name ? name.charAt(0).toUpperCase() : "U");
   const isActive = (to) => location.pathname === to;
@@ -92,14 +103,15 @@ const Navbar = () => {
     <>
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled ? "py-3 bg-black/90 backdrop-blur-xl border-b border-white/5" : "py-6 bg-black"
+          scrolled || mobileSearchOpen ? "py-3 bg-white/95 backdrop-blur-xl border-b border-stone-200 shadow-sm" : "py-6 bg-white"
         }`}
       >
-        <div className="max-w-[1800px] mx-auto px-6 lg:px-12 flex items-center justify-between gap-8">
+        <div className="max-w-[1800px] mx-auto px-6 lg:px-12 flex items-center justify-between gap-8 relative">
+          
           {/* Logo */}
           <Link
             to="/"
-            className="text-[22px] font-black italic tracking-tighter uppercase text-white flex-shrink-0 z-50"
+            className="text-[22px] font-black italic tracking-tighter uppercase text-stone-900 flex-shrink-0 z-50"
           >
             Stylix.
           </Link>
@@ -111,7 +123,7 @@ const Navbar = () => {
                 key={to}
                 to={to}
                 className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors ${
-                  isActive(to) ? "text-[#ccff00]" : "text-neutral-500 hover:text-white"
+                  isActive(to) ? "text-stone-900 border-b-2 border-stone-900 pb-1" : "text-stone-400 hover:text-stone-900"
                 }`}
               >
                 {label}
@@ -119,10 +131,10 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Expanded Search Bar (Desktop) */}
+          {/* Expanded Search Bar (Desktop Only) */}
           <div className="hidden md:flex flex-1 max-w-md relative mx-4">
-            <div className="w-full flex items-center gap-3 border-b border-white/10 pb-1.5 focus-within:border-[#ccff00] transition-all">
-              <Search size={16} className="text-neutral-500" />
+            <div className="w-full flex items-center gap-3 border-b border-stone-200 pb-1.5 focus-within:border-stone-900 transition-all">
+              <Search size={16} className="text-stone-400" />
               <input
                 ref={searchRef}
                 type="text"
@@ -130,27 +142,27 @@ const Navbar = () => {
                 onFocus={() => setIsSearchFocused(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="SEARCH COLLECTION..."
-                className="bg-transparent w-full text-[10px] tracking-[0.2em] uppercase outline-none text-white placeholder-neutral-700"
+                className="bg-transparent w-full text-[10px] tracking-[0.2em] uppercase outline-none text-stone-900 placeholder-stone-400"
               />
             </div>
 
-            {/* Search Dropdown */}
+            {/* Search Dropdown (Desktop) */}
             {isSearchFocused && (
               <div
                 ref={dropdownRef}
-                className="absolute top-full left-0 w-full bg-[#0d0d0d] border border-white/10 mt-2 py-2 shadow-2xl animate-in fade-in slide-in-from-top-1"
+                className="absolute top-full left-0 w-full bg-white border border-stone-200 mt-2 py-2 shadow-xl rounded-md animate-in fade-in slide-in-from-top-1"
               >
                 {SUGGESTIONS.map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] cursor-pointer group"
+                    className="flex items-center justify-between px-4 py-3 hover:bg-stone-50 cursor-pointer group"
                   >
-                    <span className="text-[10px] font-bold text-neutral-400 group-hover:text-[#ccff00] tracking-wider uppercase">
+                    <span className="text-[10px] font-bold text-stone-500 group-hover:text-stone-900 tracking-wider uppercase transition-colors">
                       {item.text}
                     </span>
                     <ArrowUpRight
                       size={12}
-                      className="text-neutral-700 group-hover:text-[#ccff00]"
+                      className="text-stone-300 group-hover:text-stone-900 transition-colors"
                     />
                   </div>
                 ))}
@@ -158,20 +170,32 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Action Area (Profile/Login + Bag + Mobile Toggle) */}
-          <div className="flex items-center gap-6 z-50">
+          {/* Action Area */}
+          <div className="flex items-center gap-5 z-50">
+            
+            {/* MOBILE SEARCH ICON (Visible only on Mobile) */}
+            <button
+              onClick={() => {
+                setMobileSearchOpen(!mobileSearchOpen);
+                setMobileOpen(false); // Close drawer if open
+              }}
+              className="md:hidden relative p-2 text-stone-400 hover:text-stone-900 transition-colors"
+            >
+              {mobileSearchOpen ? <X size={20} strokeWidth={2.5} className="text-stone-900" /> : <Search size={20} strokeWidth={2.5} />}
+            </button>
+
             {/* BAG ICON */}
             <button
               onClick={() => {
                 setMobileOpen(false);
+                setMobileSearchOpen(false);
                 navigate("/bag");
               }}
-              className="relative p-2 text-neutral-400 hover:text-[#ccff00] transition-colors group"
+              className="relative p-2 text-stone-400 hover:text-stone-900 transition-colors group"
             >
               <ShoppingBag size={20} strokeWidth={2.5} />
-
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#ccff00] text-black text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-in zoom-in duration-300 shadow-[0_0_10px_rgba(204,255,0,0.5)]">
+                <span className="absolute -top-1 -right-1 bg-[#ccff00] text-stone-900 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-in zoom-in duration-300 shadow-sm border border-stone-900/10">
                   {cartCount}
                 </span>
               )}
@@ -184,27 +208,27 @@ const Navbar = () => {
                   onClick={() => setAvatarOpen(!avatarOpen)}
                   className="flex items-center group"
                 >
-                  <div className="h-9 w-9 rounded-full bg-[#ccff00] text-black flex items-center justify-center text-[12px] font-black ring-2 ring-transparent group-hover:ring-[#ccff00]/30 transition-all">
+                  <div className="h-9 w-9 rounded-full bg-[#ccff00] text-stone-900 flex items-center justify-center text-[12px] font-black ring-2 ring-transparent group-hover:ring-stone-200 transition-all">
                     {getInitials(currentUser.fullname)}
                   </div>
                 </button>
 
                 {avatarOpen && (
-                  <div className="absolute right-0 top-full mt-4 w-52 bg-[#0a0a0a] border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
-                    <div className="px-4 py-3 border-b border-white/5 bg-white/[0.02]">
-                      <p className="text-[10px] font-black text-white uppercase tracking-widest truncate">
+                  <div className="absolute right-0 top-full mt-4 w-52 bg-white border border-stone-200 shadow-xl rounded-md overflow-hidden animate-in fade-in zoom-in-95">
+                    <div className="px-4 py-3 border-b border-stone-100 bg-stone-50">
+                      <p className="text-[10px] font-black text-stone-900 uppercase tracking-widest truncate">
                         {currentUser.fullname}
                       </p>
                     </div>
                     <Link
                       to="/profile"
-                      className="flex items-center gap-3 px-4 py-3 text-[9px] font-bold text-neutral-400 hover:text-[#ccff00] hover:bg-white/[0.03] transition-all uppercase tracking-widest"
+                      className="flex items-center gap-3 px-4 py-3 text-[9px] font-bold text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition-all uppercase tracking-widest"
                     >
                       <User size={12} /> Profile
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-[9px] font-bold text-red-500 hover:bg-red-500/5 transition-all uppercase tracking-widest border-t border-white/5"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-[9px] font-bold text-red-500 hover:bg-red-50 transition-all uppercase tracking-widest border-t border-stone-100"
                     >
                       <LogOut size={12} /> Sign Out
                     </button>
@@ -214,7 +238,7 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={() => navigate("/login")}
-                className="hidden md:block text-[10px] font-black uppercase tracking-[0.2em] border border-white/15 px-6 py-2.5 text-white hover:border-[#ccff00] hover:text-[#ccff00] transition-all"
+                className="hidden md:block text-[10px] font-black uppercase tracking-[0.2em] border border-stone-200 rounded-md px-6 py-2.5 text-stone-900 hover:border-stone-900 hover:bg-stone-900 hover:text-white transition-all"
               >
                 Login
               </button>
@@ -222,21 +246,24 @@ const Navbar = () => {
 
             {/* Mobile Toggle Hamburger */}
             <button
-              onClick={() => setMobileOpen(!mobileOpen)}
+              onClick={() => {
+                setMobileOpen(!mobileOpen);
+                setMobileSearchOpen(false); // Close search if open
+              }}
               className="lg:hidden flex flex-col gap-1.5 relative w-6 h-5 z-50 justify-center"
             >
               <span
-                className={`h-px w-6 bg-white transition-all duration-300 absolute ${
+                className={`h-px w-6 bg-stone-900 transition-all duration-300 absolute ${
                   mobileOpen ? "rotate-45" : "-translate-y-2"
                 }`}
               />
               <span
-                className={`h-px w-6 bg-white transition-all duration-300 absolute ${
+                className={`h-px w-6 bg-stone-900 transition-all duration-300 absolute ${
                   mobileOpen ? "opacity-0" : "opacity-100"
                 }`}
               />
               <span
-                className={`h-px w-6 bg-white transition-all duration-300 absolute ${
+                className={`h-px w-6 bg-stone-900 transition-all duration-300 absolute ${
                   mobileOpen ? "-rotate-45" : "translate-y-2"
                 }`}
               />
@@ -245,80 +272,118 @@ const Navbar = () => {
         </div>
 
         {/* ========================================= */}
-        {/* MOBILE MENU DRAWER (RESPONSIVE ADDITION)  */}
+        {/* MOBILE EXPANDABLE SEARCH BAR              */}
         {/* ========================================= */}
-        <div
-          className={`fixed inset-0 bg-[#050505] z-40 lg:hidden flex flex-col transition-all duration-500 ease-in-out ${
-            mobileOpen ? "translate-y-0 opacity-100 visible" : "-translate-y-full opacity-0 invisible"
+        <div 
+          className={`md:hidden absolute top-full left-0 w-full bg-white border-b border-stone-200 shadow-lg transition-all duration-300 overflow-hidden ${
+            mobileSearchOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 border-b-0"
           }`}
-          style={{ paddingTop: "100px" }} // Starts below the navbar
         >
-          <div className="flex flex-col px-8 py-4 h-full overflow-y-auto pb-20">
-            {/* Mobile Search */}
-            <div className="w-full flex items-center gap-4 border-b border-white/10 pb-3 mb-10 focus-within:border-[#ccff00] transition-all">
-              <Search size={18} className="text-neutral-500" />
+          <div className="p-4 flex flex-col gap-4">
+            <div className="flex items-center gap-3 bg-stone-100 px-4 py-3 rounded-lg border border-stone-200 focus-within:border-stone-900 transition-colors">
+              <Search size={16} className="text-stone-500 shrink-0" />
               <input
+                ref={mobileSearchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="SEARCH COLLECTION..."
-                className="bg-transparent w-full text-[12px] font-bold tracking-[0.2em] uppercase outline-none text-white placeholder-neutral-700"
+                placeholder="SEARCH FOR ITEMS..."
+                className="bg-transparent w-full text-[11px] font-bold tracking-[0.2em] uppercase outline-none text-stone-900 placeholder-stone-400"
               />
-            </div>
-
-            {/* Mobile Links */}
-            <div className="flex flex-col gap-8">
-              {NAV_LINKS.map(({ label, to }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className={`text-2xl font-black uppercase tracking-[0.2em] transition-colors ${
-                    isActive(to) ? "text-[#ccff00]" : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  {label}
-                </Link>
-              ))}
-            </div>
-
-            {/* Mobile Authentication / Profile */}
-            <div className="mt-auto pt-10">
-              {currentUser ? (
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-4 p-4 border border-white/10 bg-white/[0.02]">
-                    <div className="h-10 w-10 rounded-full bg-[#ccff00] text-black flex items-center justify-center text-[14px] font-black">
-                      {getInitials(currentUser.fullname)}
-                    </div>
-                    <p className="text-xs font-black text-white uppercase tracking-widest truncate">
-                      {currentUser.fullname}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => navigate("/profile")}
-                    className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400 hover:text-white flex items-center gap-3 border-b border-white/5"
-                  >
-                    <User size={16} /> My Profile
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-red-500 hover:text-red-400 flex items-center gap-3"
-                  >
-                    <LogOut size={16} /> Sign Out
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => navigate("/login")}
-                  className="w-full text-[12px] font-black uppercase tracking-[0.3em] border border-[#ccff00] bg-[#ccff00] py-5 text-black hover:bg-transparent hover:text-[#ccff00] transition-all"
-                >
-                  Login / Register
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="text-stone-400 hover:text-stone-900">
+                  <X size={14} />
                 </button>
               )}
             </div>
+            
+            {/* Mobile Suggestions */}
+            {searchQuery.length > 0 ? (
+              <div className="flex flex-col gap-1 pb-2">
+                {SUGGESTIONS.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between py-3 px-2 active:bg-stone-50 rounded-md">
+                    <span className="text-[10px] font-bold text-stone-600 uppercase tracking-widest">{item.text}</span>
+                    <ArrowUpRight size={14} className="text-stone-300" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="pb-2 px-2">
+                <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-3">Trending</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="bg-stone-100 border border-stone-200 text-stone-600 text-[9px] uppercase tracking-widest px-3 py-1.5 rounded-md">Oversized</span>
+                  <span className="bg-stone-100 border border-stone-200 text-stone-600 text-[9px] uppercase tracking-widest px-3 py-1.5 rounded-md">Jackets</span>
+                  <span className="bg-stone-100 border border-stone-200 text-stone-600 text-[9px] uppercase tracking-widest px-3 py-1.5 rounded-md">Cargo</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </nav>
-    </>
+
+      {/* ========================================= */}
+      {/* MOBILE MENU DRAWER (RESPONSIVE ADDITION)  */}
+      {/* ========================================= */}
+      <div
+        className={`fixed inset-0 bg-[#f7f6f4] z-40 lg:hidden flex flex-col transition-all duration-500 ease-in-out ${
+          mobileOpen ? "translate-y-0 opacity-100 visible" : "-translate-y-full opacity-0 invisible"
+        }`}
+        style={{ paddingTop: "100px" }}
+      >
+        <div className="flex flex-col px-8 py-4 h-full overflow-y-auto pb-20">
+          
+          {/* Mobile Links */}
+          <div className="flex flex-col gap-8 mt-4">
+            {NAV_LINKS.map(({ label, to }) => (
+              <Link
+                key={to}
+                to={to}
+                className={`text-2xl font-black uppercase tracking-[0.2em] transition-colors ${
+                  isActive(to) ? "text-stone-900" : "text-stone-400 hover:text-stone-900"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Mobile Authentication / Profile */}
+          <div className="mt-auto pt-10">
+            {currentUser ? (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-4 p-4 border border-stone-200 bg-white rounded-xl shadow-sm">
+                  <div className="h-10 w-10 rounded-full bg-[#ccff00] text-stone-900 flex items-center justify-center text-[14px] font-black">
+                    {getInitials(currentUser.fullname)}
+                  </div>
+                  <p className="text-xs font-black text-stone-900 uppercase tracking-widest truncate">
+                    {currentUser.fullname}
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate("/profile")}
+                  className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-stone-500 hover:text-stone-900 flex items-center gap-3 border-b border-stone-200"
+                >
+                  <User size={16} /> My Profile
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-red-500 hover:text-red-600 flex items-center gap-3"
+                >
+                  <LogOut size={16} /> Sign Out
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate("/login")}
+                className="w-full text-[12px] font-black uppercase tracking-[0.3em] border border-stone-900 bg-stone-900 rounded-xl py-5 text-white hover:bg-transparent hover:text-stone-900 transition-all shadow-md"
+              >
+                Login / Register
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </> 
   );
 };
 

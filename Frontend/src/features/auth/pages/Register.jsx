@@ -1,10 +1,22 @@
 import { useState } from "react";
-import { useAuth } from "../hook/useAuth";
+import { Eye, EyeOff, ArrowRight, ArrowLeft, Shield, Lock, Zap, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ArrowRight, ArrowLeft, Check } from "lucide-react";
+
+// 💡 FIX 1: ACTUAL HOOK IMPORT KARNA HAI, MOCK WALA HATA DIYA
+import { useAuth } from "../hook/useAuth";
+
+// Google SVG Icon for the button
+const GoogleIcon = () => (
+  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+  </svg>
+);
 
 export default function Register() {
-  const { handleRegister,currentUser } = useAuth();
+  const { handleRegister, currentUser } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -18,385 +30,427 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
 
+  // Reusable state updater
   const set = (field, val) => {
     setForm((p) => ({ ...p, [field]: val }));
-    setErrors((p) => ({ ...p, [field]: null }));
+    if (errors[field]) setErrors((p) => ({ ...p, [field]: null }));
+    if (errors.auth) setErrors((p) => ({ ...p, auth: null }));
   };
 
-  // Matches backend: uppercase, lowercase, number, special char, min 8
+  // Password strength logic
   const pwStrength = (pw) => {
     let s = 0;
-    if (pw.length >= 8) s++;
-    if (pw.length >= 12) s++;
-    if (/[A-Z]/.test(pw)) s++;
-    if (/[0-9]/.test(pw)) s++;
-    if (/[\W_]/.test(pw)) s++;
+    if (pw.length >= 8) s += 25;
+    if (/[A-Z]/.test(pw)) s += 25;
+    if (/[0-9]/.test(pw)) s += 25;
+    if (/[^A-Za-z0-9]/.test(pw)) s += 25;
     return s;
   };
 
-  const step1Valid = () => {
-    const e = {};
-    if (!form.fullName.trim()) e.fullName = "Name is required";
-    else if (form.fullName.trim().length < 3)
-      e.fullName = "Name must be at least 3 characters";
-    else if (!/^[a-zA-Z\s]+$/.test(form.fullName))
-      e.fullName = "Name must contain only letters";
-    if (!/^\+?[1-9]\d{7,14}$/.test(form.phone.replace(/\s/g, ""))) {
-      e.phone = "Enter a valid number with country code (e.g. +919876543210)";
+  const validateStep = () => {
+    const newErrors = {};
+    if (step === 1) {
+      if (!form.fullName.trim()) newErrors.fullName = "Full name is required";
+      if (!form.phone.trim()) newErrors.phone = "Phone number is required";
+    } else {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+        newErrors.email = "Invalid email address";
+      if (!form.password) newErrors.password = "Password is required";
+      else if (form.password.length < 8) newErrors.password = "Min 8 characters required";
     }
-    setErrors(e);
-    return !Object.keys(e).length;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const step2Valid = () => {
-    const e = {};
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      e.email = "Email looks invalid";
-    if (form.password.length < 8) e.password = "Minimum 8 characters";
-    else if (!/[A-Z]/.test(form.password))
-      e.password = "Must include an uppercase letter";
-    else if (!/[a-z]/.test(form.password))
-      e.password = "Must include a lowercase letter";
-    else if (!/[0-9]/.test(form.password)) e.password = "Must include a number";
-    else if (!/[\W_]/.test(form.password))
-      e.password = "Must include a special character";
-    setErrors(e);
-    return !Object.keys(e).length;
+  const handleNext = (e) => {
+    e.preventDefault();
+    if (validateStep()) setStep(2);
   };
 
-  const submit = async () => {
-    if (!step2Valid()) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateStep()) return;
     setLoading(true);
     try {
-      await handleRegister({
-        email: form.email,
-        contact: form.phone.replace(/\s/g, ""),
-        password: form.password,
-        isSeller: form.isSeller,
-        fullname: form.fullName,
-      });
-       if(currentUser.role == "buyer"){
-        navigate("/")
-      }else if(currentUser.role == "seller"){
-        navigate("/seller/dashboard")
-      }
-    } catch (err) {
-      const msg = err.message || "Registration failed, try again";
-      if (msg.toLowerCase().includes("email")) {
-        setErrors({ email: msg });
-        setStep(2);
-      } else if (
-        msg.toLowerCase().includes("phone") ||
-        msg.toLowerCase().includes("contact")
-      ) {
-        setErrors({ phone: msg });
-        setStep(1);
+      // 💡 FIX 2: SAME LOGIN WALA ROBUST LOGIC LAGAYA HAI
+      const response = await handleRegister(form);
+      
+      // Har possible jagah se role check karenge (Fallback system)
+      const rawRole = response?.role || response?.user?.role || response?.data?.user?.role || currentUser?.role || (form.isSeller ? "seller" : "buyer");
+      const role = rawRole ? rawRole.toLowerCase() : "buyer";
+
+      if (role === "seller") {
+        navigate("/seller/dashboard");
       } else {
-        setErrors({ submit: msg });
+        navigate("/");
       }
+
+    } catch (err) {
+      setErrors({ auth: err.message || "Registration failed. Please try again." });
     } finally {
       setLoading(false);
     }
   };
 
-  const strength = pwStrength(form.password);
-  const strengthColors = [
-    "",
-    "bg-red-500",
-    "bg-orange-500",
-    "bg-yellow-400",
-    "bg-[#c8ff00]",
-    "bg-[#c8ff00]",
-  ];
-  const strengthLabels = ["", "WEAK", "MEH", "OK", "GOOD", "SECURE"];
+  const handleGoogleAuth = () => {
+    // Implement your Google Auth Logic here
+    console.log("Initiating Google Auth...");
+  };
 
-  const inputStyle = (error) => `
-    w-full bg-white/[0.03] border-b text-white text-sm px-4 py-4 outline-none 
-    rounded-t-lg transition-all duration-300 
-    placeholder:text-white/20 placeholder:uppercase placeholder:tracking-widest placeholder:text-[10px]
-    autofill:shadow-[0_0_0_1000px_#080808_inset]
-    [-webkit-text-fill-color:white!important]
-    ${error ? "border-red-500/50" : "border-white/10 focus:border-[#c8ff00] focus:bg-white/[0.07]"}
-  `;
+  // ── Exact Input Styles from your Login ─────────────────────────────────────
+  const inputStyle = (fieldName, error) => {
+    const isFocused = focusedField === fieldName;
+    return [
+      "w-full text-stone-900 text-sm px-3 pb-3 rounded-t-md py-3 outline-none bg-transparent",
+      "border-0 border-b-2 transition-all duration-300",
+      "placeholder:text-stone-300 placeholder:uppercase placeholder:tracking-widest placeholder:text-[10px]",
+      error
+        ? "border-red-400"
+        : isFocused
+          ? "border-stone-900"
+          : "border-stone-200 hover:border-stone-300",
+    ].join(" ");
+  };
+
+  const labelStyle = (fieldName, error) => {
+    const isFocused = focusedField === fieldName;
+    return [
+      "text-[9px] font-black uppercase tracking-[0.25em] mb-1.5 block transition-colors duration-300",
+      error ? "text-red-500" : isFocused ? "text-stone-900" : "text-stone-400",
+    ].join(" ");
+  };
 
   return (
-    <div className="min-h-screen flex bg-[#080808] font-sans selection:bg-[#c8ff00] selection:text-black">
-      {/* LEFT - Editorial Panel */}
-      <div className="hidden lg:block w-1/2 fixed inset-y-0 left-0">
-        <img
-          src="/sytlix2.jpg"
-          alt=""
-          className="w-full h-full object-center object-cover opacity-60"
-        />
-        <div className="absolute inset-0 bg-gradient-to-tr from-[#080808] via-transparent to-transparent opacity-90" />
-        <div className="absolute top-0 left-0 w-[2px] h-full bg-[#c8ff00]" />
+    <div className="min-h-screen flex bg-[#f7f6f4] font-sans selection:bg-stone-900 selection:text-white">
 
-        <div className="absolute inset-0 flex flex-col justify-between p-16">
-          <h2 className="text-[#c8ff00] text-xl font-black tracking-[0.4em] uppercase">
-            stylix.
-          </h2>
+      {/* ── LEFT — editorial panel (Exact match to Login) ─────────────────── */}
+      <div className="hidden lg:block w-1/2 fixed inset-y-0 left-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-stone-950 via-stone-900 to-stone-800" />
+        <img
+          src="/sytlix.jpg"
+          alt="Stylix editorial"
+          className="relative w-full h-full object-cover object-center z-0"
+          onError={(e) => { e.target.style.display = "none"; }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 48px)," +
+              "repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 48px)",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-stone-950/30" />
+        <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+
+        <div className="absolute inset-0 flex flex-col justify-between p-14 z-10">
+          <div className="flex items-center gap-3">
+            <h2 className="text-white text-md font-black tracking-[0.45em] uppercase">stylix.</h2>
+          </div>
           <div>
-            <h1 className="text-white font-black leading-[0.85] text-[7rem] tracking-tighter mb-8">
-              UNLEASH
+            <p className="text-[10px] text-white/40 font-bold tracking-[0.35em] uppercase mb-5">
+              New Member
+            </p>
+            <h1 className="text-white font-black leading-[0.82] text-[6.5rem] tracking-tighter mb-7">
+              JOIN
               <br />
-              <span className="text-[#c8ff00]">STYLE.</span>
+              <span className="text-stone-400">THE ELITE.</span>
             </h1>
-            <p className="text-white/40 text-lg max-w-sm font-light leading-relaxed">
-              Step into the vault. Exclusive drops and high-fidelity streetwear
-              designed for the bold.
+            <p className="text-white/40 text-base max-w-xs font-light leading-relaxed">
+              Create your account to unlock curated collections and secure your access to exclusive drops.
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div
-              className={`h-[2px] transition-all duration-700 ${step === 1 ? "w-16 bg-[#c8ff00]" : "w-8 bg-white/20"}`}
-            />
-            <div
-              className={`h-[2px] transition-all duration-700 ${step === 2 ? "w-16 bg-[#c8ff00]" : "w-8 bg-white/20"}`}
-            />
-            <span className="text-[10px] text-white/30 tracking-[0.2em] font-bold">
-              PHASE 0{step}
-            </span>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-px bg-[#c8ff00]" />
+              <span className="text-[9px] text-white/25 tracking-[0.4em] font-bold uppercase">Terminal v.2.0</span>
+            </div>
+            <p className="text-[9px] text-white/20 tracking-widest font-bold uppercase">
+              © 2025 Stylix. All rights reserved.
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="w-full max-h-screen lg:w-1/2 lg:ml-[50%] flex items-center justify-center p-8 py-20">
-        <div className="w-full max-w-[420px]">
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="h-[1px] w-8 bg-[#c8ff00]" />
-              <span className="text-[10px] text-[#c8ff00] font-black tracking-widest uppercase">
-                Start Journey
+      {/* ── RIGHT — form panel ────────────────────────────────────────────── */}
+      <div className="w-full lg:w-1/2 lg:ml-[50%] min-h-screen flex items-center justify-center p-8 py-16 bg-white relative">
+        <div className="w-full max-w-[400px]">
+
+          {/* Mobile brand */}
+          <div className="lg:hidden flex items-center gap-2 mb-10">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c8ff00]" />
+            <span className="text-stone-900 text-sm font-black tracking-[0.4em] uppercase">stylix.</span>
+          </div>
+
+          {/* Header */}
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <span className="h-px w-6 bg-stone-900" />
+                <span className="text-[9px] text-stone-400 font-black tracking-[0.3em] uppercase">
+                  Secure Registration
+                </span>
+              </div>
+              <span className="text-[9px] text-stone-400 font-bold tracking-[0.2em] uppercase bg-stone-100 px-2 py-1 rounded">
+                Step {step} of 2
               </span>
             </div>
-            <h2 className="text-white text-4xl font-black tracking-tight uppercase">
-              {step === 1 ? "Personal Info" : "Access Credentials"}
+            <h2 className="text-stone-900 text-[2.4rem] font-black tracking-tight uppercase leading-none mb-2">
+              Register
             </h2>
+            <p className="text-stone-400 text-[11px] font-medium tracking-wide">
+              {step === 1 ? "Tell us who you are." : "Secure your account credentials."}
+            </p>
           </div>
 
-          <a
-            href="/api/auth/google"
-            className="w-full group flex items-center justify-center gap-3 bg-white border border-[#dadce0] hover:bg-[#f8f9fa] text-[#3c4043] py-3 rounded-lg transition-all duration-300 mb-8 shadow-sm"
-          >
-            {/* Official Google Multi-color Logo */}
-            <svg
-              className="w-5 h-5 group-hover:scale-110 transition-transform"
-              viewBox="0 0 48 48"
-            >
-              <path
-                fill="#EA4335"
-                d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-              />
-              <path
-                fill="#4285F4"
-                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-              />
-              <path
-                fill="#34A853"
-                d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-              />
-              <path fill="none" d="M0 0h48v48H0z" />
-            </svg>
+          {/* Form */}
+          <form onSubmit={step === 1 ? handleNext : handleSubmit} className="space-y-7" noValidate>
 
-            {/* Typography: Using "Sign in with Google" or "Continue" as per guidelines */}
-            <span className="text-sm font-medium tracking-normal font-sans">
-              Continue with Google
-            </span>
-          </a>
+            {errors.auth && (
+              <div className="bg-red-50 border border-red-200 text-red-600 text-[9px] p-3.5 rounded-xl tracking-widest uppercase text-center font-bold">
+                ✕ {errors.auth}
+              </div>
+            )}
 
-          <div className="relative flex items-center mb-8">
-            <div className="flex-grow border-t border-white/5"></div>
-            <span className="flex-shrink mx-4 text-[10px] text-white/20 font-bold uppercase tracking-widest">
-              Or via Email
-            </span>
-            <div className="flex-grow border-t border-white/5"></div>
-          </div>
+            {/* ── STEP 1: Personal Info ── */}
+            {step === 1 && (
+              <div className="space-y-7 animate-in fade-in slide-in-from-right-4 duration-500">
 
-          {errors.submit && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] p-4 rounded-lg tracking-widest uppercase text-center mb-6">
-              {errors.submit}
-            </div>
-          )}
-
-          <form className="space-y-6" noValidate>
-            {step === 1 ? (
-              <>
-                <div className="group">
-                  <label className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] mb-2 block transition-colors group-focus-within:text-[#c8ff00]">
-                    Identity
+                {/* Full Name */}
+                <div>
+                  <label className={labelStyle("fullName", errors.fullName)}>
+                    Full Name
                   </label>
                   <input
+                    type="text"
                     value={form.fullName}
                     onChange={(e) => set("fullName", e.target.value)}
-                    placeholder="FULL NAME"
-                    autoComplete="name"
-                    className={inputStyle(errors.fullName)}
+                    onFocus={() => setFocusedField("fullName")}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="JOHN DOE"
+                    className={inputStyle("fullName", errors.fullName)}
                   />
                   {errors.fullName && (
-                    <p className="text-red-400 text-[9px] mt-2 tracking-widest">
+                    <p className="text-red-500 text-[9px] mt-1.5 tracking-wide flex items-center gap-1">
+                      <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
                       {errors.fullName}
                     </p>
                   )}
                 </div>
 
-                <div className="group">
-                  <label className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] mb-2 block group-focus-within:text-[#c8ff00]">
-                    Contact Number
+                {/* Phone */}
+                <div>
+                  <label className={labelStyle("phone", errors.phone)}>
+                    Phone Number
                   </label>
                   <input
+                    type="tel"
                     value={form.phone}
                     onChange={(e) => set("phone", e.target.value)}
-                    type="tel"
-                    placeholder="+91XXXXXXXXXX"
-                    autoComplete="tel"
-                    className={inputStyle(errors.phone)}
+                    onFocus={() => setFocusedField("phone")}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="+1 (555) 000-0000"
+                    className={inputStyle("phone", errors.phone)}
                   />
                   {errors.phone && (
-                    <p className="text-red-400 text-[9px] mt-2 tracking-widest">
+                    <p className="text-red-500 text-[9px] mt-1.5 tracking-wide flex items-center gap-1">
+                      <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
                       {errors.phone}
                     </p>
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => set("isSeller", !form.isSeller)}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all"
-                >
-                  <div className="text-left">
-                    <p className="text-xs font-bold text-white tracking-wide">
-                      Register as Seller
-                    </p>
-                    <p className="text-[10px] text-white/30 uppercase mt-1">
-                      Join the vendor marketplace
-                    </p>
+                {/* Role Toggle moved below Phone Number */}
+                <div>
+                  <label className="text-[9px] font-black uppercase tracking-[0.25em] mb-3 block text-stone-900">
+                    Account Type
+                  </label>
+                  <div className="flex p-1 bg-stone-100 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => set("isSeller", false)}
+                      className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${!form.isSeller ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"}`}
+                    >
+                      Buyer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => set("isSeller", true)}
+                      className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${form.isSeller ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"}`}
+                    >
+                      Seller
+                    </button>
                   </div>
-                  <div
-                    className={`w-12 h-6 rounded-full flex items-center px-1 transition-colors ${form.isSeller ? "bg-[#c8ff00]" : "bg-white/10"}`}
-                  >
-                    <div
-                      className={`w-4 h-4 rounded-full transition-all ${form.isSeller ? "translate-x-6 bg-black" : "translate-x-0 bg-white/40"}`}
-                    />
-                  </div>
-                </button>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => step1Valid() && setStep(2)}
-                  className="w-full bg-[#c8ff00] text-black font-black py-5 rounded-lg text-xs uppercase tracking-[0.3em] hover:bg-white hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
-                >
-                  Next Phase <ArrowRight size={16} strokeWidth={3} />
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="group">
-                  <label className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] mb-2 block group-focus-within:text-[#c8ff00]">
-                    Email Address
+                <div className="pt-2 space-y-4">
+                  {/* Changed "Continue" to "Next Phase" */}
+                  <button
+                    type="submit"
+                    className="group w-full bg-stone-900 text-white font-black py-[18px] rounded-2xl text-[11px] uppercase tracking-[0.35em] hover:bg-stone-700 hover:shadow-[0_8px_30px_rgba(0,0,0,0.20)] hover:-translate-y-[1px] transition-all duration-200 flex items-center justify-center gap-3"
+                  >
+                    Next Phase
+                    <ArrowRight size={15} strokeWidth={2.5} className="transition-transform duration-200 group-hover:translate-x-1.5" />
+                  </button>
+
+                  {/* Added Google Auth Divider & Button */}
+                  <div className="flex items-center gap-3 pt-3 pb-1">
+                    <span className="flex-1 h-px bg-stone-200"></span>
+                    <span className="text-[8px] font-black tracking-[0.2em] text-stone-400 uppercase">OR</span>
+                    <span className="flex-1 h-px bg-stone-200"></span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleGoogleAuth}
+                    className="w-full bg-white border border-stone-200 text-[#3c4043] font-medium py-[12px] rounded-xl text-[14px] tracking-normal normal-case hover:bg-[#f8f9fa] hover:border-stone-300 hover:shadow-sm transition-all duration-200 flex items-center justify-center gap-3"
+                  >
+                    <svg className="w-5 h-5 shrink-0" viewBox="0 0 48 48">
+                      <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
+                      <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
+                      <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.222 0-9.649-3.342-11.127-8.029l-6.571 4.82C9.656 39.663 16.318 44 24 44z" />
+                      <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
+                    </svg>
+                    Continue with Google
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── STEP 2: Credentials ── */}
+            {step === 2 && (
+              <div className="space-y-7 animate-in fade-in slide-in-from-left-4 duration-500">
+
+                {/* Email */}
+                <div>
+                  <label className={labelStyle("email", errors.email)}>
+                    Identity (Email)
                   </label>
                   <input
+                    type="email"
                     value={form.email}
                     onChange={(e) => set("email", e.target.value)}
-                    type="email"
-                    placeholder="YOU@DOMAIN.COM"
-                    autoComplete="email"
-                    className={inputStyle(errors.email)}
+                    onFocus={() => setFocusedField("email")}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="EMAIL@PROVIDER.COM"
+                    className={inputStyle("email", errors.email)}
                   />
                   {errors.email && (
-                    <p className="text-red-400 text-[9px] mt-2 tracking-widest">
+                    <p className="text-red-500 text-[9px] mt-1.5 tracking-wide flex items-center gap-1">
+                      <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
                       {errors.email}
                     </p>
                   )}
                 </div>
 
-                <div className="group">
-                  <label className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] mb-2 block group-focus-within:text-[#c8ff00]">
-                    Secure Password
+                {/* Password */}
+                <div>
+                  <label className={labelStyle("password", errors.password)}>
+                    Password
                   </label>
                   <div className="relative">
                     <input
+                      type={showPw ? "text" : "password"}
                       value={form.password}
                       onChange={(e) => set("password", e.target.value)}
-                      type={showPw ? "text" : "password"}
+                      onFocus={() => setFocusedField("password")}
+                      onBlur={() => setFocusedField(null)}
                       placeholder="••••••••"
-                      autoComplete="new-password"
-                      className={inputStyle(errors.password)}
+                      className={inputStyle("password", errors.password)}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPw(!showPw)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-[#c8ff00]"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 text-stone-300 hover:text-stone-700 transition-colors p-1"
                     >
-                      {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                      {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
-                  {errors.password && (
-                    <p className="text-red-400 text-[9px] mt-2 tracking-widest">
-                      {errors.password}
-                    </p>
-                  )}
-                  {form.password.length > 0 && !errors.password && (
-                    <div className="mt-3 flex items-center gap-3">
-                      <div className="flex-1 flex gap-1">
-                        {[1, 2, 3, 4, 5].map((i) => (
+
+                  {/* Styled Password Strength Indicator */}
+                  {form.password && (
+                    <div className="mt-3 flex gap-1">
+                      {[1, 2, 3, 4].map((i) => {
+                        const strength = pwStrength(form.password);
+                        const isActive = strength >= i * 25;
+                        return (
                           <div
                             key={i}
-                            className={`h-[2px] flex-1 rounded-full transition-colors ${i <= strength ? strengthColors[strength] : "bg-white/5"}`}
+                            className={`h-1 flex-1 rounded-full transition-all duration-300 ${isActive
+                                ? strength <= 50 ? "bg-stone-500" : "bg-stone-900"
+                                : "bg-stone-100"
+                              }`}
                           />
-                        ))}
-                      </div>
-                      <span className="text-[9px] font-black tracking-widest text-[#c8ff00]">
-                        {strengthLabels[strength]}
-                      </span>
+                        );
+                      })}
                     </div>
                   )}
-                  {/* Password requirements hint */}
-                  {form.password.length > 0 && form.password.length < 8 && (
-                    <p className="text-white/20 text-[9px] mt-2 tracking-widest">
-                      Min 8 chars • uppercase • lowercase • number • special
-                      char
+
+                  {errors.password && (
+                    <p className="text-red-500 text-[9px] mt-1.5 tracking-wide flex items-center gap-1">
+                      <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
+                      {errors.password}
                     </p>
                   )}
                 </div>
 
-                <div className="flex gap-4">
+                <div className="pt-2 flex gap-3">
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="p-5 border border-white/10 text-white/40 rounded-lg hover:text-white hover:border-white/30 transition-all"
+                    className="px-6 bg-stone-100 text-stone-900 hover:bg-stone-200 rounded-2xl transition-colors flex items-center justify-center"
                   >
-                    <ArrowLeft size={20} strokeWidth={2} />
+                    <ArrowLeft size={16} strokeWidth={2.5} />
                   </button>
                   <button
-                    type="button"
-                    onClick={submit}
+                    type="submit"
                     disabled={loading}
-                    className="flex-1 bg-[#c8ff00] text-black font-black py-5 rounded-lg text-xs uppercase tracking-[0.3em] hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
+                    className="group flex-1 bg-stone-900 text-white font-black py-[18px] rounded-2xl text-[11px] uppercase tracking-[0.35em] hover:bg-stone-700 hover:shadow-[0_8px_30px_rgba(0,0,0,0.20)] hover:-translate-y-[1px] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-3"
                   >
                     {loading ? (
-                      "PROCESSING..."
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                          <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                        Creating…
+                      </span>
                     ) : (
                       <>
-                        <Check size={18} strokeWidth={3} /> Finalize Account
+                        Create Account
+                        <Check size={15} strokeWidth={3} />
                       </>
                     )}
                   </button>
                 </div>
-              </>
+              </div>
             )}
+
+            {/* Trust signals */}
+            <div className="flex items-center justify-center gap-5 pt-3">
+              <div className="flex items-center gap-1.5 text-stone-400">
+                <Shield size={10} strokeWidth={2} />
+                <span className="text-[9px] font-semibold tracking-widest uppercase">Encrypted</span>
+              </div>
+              <span className="w-px h-3 bg-stone-200" />
+              <div className="flex items-center gap-1.5 text-stone-400">
+                <Lock size={10} strokeWidth={2} />
+                <span className="text-[9px] font-semibold tracking-widest uppercase">Secure</span>
+              </div>
+              <span className="w-px h-3 bg-stone-200" />
+              <div className="flex items-center gap-1.5 text-stone-400">
+                <Zap size={10} strokeWidth={2} />
+                <span className="text-[9px] font-semibold tracking-widest uppercase">Trusted</span>
+              </div>
+            </div>
           </form>
 
-          <p className="mt-10 text-center text-white/20 text-[10px] font-bold uppercase tracking-[0.2em]">
+          {/* Login link */}
+          <p className="mt-8 text-center text-stone-300 text-[9px] font-bold uppercase tracking-[0.3em]">
             Already a member?{" "}
-            <a
-              href="/login"
-              className="text-white hover:text-[#c8ff00] border-b border-white/10 transition-colors"
-            >
+            <a href="/login" className="text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-500 transition-all">
               Sign In
             </a>
           </p>

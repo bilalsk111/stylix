@@ -46,3 +46,25 @@ export async function addProductVariant(productId, newProductVariant) {
     const res = await productApi.post(`/${productId}/variant`, formData);
     return res.data;
 }
+
+export async function editVariant(productId, variantId, data) {
+     const formData = new FormData();
+
+    if (data.images && data.images.length > 0) {
+        data.images.forEach((img) => {
+            if (img.file) {
+                formData.append("images", img.file);
+            }
+        });
+    }
+
+    // ✅ Map fields to match Backend expectations
+    formData.append("title", data.title || "");
+    formData.append("stock", data.stock || 0);
+    formData.append("priceAmount", data.price?.amount || 0);
+    formData.append("priceCurrency", data.price?.currency || "INR");
+    formData.append("attributes", JSON.stringify(data.attributes || {}));
+    const res = await productApi.put(`/${productId}/variant/${variantId}`, formData)
+    return res.data
+
+}

@@ -20,3 +20,13 @@ export const getCart = async () => {
     return res.data
 }
 
+// FIX: req.body mein quantity bhejna zaroori hai!
+export const updateCartItemQuantity = async({ productId, variantId, quantity }) => {
+    const res = await cartApiInstance.patch(`/qty/${productId}/${variantId}`, { quantity });
+    return res.data;
+}
+
+export const removeCartItem = async({ productId, variantId }) => {
+    const res = await cartApiInstance.delete(`/del/${productId}/${variantId}`);
+    return res.data;
+}
