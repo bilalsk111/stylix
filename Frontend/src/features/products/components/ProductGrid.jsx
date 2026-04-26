@@ -1,35 +1,44 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, LayoutGrid } from "lucide-react";
+import { ArrowUpRight, LayoutGrid, Plus } from "lucide-react";
 
-const ProductGrid = ({ products =[], title = "Recommended Drops", limit = 4 }) => {
+const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) => {
   const navigate = useNavigate();
 
   const randomProducts = useMemo(() => {
-      if (!Array.isArray(products)) return [];
+    if (!Array.isArray(products)) return [];
     const shuffled = [...products].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, limit);
   }, [products, limit]);
 
-   if (!Array.isArray(products) || products.length === 0) return null;
+  if (!Array.isArray(products) || products.length === 0) return null;
 
   return (
-    <section className="w-full px-6 lg:px-12 bg-transparent">
+    <section className="w-full bg-transparent">
       <div className="max-w-[1600px] mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-16 border-b border-white/5 pb-8">
-          <div className="flex items-center gap-6">
+        
+        {/* HEADER SECTION - Light Theme Editorial */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-stone-200 pb-6">
+          <div className="flex flex-col items-start gap-4">
             <div className="flex items-center gap-3">
-              <LayoutGrid size={18} className="text-[#ccff00]" />
-              <h2 className="text-[12px] font-black uppercase tracking-[0.5em] text-white">
-                {title}
+              <span className="h-[2px] w-6 bg-[#ccff00]"></span>
+              <h2 className="text-[9px] font-black uppercase tracking-[0.4em] text-stone-500">
+                Curated Selection
               </h2>
             </div>
+            <div className="flex items-center gap-3">
+              <LayoutGrid size={24} className="text-stone-900" />
+              <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-stone-900 leading-none">
+                {title}
+              </h3>
+            </div>
           </div>
+          
           <button
             onClick={() => navigate("/")}
-            className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 hover:text-[#ccff00] transition-colors flex items-center gap-2 group"
+            className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400 hover:text-stone-900 transition-colors flex items-center gap-1.5 group pb-1"
           >
-            View Full Archive{" "}
+            View Full Archive
             <ArrowUpRight
               size={14}
               className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"
@@ -37,63 +46,84 @@ const ProductGrid = ({ products =[], title = "Recommended Drops", limit = 4 }) =
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-x-10 gap-y-20">
-          {randomProducts.map((product) => (
-            <div
-              key={product._id}
-              className="group flex flex-col cursor-pointer"
-              onClick={() => navigate(`/product/${product._id}`)}
-            >
-              <div className="aspect-[4/5] overflow-hidden relative bg-[#0a0a0a] rounded-sm transition-all duration-700">
-                <img
-                  src={product.images?.[0]?.url || "https://via.placeholder.com/600x800"}
-                  alt={product.title}
-                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-[1.5s] ease-out"
-                />
+        {/* GRID SECTION - Matches AllProducts UI */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 md:gap-x-8 gap-y-12 md:gap-y-16">
+          {randomProducts.map((product) => {
+            const stock = product.stock || 0;
+            const isOutOfStock = stock === 0;
 
-                <div className="absolute top-4 left-4">
-                  <span className="bg-black/80 backdrop-blur-md text-[8px] font-black px-3 py-1 uppercase tracking-widest border border-white/10 group-hover:border-[#ccff00]/50 transition-colors">
-                    In Stock
-                  </span>
-                </div>
+            return (
+              <div
+                key={product._id}
+                className="group flex flex-col cursor-pointer"
+                onClick={() => {
+                  navigate(`/product/${product._id}`);
+                  window.scrollTo(0, 0); // Ensures page scrolls to top when navigating
+                }}
+              >
+                {/* IMAGE CONTAINER */}
+                <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 rounded-xl mb-4 group-hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-shadow duration-500 border border-stone-200/60">
+                  <img
+                    src={product.images?.[0]?.url || "https://via.placeholder.com/600x800"}
+                    alt={product.title}
+                    className={`w-full h-full object-cover transition-transform duration-[2s] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.03] ${isOutOfStock ? 'grayscale opacity-70' : 'mix-blend-multiply'}`}
+                  />
 
-                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-2 group-hover:translate-x-0">
-                  <div className="w-10 h-10 bg-[#ccff00] text-black flex items-center justify-center rounded-full rotate-45 group-hover:rotate-0 transition-transform duration-700">
-                    <ArrowUpRight size={20} />
+                  {/* STOCK BADGE */}
+                  <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                    {isOutOfStock ? (
+                      <span className="bg-red-500 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm">
+                        Sold Out
+                      </span>
+                    ) : (
+                      <span className="bg-white/90 backdrop-blur-md text-stone-900 text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm border border-white/20">
+                        In Stock
+                      </span>
+                    )}
+                  </div>
+
+                  {/* QUICK ADD OVERLAY */}
+                  <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4 translate-y-[120%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-20">
+                    <button className="w-full bg-white/95 backdrop-blur-xl text-stone-900 text-[9px] sm:text-[10px] font-black uppercase py-3 sm:py-3.5 tracking-[0.2em] rounded-lg shadow-lg hover:bg-[#ccff00] transition-colors flex items-center justify-center gap-2">
+                      Quick Add <Plus size={14} strokeWidth={2.5}/>
+                    </button>
                   </div>
                 </div>
 
-                <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                  <button className="w-full bg-white text-black text-[10px] font-black uppercase py-3 tracking-[0.2em] hover:bg-[#ccff00] transition-colors">
-                    Quick Add +
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col gap-1">
-                <div className="flex justify-between items-start">
-                  <h3 className="text-[14px] font-black uppercase tracking-tighter text-white group-hover:text-[#ccff00] transition-colors max-w-[70%]">
+                {/* DETAILS CONTAINER */}
+                <div className="flex flex-col px-1.5">
+                  <h3 
+                    className="text-[11px] sm:text-[13px] font-black uppercase tracking-widest text-stone-900 truncate mb-1.5"
+                    title={product.title}
+                  >
                     {product.title}
                   </h3>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[16px] font-black text-white leading-none">
+
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-[12px] sm:text-[14px] font-bold text-stone-700">
                       {product.price?.currency} {product.price?.amount}
                     </span>
-                    <span className="text-[9px] text-neutral-600 font-bold line-through">
-                      {product.price?.currency} {(product.price?.amount * 1.2).toFixed(0)}
+                    {product.price?.amount && (
+                      <span className="text-[10px] sm:text-[11px] text-stone-400 line-through font-medium">
+                        {product.price.currency} {Math.round(product.price.amount * 1.5)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* AUTHENTIC BADGE */}
+                  <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-stone-100">
+                    <div className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c8ff00] opacity-40 group-hover:opacity-100"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-stone-300 group-hover:bg-stone-900 transition-colors duration-500"></span>
+                    </div>
+                    <span className="text-[8px] text-stone-400 font-black uppercase tracking-[0.2em] group-hover:text-stone-900 transition-colors">
+                      Stylix Authentic
                     </span>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="w-2 h-2 rounded-full bg-neutral-800 group-hover:bg-[#ccff00] transition-colors"></span>
-                  <span className="text-[10px] text-neutral-500 font-black uppercase tracking-[0.2em]">
-                    Stylix Authentic
-                  </span>
-                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

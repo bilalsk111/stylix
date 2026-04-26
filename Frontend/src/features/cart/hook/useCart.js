@@ -3,10 +3,11 @@ import {
   addItem as addItemAPI, 
   getCart, 
   updateCartItemQuantity, 
-  removeCartItem // Yeh import zaroori hai!
+  removeCartItem, // Yeh import zaroori hai!
+  createOrder
 } from "../services/cart.api";
 import { useDispatch } from "react-redux";
-import { setItems, setUpdateQuantity, removeItemLocal } from "../state/cart.slice";
+import { setItems, setUpdateQuantity, removeItemLocal,setCart } from "../state/cart.slice";
 import { useEffect, useCallback } from "react";
 
 export const useCart = () => {
@@ -16,7 +17,7 @@ export const useCart = () => {
     try {
       const data = await getCart();
       const items = data.items || data.cart?.items || (Array.isArray(data) ? data : []);
-      dispatch(setItems(items));
+      dispatch(setCart(items));
       return data;
     } catch (err) {
       console.error("Cart load failed", err);
@@ -33,7 +34,7 @@ export const useCart = () => {
       const items = res.items || res.cart?.items || (Array.isArray(res) ? res : []);
       
       if (items.length > 0) {
-        dispatch(setItems(items));
+        dispatch(setCart(items));
       } else {
         await handleGetCart();
       }
@@ -72,10 +73,16 @@ export const useCart = () => {
     }
   }
 
+async function handleCreateOrder() {
+  const data = await createOrder();
+  return data?.order; 
+}
+
   return { 
     handleGetCart, 
     handleAddItem, 
     handleUpdateItemQty, 
-    handleRemoveItem 
+    handleRemoveItem ,
+    handleCreateOrder
   };
 };

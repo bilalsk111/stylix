@@ -8,6 +8,7 @@ export const useAuth = () => {
 
   const { user, loading, error, isAuthChecked } = useSelector((state) => state.auth);
 
+
   const handleRegister = async (payload) => {
     dispatch(setLoading(true));
     try {

@@ -2,15 +2,30 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const cartSlice = createSlice({
   name: "cart",
-  initialState: { items: [] },
+  initialState: {
+    totalPrice: null,
+    currency: null,
+    items: [],
+  },
   reducers: {
+    setCart: (state, action) => {
+      // 🔥 FIX: Smart Check - Agar array aa raha hai toh direct items mein dalo, warna object se nikalo
+      if (Array.isArray(action.payload)) {
+        state.items = action.payload;
+      } else {
+        state.items = action.payload?.items || [];
+        state.totalPrice = action.payload?.totalPrice || null;
+        state.currency = action.payload?.currency || "INR";
+      }
+    },
     setItems: (state, action) => {
-      state.items = action.payload;
+      // Yahan bhi same smart check laga diya
+      state.items = Array.isArray(action.payload) ? action.payload : (action.payload?.items || []);
     },
     addItem: (state, action) => {
       const { productId, variantId } = action.payload;
       const existingItem = state.items.find(
-        (item) => item.product === productId && item.variant === variantId
+        (item) => (item.product?._id || item.product) === productId && (item.variant?._id || item.variant) === variantId
       );
 
       if (existingItem) {
@@ -21,10 +36,10 @@ const cartSlice = createSlice({
     },
     setUpdateQuantity: (state, action) => {
       const { productId, variantId, quantity } = action.payload;
-      // FIX: Proper matching logic
       const item = state.items.find(
-        (item) => (item.product?._id || item.product) === productId && 
-                  (item.variant?._id || item.variant) === variantId
+        (item) =>
+          (item.product?._id || item.product) === productId &&
+          (item.variant?._id || item.variant) === variantId
       );
       if (item) {
         item.quantity = quantity; // UI instantly change ho jayega!
@@ -32,15 +47,16 @@ const cartSlice = createSlice({
     },
     removeItemLocal: (state, action) => {
       const { productId, variantId } = action.payload;
-      // FIX: Filter unhe karega jo match nahi karte
       state.items = state.items.filter(
-        (item) => !((item.product?._id || item.product) === productId && 
-                    (item.variant?._id || item.variant) === variantId)
+        (item) =>
+          !(
+            (item.product?._id || item.product) === productId &&
+            (item.variant?._id || item.variant) === variantId
+          )
       );
-    }
+    },
   },
 });
 
-// FIX: Naye reducers export karna mat bhulna
-export const { setItems, addItem, setUpdateQuantity, removeItemLocal } = cartSlice.actions;
+export const { setCart, setItems, addItem, setUpdateQuantity, removeItemLocal } = cartSlice.actions;
 export default cartSlice.reducer;

@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Search,
   ShoppingBag,
   User,
   LogOut,
-  ArrowUpRight,
-  X // Added X for closing mobile search
+  LayoutDashboard, // 🔥 Naya icon Dashboard ke liye
 } from "lucide-react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hook/useAuth";
 import { useSelector } from "react-redux";
+import { useCart } from "../features/cart/hook/useCart"; // 🔥 Ensure ye path sahi ho aapke project ke hisaab se
 
 const NAV_LINKS = [
   { label: "Men", to: "/men" },
@@ -19,35 +18,27 @@ const NAV_LINKS = [
   { label: "Drops", to: "/drops" },
 ];
 
-const SUGGESTIONS = [
-  { text: "Maroon Dresses For Women", count: "32.9K" },
-  { text: "Marvel Merchandise", count: "243" },
-  { text: "Marvel", count: "147" },
-  { text: "Marvel Oversized T-Shirts", count: "108" },
-];
-
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, handleLogout } = useAuth();
+  const { handleGetCart } = useCart(); // 🔥 Cart fetch karne ka function nikal liya
 
   const [scrolled, setScrolled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  
-  // NEW STATE FOR MOBILE SEARCH TOGGLE
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  const searchRef = useRef(null);
-  const dropdownRef = useRef(null);
   const avatarRef = useRef(null);
-  const mobileSearchInputRef = useRef(null);
 
-  // Safe fallback for cartItems to prevent crashes
   const cartItems = useSelector((state) => state.cart?.items);
   const cartCount = Array.isArray(cartItems) ? cartItems.length : 0;
+
+  // 🔥 THE CART FIX: Jaise hi user login ho ya page reload ho, Cart fetch kar lo!
+  useEffect(() => {
+    if (currentUser) {
+      handleGetCart();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -57,14 +48,6 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target) &&
-        searchRef.current &&
-        !searchRef.current.contains(e.target)
-      ) {
-        setIsSearchFocused(false);
-      }
       if (avatarRef.current && !avatarRef.current.contains(e.target)) {
         setAvatarOpen(false);
       }
@@ -86,28 +69,28 @@ const Navbar = () => {
 
   useEffect(() => {
     setMobileOpen(false);
-    setMobileSearchOpen(false); // Close search on route change too
   }, [location.pathname]);
-
-  // Focus mobile input automatically when opened
-  useEffect(() => {
-    if (mobileSearchOpen && mobileSearchInputRef.current) {
-      mobileSearchInputRef.current.focus();
-    }
-  }, [mobileSearchOpen]);
 
   const getInitials = (name) => (name ? name.charAt(0).toUpperCase() : "U");
   const isActive = (to) => location.pathname === to;
+
+  const handleCartClick = () => {
+    if (!currentUser) {
+      navigate("/login");
+    } else {
+      navigate("/bag");
+    }
+  };
 
   return (
     <>
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled || mobileSearchOpen ? "py-3 bg-white/95 backdrop-blur-xl border-b border-stone-200 shadow-sm" : "py-6 bg-white"
+          scrolled ? "py-3 bg-white/95 backdrop-blur-xl border-b border-stone-200 shadow-sm" : "py-6 bg-white"
         }`}
       >
         <div className="max-w-[1800px] mx-auto px-6 lg:px-12 flex items-center justify-between gap-8 relative">
-          
+
           {/* Logo */}
           <Link
             to="/"
@@ -116,8 +99,8 @@ const Navbar = () => {
             Stylix.
           </Link>
 
-          {/* Desktop Links */}
-          <div className="hidden lg:flex items-center gap-10">
+          {/* Desktop Links (Centered beautifully now that Search is gone) */}
+          <div className="hidden lg:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
             {NAV_LINKS.map(({ label, to }) => (
               <Link
                 key={to}
@@ -131,65 +114,14 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Expanded Search Bar (Desktop Only) */}
-          <div className="hidden md:flex flex-1 max-w-md relative mx-4">
-            <div className="w-full flex items-center gap-3 border-b border-stone-200 pb-1.5 focus-within:border-stone-900 transition-all">
-              <Search size={16} className="text-stone-400" />
-              <input
-                ref={searchRef}
-                type="text"
-                value={searchQuery}
-                onFocus={() => setIsSearchFocused(true)}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="SEARCH COLLECTION..."
-                className="bg-transparent w-full text-[10px] tracking-[0.2em] uppercase outline-none text-stone-900 placeholder-stone-400"
-              />
-            </div>
-
-            {/* Search Dropdown (Desktop) */}
-            {isSearchFocused && (
-              <div
-                ref={dropdownRef}
-                className="absolute top-full left-0 w-full bg-white border border-stone-200 mt-2 py-2 shadow-xl rounded-md animate-in fade-in slide-in-from-top-1"
-              >
-                {SUGGESTIONS.map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-stone-50 cursor-pointer group"
-                  >
-                    <span className="text-[10px] font-bold text-stone-500 group-hover:text-stone-900 tracking-wider uppercase transition-colors">
-                      {item.text}
-                    </span>
-                    <ArrowUpRight
-                      size={12}
-                      className="text-stone-300 group-hover:text-stone-900 transition-colors"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Action Area */}
-          <div className="flex items-center gap-5 z-50">
-            
-            {/* MOBILE SEARCH ICON (Visible only on Mobile) */}
-            <button
-              onClick={() => {
-                setMobileSearchOpen(!mobileSearchOpen);
-                setMobileOpen(false); // Close drawer if open
-              }}
-              className="md:hidden relative p-2 text-stone-400 hover:text-stone-900 transition-colors"
-            >
-              {mobileSearchOpen ? <X size={20} strokeWidth={2.5} className="text-stone-900" /> : <Search size={20} strokeWidth={2.5} />}
-            </button>
+          <div className="flex items-center gap-5 z-50 ml-auto">
 
             {/* BAG ICON */}
             <button
               onClick={() => {
                 setMobileOpen(false);
-                setMobileSearchOpen(false);
-                navigate("/bag");
+                handleCartClick();
               }}
               className="relative p-2 text-stone-400 hover:text-stone-900 transition-colors group"
             >
@@ -220,12 +152,24 @@ const Navbar = () => {
                         {currentUser.fullname}
                       </p>
                     </div>
+                    
+                    {/* 🔥 SELLER DASHBOARD LOGIC ADDED */}
+                    {(currentUser.role === "seller" || currentUser.role === "admin") && (
+                      <Link
+                        to="/seller/dashboard"
+                        className="flex items-center gap-3 px-4 py-3 text-[9px] font-bold text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition-all uppercase tracking-widest border-b border-stone-100"
+                      >
+                        <LayoutDashboard size={12} /> Dashboard
+                      </Link>
+                    )}
+
                     <Link
                       to="/profile"
                       className="flex items-center gap-3 px-4 py-3 text-[9px] font-bold text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition-all uppercase tracking-widest"
                     >
                       <User size={12} /> Profile
                     </Link>
+                    
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-4 py-3 text-[9px] font-bold text-red-500 hover:bg-red-50 transition-all uppercase tracking-widest border-t border-stone-100"
@@ -246,83 +190,19 @@ const Navbar = () => {
 
             {/* Mobile Toggle Hamburger */}
             <button
-              onClick={() => {
-                setMobileOpen(!mobileOpen);
-                setMobileSearchOpen(false); // Close search if open
-              }}
+              onClick={() => setMobileOpen(!mobileOpen)}
               className="lg:hidden flex flex-col gap-1.5 relative w-6 h-5 z-50 justify-center"
             >
-              <span
-                className={`h-px w-6 bg-stone-900 transition-all duration-300 absolute ${
-                  mobileOpen ? "rotate-45" : "-translate-y-2"
-                }`}
-              />
-              <span
-                className={`h-px w-6 bg-stone-900 transition-all duration-300 absolute ${
-                  mobileOpen ? "opacity-0" : "opacity-100"
-                }`}
-              />
-              <span
-                className={`h-px w-6 bg-stone-900 transition-all duration-300 absolute ${
-                  mobileOpen ? "-rotate-45" : "translate-y-2"
-                }`}
-              />
+              <span className={`h-px w-6 bg-stone-900 transition-all duration-300 absolute ${mobileOpen ? "rotate-45" : "-translate-y-2"}`} />
+              <span className={`h-px w-6 bg-stone-900 transition-all duration-300 absolute ${mobileOpen ? "opacity-0" : "opacity-100"}`} />
+              <span className={`h-px w-6 bg-stone-900 transition-all duration-300 absolute ${mobileOpen ? "-rotate-45" : "translate-y-2"}`} />
             </button>
-          </div>
-        </div>
-
-        {/* ========================================= */}
-        {/* MOBILE EXPANDABLE SEARCH BAR              */}
-        {/* ========================================= */}
-        <div 
-          className={`md:hidden absolute top-full left-0 w-full bg-white border-b border-stone-200 shadow-lg transition-all duration-300 overflow-hidden ${
-            mobileSearchOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 border-b-0"
-          }`}
-        >
-          <div className="p-4 flex flex-col gap-4">
-            <div className="flex items-center gap-3 bg-stone-100 px-4 py-3 rounded-lg border border-stone-200 focus-within:border-stone-900 transition-colors">
-              <Search size={16} className="text-stone-500 shrink-0" />
-              <input
-                ref={mobileSearchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="SEARCH FOR ITEMS..."
-                className="bg-transparent w-full text-[11px] font-bold tracking-[0.2em] uppercase outline-none text-stone-900 placeholder-stone-400"
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="text-stone-400 hover:text-stone-900">
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-            
-            {/* Mobile Suggestions */}
-            {searchQuery.length > 0 ? (
-              <div className="flex flex-col gap-1 pb-2">
-                {SUGGESTIONS.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between py-3 px-2 active:bg-stone-50 rounded-md">
-                    <span className="text-[10px] font-bold text-stone-600 uppercase tracking-widest">{item.text}</span>
-                    <ArrowUpRight size={14} className="text-stone-300" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="pb-2 px-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-3">Trending</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="bg-stone-100 border border-stone-200 text-stone-600 text-[9px] uppercase tracking-widest px-3 py-1.5 rounded-md">Oversized</span>
-                  <span className="bg-stone-100 border border-stone-200 text-stone-600 text-[9px] uppercase tracking-widest px-3 py-1.5 rounded-md">Jackets</span>
-                  <span className="bg-stone-100 border border-stone-200 text-stone-600 text-[9px] uppercase tracking-widest px-3 py-1.5 rounded-md">Cargo</span>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </nav>
 
       {/* ========================================= */}
-      {/* MOBILE MENU DRAWER (RESPONSIVE ADDITION)  */}
+      {/* MOBILE MENU DRAWER                        */}
       {/* ========================================= */}
       <div
         className={`fixed inset-0 bg-[#f7f6f4] z-40 lg:hidden flex flex-col transition-all duration-500 ease-in-out ${
@@ -331,7 +211,7 @@ const Navbar = () => {
         style={{ paddingTop: "100px" }}
       >
         <div className="flex flex-col px-8 py-4 h-full overflow-y-auto pb-20">
-          
+
           {/* Mobile Links */}
           <div className="flex flex-col gap-8 mt-4">
             {NAV_LINKS.map(({ label, to }) => (
@@ -351,7 +231,7 @@ const Navbar = () => {
           <div className="mt-auto pt-10">
             {currentUser ? (
               <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-4 p-4 border border-stone-200 bg-white rounded-xl shadow-sm">
+                <div className="flex items-center gap-4 p-4 border border-stone-200 bg-white rounded-xl shadow-sm mb-2">
                   <div className="h-10 w-10 rounded-full bg-[#ccff00] text-stone-900 flex items-center justify-center text-[14px] font-black">
                     {getInitials(currentUser.fullname)}
                   </div>
@@ -359,6 +239,16 @@ const Navbar = () => {
                     {currentUser.fullname}
                   </p>
                 </div>
+
+                {(currentUser.role === "seller" || currentUser.role === "admin") && (
+                  <button
+                    onClick={() => navigate("/seller/dashboard")}
+                    className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-stone-500 hover:text-stone-900 flex items-center gap-3 border-b border-stone-200"
+                  >
+                    <LayoutDashboard size={16} /> Dashboard
+                  </button>
+                )}
+
                 <button
                   onClick={() => navigate("/profile")}
                   className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-stone-500 hover:text-stone-900 flex items-center gap-3 border-b border-stone-200"
@@ -383,7 +273,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-    </> 
+    </>
   );
 };
 

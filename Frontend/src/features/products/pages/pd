@@ -1,429 +1,472 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ShoppingBag, Zap, ShieldCheck, Truck, 
-  RefreshCcw, ArrowLeft, Share2, Heart
+  ShoppingBag,
+  Zap,
+  ChevronRight,
+  ArrowUpRight,
+  X,
+  Ruler,
+  Droplets,
+  Truck,
+  RefreshCcw
 } from "lucide-react";
 import { useProduct } from "../hook/useProduct";
 import ProductGrid from "../components/ProductGrid";
-
-const SIZES = ["XS", "S", "M", "L", "XL", "2XL"];
-
-export default function ProductDetail() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { handleGetAllProduct } = useProduct();
-
-  const [product, setProduct] = useState(null);
-  const [allProducts, setAllProducts] = useState([]);
-  const [activeImg, setActiveImg] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [wished, setWished] = useState(false);
-  const [addedToCart, setAddedToCart] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const all = await handleGetAllProduct();
-        setAllProducts(all);
-        setProduct(all.find(p => p._id === id) || null);
-      } finally {
-        setLoading(false);
-      }
-    })();
-    window.scrollTo(0, 0);
-  }, [id]);
-
-  const handleAddCart = () => {
-    if (!selectedSize) return;
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
-  };
-
-  if (loading) return (
-    <div className="h-screen bg-[#050505] flex items-center justify-center">
-      <span className="text-[#ccff00] text-[9px] font-black uppercase tracking-[0.45em] animate-pulse">
-        Loading Drop...
-      </span>
-    </div>
-  );
-
-  if (!product) return (
-    <div className="h-screen bg-[#050505] flex items-center justify-center text-white/30 text-xs uppercase tracking-widest">
-      Asset not found
-    </div>
-  );
-
-  const mrp = (product.price?.amount * 1.4).toFixed(0);
-  const discount = Math.round(((mrp - product.price?.amount) / mrp) * 100);
-
-  return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-[#ccff00] selection:text-black">
-      
-      <nav className="sticky top-0 z-40 bg-[#050505]/95 backdrop-blur-md border-b border-white/[0.06] px-5 py-3.5 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-white/35 hover:text-white transition-colors text-[9px] font-bold uppercase tracking-[0.2em]">
-          <ArrowLeft size={13} strokeWidth={2.5} /> Back
-        </button>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setWished(!wished)} className="transition-colors">
-            <Heart size={16} className={wished ? "fill-[#ccff00] text-[#ccff00]" : "text-white/30 hover:text-white"} />
-          </button>
-          <button className="text-white/30 hover:text-white transition-colors"><Share2 size={16} /></button>
-        </div>
-      </nav>
-
-      <div className="max-w-[1300px] mx-auto px-5 lg:px-10 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-16 items-start">
-
-          <div className="flex flex-col-reverse lg:flex-row gap-6">
-            <div className="flex lg:flex-col gap-3 overflow-x-auto lg:overflow-y-auto lg:w-[70px] no-scrollbar">
-              {product.images?.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveImg(i)}
-                  className={`relative aspect-[3/4] w-16 lg:w-full flex-shrink-0 border transition-all duration-200 overflow-hidden
-                    ${activeImg === i ? "border-[#ccff00] opacity-100" : "border-white/[0.07] opacity-40 hover:opacity-100"}`}
-                >
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-
-            <div className="relative flex-1 aspect-[3/4] max-h-[700px] bg-[#0a0a0a] border border-white/[0.06] overflow-hidden group">
-              <img
-                src={product.images?.[activeImg]?.url}
-                alt={product.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-              />
-              <div className="absolute top-4 left-4 bg-[#ccff00] text-black text-[8px] font-black uppercase tracking-wider px-2.5 py-1">
-                {discount}% OFF
-              </div>
-              <div className="absolute bottom-4 left-4 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm border border-white/[0.08] px-3 py-1.5">
-                <ShieldCheck size={9} className="text-[#ccff00]" strokeWidth={2} />
-                <span className="text-[7px] font-black uppercase tracking-wider">Verified Asset</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-8 lg:pl-4">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-4 h-[1px] bg-[#ccff00]" />
-                <span className="text-[8px] text-[#ccff00] uppercase tracking-[0.25em] font-black">Archive Drop</span>
-              </div>
-              
-              <h1
-                className="font-black tracking-tighter leading-[0.9] text-white mb-6"
-                style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontSize: "clamp(2.5rem, 5vw, 3.5rem)",
-                }}
-              >
-                {product.title}
-              </h1>
-              
-              <p className="text-white/40 text-sm font-light leading-relaxed max-w-sm">
-                {product.description}
-              </p>
-            </div>
-
-            <div className="border-t border-white/[0.06] pt-8">
-              <div className="flex items-baseline gap-4 mb-8">
-                <span className="font-black text-[#ccff00] text-5xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
-                  {product.price?.currency} {Number(product.price?.amount).toLocaleString("en-IN")}
-                </span>
-                <span className="text-white/20 line-through text-lg font-medium">
-                  {product.price?.currency} {Number(mrp).toLocaleString("en-IN")}
-                </span>
-              </div>
-
-              <div className="space-y-4 mb-10">
-                <div className="flex items-center justify-between">
-                  <span className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/30">Select Size</span>
-                  <button className="text-[8px] text-white/25 hover:text-[#ccff00] uppercase tracking-wider border-b border-white/10 pb-px transition-colors">Size Guide</button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {SIZES.map(size => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`w-14 h-14 text-[11px] font-black uppercase transition-all border
-                        ${selectedSize === size ? "bg-[#ccff00] text-black border-[#ccff00]" : "bg-transparent text-white/50 border-white/[0.1] hover:border-white/40"}`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-10">
-                <button
-                  onClick={handleAddCart}
-                  disabled={!selectedSize}
-                  className={`py-5 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all
-                    ${addedToCart ? "bg-[#ccff00] text-black" : selectedSize ? "bg-white text-black hover:bg-[#ccff00]" : "bg-white/10 text-white/20"}`}
-                >
-                  <ShoppingBag size={16} /> {addedToCart ? "Added" : "Add to Cart"}
-                </button>
-                <button
-                  disabled={!selectedSize}
-                  className={`py-5 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all
-                    ${selectedSize ? "bg-[#ccff00] text-black hover:bg-white" : "bg-[#ccff00]/10 text-white/10"}`}
-                >
-                  <Zap size={16} fill={selectedSize ? "currentColor" : "none"} /> Buy Now
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {[{ icon: Truck, l: "Free Delivery" }, { icon: RefreshCcw, l: "15-Day Exchange" }].map((f, i) => (
-                  <div key={i} className="flex items-center gap-3 p-5 bg-[#0a0a0a] border border-white/[0.05]">
-                    <f.icon size={16} className="text-[#ccff00]" />
-                    <span className="text-[9px] font-black uppercase tracking-wider text-white/70">{f.l}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-40 border-t border-white/[0.06] pt-24 pb-20">
-         <div className="px-5 lg:px-10 mb-12 flex items-center gap-3">
-            <div className="w-6 h-[1px] bg-[#ccff00]" />
-            <h2 className="text-2xl font-black italic uppercase tracking-tighter" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
-              More from the <span className="text-[#ccff00]">Vault</span>
-            </h2>
-         </div>
-         <ProductGrid products={allProducts.filter(p => p._id !== id)} limit={4} />
-      </div>
-    </div>
-  );
-}
-
-
-"import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ShoppingBag, Zap, ChevronRight, ShieldCheck, Truck, RefreshCcw, ArrowLeft, Heart } from "lucide-react";
-import { useProduct } from "../hook/useProduct";
-import ProductGrid from "../components/ProductGrid";
-
-const SIZES = ["XS", "S", "M", "L", "XL", "2XL"];
+import { useCart } from "../../cart/hook/useCart";
+import { useSelector } from "react-redux";
+import toast, { Toaster } from "react-hot-toast";
+import { useAuth } from "../../auth/hook/useAuth";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { handleGetProductById, handleGetAllProduct } = useProduct();
+  const { handleAddItem } = useCart();
+  const EMPTY_CART = []; 
+  const { currentUser } = useAuth()
+  const cartItems = useSelector((state) => state.cart?.items || EMPTY_CART);
+
   const [product, setProduct] = useState(null);
-  const [allProducts, setAllProducts] = useState([]);
   const [activeImg, setActiveImg] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [wishlisted, setWishlisted] = useState(false);
-  const [added, setAdded] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [allProducts, setAllProducts] = useState([]);
+
+  const [selectedAttributes, setSelectedAttributes] = useState({});
+  const [currentVariant, setCurrentVariant] = useState(null);
+
+  const [isAdding, setIsAdding] = useState(false);
+  const [localCart, setLocalCart] = useState([]);
+
+  const getProductByIdRef = useRef(handleGetProductById);
+  const getAllProductRef = useRef(handleGetAllProduct);
 
   useEffect(() => {
-    const fetch = async () => {
-      try { setProduct(await handleGetProductById(id)); }
-      catch (e) { console.error(e); }
-      finally { setLoading(false); }
+    getProductByIdRef.current = handleGetProductById;
+    getAllProductRef.current = handleGetAllProduct;
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchProduct = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        const data = await getProductByIdRef.current(id);
+        if (isMounted) {
+          setProduct(data);
+          if (data?.variants?.length > 0) {
+            setCurrentVariant(data.variants[0]);
+            setSelectedAttributes(data.variants[0].attributes);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
-    fetch();
-    handleGetAllProduct().then(setAllProducts);
-    window.scrollTo(0, 0);
+    fetchProduct();
+    return () => { isMounted = false; };
   }, [id]);
 
-  const handleAddToCart = () => {
-    if (!selectedSize) return;
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAll = async () => {
+      try {
+        const data = await getAllProductRef.current();
+        if (isMounted) setAllProducts(data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchAll();
+    return () => { isMounted = false; };
+  }, []);
+
+  const getStrId = (idObj) => {
+    if (!idObj) return "";
+    if (typeof idObj === "string") return idObj;
+    if (typeof idObj === "object") {
+      if (idObj.$oid) return idObj.$oid;
+      if (idObj._id) return getStrId(idObj._id);
+    }
+    return String(idObj);
   };
 
-  if (loading) return (
-    <div className="h-screen bg-[#050505] flex items-center justify-center gap-2">
-      {[0,1,2].map(i => (
-        <span key={i} className="w-1.5 h-1.5 bg-[#ccff00] rounded-full animate-bounce"
-          style={{ animationDelay: `${i * 150}ms` }} />
-      ))}
-    </div>
-  );
+  const allPossibleOptions = useMemo(() => {
+    if (!product?.variants) return {};
+    const options = {};
+    product.variants.forEach((v) => {
+      if (!v.attributes) return;
+      Object.entries(v.attributes).forEach(([key, value]) => {
+        if (!options[key]) options[key] = new Set();
+        options[key].add(value.toString().toUpperCase());
+      });
+    });
+    Object.keys(options).forEach(
+      (key) => (options[key] = Array.from(options[key])),
+    );
+    return options;
+  }, [product]);
 
-  if (!product) return (
-    <div className="h-screen bg-[#050505] flex items-center justify-center">
-      <p className="text-neutral-600 text-[10px] uppercase tracking-[0.5em]">Asset Not Found</p>
-    </div>
-  );
+  const handleAttributeClick = (key, value) => {
+    const targetValue = value.toLowerCase();
 
-  const wasPrice = (product.price?.amount * 1.4).toFixed(0);
-  const savePercent = Math.round((1 - product.price?.amount / wasPrice) * 100);
+    let bestMatch = product.variants.find((v) => {
+      if (v.attributes[key]?.toString().toLowerCase() !== targetValue) return false;
+      let otherMatch = true;
+      Object.entries(selectedAttributes).forEach(([selKey, selVal]) => {
+        if (selKey !== key && v.attributes[selKey]?.toString().toLowerCase() !== selVal?.toString().toLowerCase()) {
+          otherMatch = false;
+        }
+      });
+      return otherMatch;
+    });
 
-  return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-[#ccff00] selection:text-black">
+    if (!bestMatch) {
+      bestMatch = product.variants.find((v) =>
+        v.attributes[key]?.toString().toLowerCase() === targetValue
+      );
+    }
+
+    if (bestMatch) {
+      setCurrentVariant(bestMatch);
+      setSelectedAttributes(bestMatch.attributes);
+      setActiveImg(0);
+    } else {
+      setSelectedAttributes({ ...selectedAttributes, [key]: value });
+    }
+  };
+
+  const isCurrentlyInCart = useMemo(() => {
+    if (!product || !currentVariant) return false;
+    const pId = getStrId(product._id);
+    const vId = getStrId(currentVariant._id);
+
+    if (localCart.includes(vId)) return true;
+
+    if (!Array.isArray(cartItems)) return false;
+    return cartItems.some(item => {
+      const itemPId = getStrId(item.productId || item.product);
+      const itemVId = getStrId(item.variantId || item.variant);
+      return itemPId === pId && itemVId === vId;
+    });
+  }, [cartItems, product, currentVariant, localCart]);
 
 
-      {/* pt-16 accounts for fixed navbar height (~64px) */}
-      <div className="pt-16">
+  const displayImages = currentVariant?.images?.length > 0 && currentVariant.images[0]?.url
+    ? currentVariant.images
+    : product?.images;
 
-        {/* Breadcrumb */}
-        <nav className="px-6 lg:px-12 py-4 flex items-center gap-2 text-[8px] font-bold uppercase tracking-[0.25em]">
-          <button onClick={() => navigate("/")}
-            className="flex items-center gap-1.5 text-neutral-600 hover:text-white transition-colors">
-            <ArrowLeft size={11} /> Shop
-          </button>
-          <ChevronRight size={9} className="text-neutral-800" />
-          <span className="text-neutral-500 truncate max-w-[200px]">{product.title}</span>
-        </nav>
+  const displayPrice = currentVariant?.price || product?.price;
 
-        {/* Main layout */}
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-12 pb-24
-                        grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+  const displayTitle = currentVariant?.title && currentVariant.title.toUpperCase() !== "DEFAULT"
+    ? currentVariant.title
+    : product?.title;
 
-          {/* ── Gallery ── */}
-          <div className="flex flex-col-reverse md:flex-row gap-3">
-            {/* Thumbnails */}
-            <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible shrink-0">
-              {product.images?.map((img, i) => (
-                <button key={i} onClick={() => setActiveImg(i)}
-                  className={`w-14 flex-shrink-0 border transition-all duration-200 overflow-hidden
-                    ${activeImg === i ? "border-[#ccff00]" : "border-white/5 opacity-40 hover:opacity-70"}`}
-                  style={{ height: "72px" }}>
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
+  const showSuccessToast = () => {
+    toast.custom(
+      (t) => (
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white border border-stone-200 shadow-2xl flex flex-col overflow-hidden rounded-sm`}>
+          <div className="flex p-4 gap-4 items-center">
+            <div className="h-16 w-12 shrink-0 bg-stone-100 overflow-hidden">
+              <img src={displayImages?.[0]?.url} className="w-full h-full object-cover mix-blend-multiply" alt="Product" />
             </div>
 
-            {/* Main image */}
-            <div className="flex-1 aspect-[4/5] bg-[#0d0d0d] relative overflow-hidden group">
-              <img
-                src={product.images?.[activeImg]?.url}
-                alt={product.title}
-                className="w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-
-              <div className="absolute top-4 left-4 flex items-center gap-1.5
-                              bg-black/70 backdrop-blur-sm border border-[#ccff00]/20 px-2.5 py-1.5">
-                <ShieldCheck size={9} className="text-[#ccff00]" />
-                <span className="text-[7px] font-black tracking-[0.2em] uppercase">Verified</span>
-              </div>
-
-              <button onClick={() => setWishlisted(v => !v)}
-                className={`absolute top-4 right-4 w-9 h-9 flex items-center justify-center
-                            rounded-full transition-all duration-200 backdrop-blur-sm
-                            ${wishlisted
-                              ? "bg-white text-black"
-                              : "bg-black/50 border border-white/15 text-white hover:bg-white hover:text-black"}`}>
-                <Heart size={14} className={wishlisted ? "fill-current" : ""} />
+            <div className="flex-1 flex flex-col justify-center">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-stone-500 mb-1">Added to Cart</p>
+              <p className="text-xs font-bold uppercase tracking-tight text-stone-900 line-clamp-1 mb-2">{displayTitle}</p>
+              <button
+                onClick={() => { toast.dismiss(t.id); navigate("/bag"); }}
+                className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-900 hover:text-stone-500 flex items-center gap-1 w-fit transition-colors"
+              >
+                View Bag <ArrowUpRight size={10} />
               </button>
             </div>
+
+            <button onClick={() => toast.dismiss(t.id)} className="text-stone-400 hover:text-stone-900 self-start">
+              <X size={14} />
+            </button>
           </div>
+          <div className="h-[1px] w-full bg-stone-100">
+            <div className="h-full bg-stone-900" style={{ animation: "shrink-timeline 5s linear forwards" }} />
+          </div>
+        </div>
+      ),
+      { duration: 2000, id: "cart-success" }
+    );
+  };
 
-          {/* ── Product info ── */}
-          <div className="flex flex-col gap-7 lg:pt-2">
-
-            <div>
-              <span className="text-[8px] font-black uppercase tracking-[0.35em] text-neutral-600 mb-2 block">
-                {product.category ?? "Apparel"}
-              </span>
-              <h1 className="text-3xl lg:text-[2.6rem] font-black italic uppercase tracking-tighter leading-[0.9] mb-4">
-                {product.title}
-              </h1>
-              <p className="text-[12px] text-neutral-500 leading-relaxed max-w-md">
-                {product.description}
+  const showErrorToast = (missingOptions) => {
+    toast.custom(
+      (t) => (
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white border border-stone-200 shadow-2xl flex flex-col overflow-hidden rounded-sm`}>
+          <div className="flex p-4 gap-3 items-start">
+            <div className="flex-1">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-red-500 mb-1">Selection Required</p>
+              <p className="text-xs text-stone-600 font-medium">
+                Please select <span className="text-stone-900 font-bold uppercase">{missingOptions.join(" & ")}</span>
               </p>
             </div>
+            <button onClick={() => toast.dismiss(t.id)} className="text-stone-400 hover:text-stone-900">
+              <X size={14} />
+            </button>
+          </div>
+          <div className="h-[1px] w-full bg-stone-100">
+            <div className="h-full bg-red-500" style={{ animation: "shrink-timeline 5s linear forwards" }} />
+          </div>
+        </div>
+      ),
+      { duration: 2000, id: "cart-error" }
+    );
+  };
 
-            {/* Price */}
-            <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="text-[2rem] font-black text-[#ccff00] italic leading-none">
-                {product.price?.currency}{product.price?.amount}
-              </span>
-              <span className="text-neutral-600 line-through text-[11px] font-bold tracking-widest">
-                {product.price?.currency}{wasPrice}
-              </span>
-              <span className="text-[8px] font-black uppercase tracking-widest bg-[#ccff00]/10
-                               text-[#ccff00] px-2 py-1 border border-[#ccff00]/20">
-                Save {savePercent}%
-              </span>
-            </div>
+  if (loading)
+    return (
+      <div className="h-screen bg-[#f7f6f4] flex items-center justify-center">
+        <div className="text-stone-900 text-[10px] font-black uppercase tracking-[0.6em] animate-pulse">
+          Loading...
+        </div>
+      </div>
+    );
 
-            {/* Size */}
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-neutral-500">
-                  Select Size
-                </span>
-                <button className="text-[8px] font-bold text-neutral-600 hover:text-[#ccff00]
-                                   border-b border-neutral-700 hover:border-[#ccff00] transition-colors">
-                  Size Guide
-                </button>
+  if (!product)
+    return (
+      <div className="h-screen bg-[#f7f6f4] flex items-center justify-center text-stone-900 p-20 text-center uppercase tracking-widest text-xs font-black">
+        Product Unavailable
+      </div>
+    );
+
+  return (
+    <div className="min-h-screen bg-[#f7f6f4] text-stone-900 selection:bg-stone-900 selection:text-white pt-[100px] lg:pt-[130px]">
+
+      <style>{`
+        @keyframes shrink-timeline {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      `}</style>
+
+      <Toaster 
+        position="top-right" 
+        reverseOrder={false} 
+        toastOptions={{ duration: 5000 }} 
+        containerStyle={{
+          top: '90px', 
+          right: '24px'
+        }}
+      />
+
+      {/* BREADCRUMB */}
+      <nav className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-8 flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 overflow-x-auto no-scrollbar whitespace-nowrap">
+        <span className="hover:text-stone-900 cursor-pointer transition-colors" onClick={() => navigate("/")}>
+          Shop
+        </span>
+        <ChevronRight size={10} />
+        <span className="hover:text-stone-900 cursor-pointer transition-colors" onClick={() => navigate("/")}>
+          {product.category || "Apparel"}
+        </span>
+        <ChevronRight size={10} />
+        <span className="text-stone-900 truncate max-w-[200px]">
+          {displayTitle}
+        </span>
+      </nav>
+
+      {/* 🔥 FIX 1: items-start LAGAYA TAKI STICKY KAAM KARE */}
+      <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 px-6 lg:px-12 pb-24 items-start">
+
+        {/* 🔥 FIX 2: IMAGE SECTION (STICKY) */}
+        <div className="lg:col-span-7 lg:sticky lg:top-32 relative flex flex-col-reverse md:flex-row gap-4">
+          {/* Thumbnails */}
+          <div className="flex md:flex-col gap-3 shrink-0 overflow-x-auto md:overflow-y-auto max-h-[600px] no-scrollbar w-full md:w-20">
+            {displayImages?.map((img, i) => (
+              <div
+                key={i}
+                onClick={() => setActiveImg(i)}
+                className={`w-16 h-20 md:w-full md:h-28 shrink-0 cursor-pointer overflow-hidden transition-all duration-300 bg-stone-100 ${activeImg === i ? "border border-stone-900 opacity-100" : "border border-transparent opacity-50 hover:opacity-100"}`}
+              >
+                <img src={img.url} className="w-full h-full object-cover mix-blend-multiply" alt="" />
               </div>
-              <div className="flex flex-wrap gap-2">
-                {SIZES.map(s => (
-                  <button key={s} onClick={() => setSelectedSize(s)}
-                    className={`w-11 h-11 text-[10px] font-black border transition-all duration-150
-                      ${selectedSize === s
-                        ? "bg-[#ccff00] text-black border-[#ccff00]"
-                        : "border-white/10 text-neutral-400 hover:border-white/40 hover:text-white"}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-              {!selectedSize && (
-                <p className="text-[8px] text-neutral-700 uppercase tracking-widest mt-2">
-                  — Please select a size
-                </p>
-              )}
-            </div>
+            ))}
+          </div>
 
-            {/* CTAs */}
-            <div className="flex gap-3 pt-2">
-              <button onClick={handleAddToCart}
-                className={`flex-1 py-4 text-[9px] font-black uppercase tracking-[0.2em]
-                            flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98]
-                            ${!selectedSize ? "bg-white/8 text-white/25 cursor-not-allowed"
-                              : added ? "bg-[#ccff00] text-black"
-                              : "bg-white text-black hover:bg-[#ccff00]"}`}>
-                <ShoppingBag size={13} />
-                {added ? "Added to Bag ✓" : "Add to Bag"}
-              </button>
-              <button onClick={() => selectedSize && navigate("/checkout")}
-                className={`flex-1 py-4 text-[9px] font-black uppercase tracking-[0.2em]
-                            flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98]
-                            ${!selectedSize ? "bg-white/5 text-white/20 cursor-not-allowed"
-                              : "bg-[#ccff00] text-black hover:bg-white"}`}>
-                <Zap size={13} fill="currentColor" /> Buy Now
-              </button>
-            </div>
-
-            {/* Trust badges */}
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06]">
-              {[
-                { icon: Truck,       label: "Priority",  sub: "Shipping"  },
-                { icon: RefreshCcw,  label: "15-Day",    sub: "Exchange"  },
-                { icon: ShieldCheck, label: "Authentic", sub: "Verified"  },
-                { icon: Zap,         label: "Fast",      sub: "Checkout"  },
-              ].map(({ icon: Icon, label, sub }) => (
-                <div key={sub} className="flex items-center gap-2.5 p-3 bg-[#080808] border border-white/[0.05]">
-                  <Icon size={14} className="text-[#ccff00] flex-shrink-0" />
-                  <span className="text-[7px] font-bold uppercase tracking-widest leading-tight text-neutral-500">
-                    {label}<br /><span className="text-white/80">{sub}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
+          {/* Main Image */}
+          <div className="w-full aspect-[3/4] md:aspect-[4/5] bg-stone-100 relative overflow-hidden flex-1 group">
+            <img
+              src={displayImages?.[activeImg]?.url}
+              className="w-full h-full object-cover mix-blend-multiply"
+              alt={displayTitle}
+            />
           </div>
         </div>
 
-        {/* Related */}
-        <ProductGrid
-          products={allProducts.filter(p => p._id !== product._id)}
-          title="More From The Vault"
-          limit={4}
-        />
+        {/* INFO SECTION (SCROLLABLE) */}
+        <div className="lg:col-span-5 flex flex-col justify-start">
+          
+          {/* Title & Price - Sleeker, smaller typography */}
+          <div className="mb-8 border-b border-stone-200 pb-8">
+            <h1 className="text-2xl md:text-3xl lg:text-[32px] font-black uppercase tracking-tight leading-[1.1] text-stone-900 mb-4">
+              {displayTitle}
+            </h1>
+            
+            <div className="flex items-end gap-3 mb-4">
+              <span className="text-xl font-medium text-stone-900">
+                {displayPrice?.currency} {displayPrice?.amount}
+              </span>
+              <span className="text-stone-400 line-through text-xs font-medium pb-0.5">
+                {displayPrice?.currency} {Math.round(displayPrice?.amount * 1.5)}
+              </span>
+            </div>
+            
+            <p className="text-stone-500 font-normal text-sm leading-relaxed">
+              {product.description || "A curated essential crafted with premium materials. Precision cut for a relaxed, structural fit. Designed to elevate your daily rotation."}
+            </p>
+          </div>
+
+          {/* Attributes Selection - Clean Squares */}
+          <div className="space-y-8 mb-10">
+            {Object.entries(allPossibleOptions).map(([attrKey, attrValues]) => (
+              <div key={attrKey} className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-stone-900">
+                    {attrKey}
+                  </h3>
+                  {attrKey.toLowerCase() === 'size' && (
+                    <button className="text-[9px] text-stone-400 underline uppercase tracking-widest hover:text-stone-900">Size Guide</button>
+                  )}
+                </div>
+                
+                <div className="flex flex-wrap gap-3">
+                  {attrValues.map((val) => {
+                    const isSelected = selectedAttributes[attrKey]?.toString().toLowerCase() === val.toLowerCase();
+                    return (
+                      <button
+                        key={val}
+                        onClick={() => handleAttributeClick(attrKey, val)}
+                        className={`px-5 py-3 min-w-[3rem] text-[11px] font-bold uppercase tracking-wider transition-all duration-200 
+                          ${isSelected ? "bg-stone-900 text-white border border-stone-900" : "bg-transparent text-stone-600 border border-stone-200 hover:border-stone-400"}`}
+                      >
+                        {val}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Add to Cart Actions - Sharp Edges, Minimalist */}
+          <div className="flex flex-col gap-3 mb-10">
+            <button
+              disabled={isAdding}
+              onClick={async () => {
+                const requiredKeys = Object.keys(allPossibleOptions);
+                const missingOptions = requiredKeys.filter(key => !selectedAttributes[key]);
+                
+                if (!currentUser) {
+                  navigate("/login");
+                  return;
+                }
+
+                if (missingOptions.length > 0) {
+                  showErrorToast(missingOptions);
+                  return;
+                }
+
+                if (isCurrentlyInCart) {
+                  navigate("/bag");
+                } else {
+                  try {
+                    const safeProductId = getStrId(product._id);
+                    const safeVariantId = getStrId(currentVariant?._id);
+                    setIsAdding(true);
+                    await handleAddItem({ productId: safeProductId, variantId: safeVariantId });
+                    setLocalCart(prev => [...prev, safeVariantId]);
+                    showSuccessToast();
+                  } catch (e) {
+                    console.error("Add item failed", e);
+                  } finally {
+                    setIsAdding(false);
+                  }
+                }
+              }}
+              className={`w-full bg-stone-900 text-white py-4 text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-colors 
+                ${isAdding ? "opacity-70 cursor-wait" : "hover:bg-stone-800"}`}
+            >
+              {isCurrentlyInCart ? "View In Bag" : isAdding ? "Adding..." : "Add to Bag"}
+            </button>
+
+            <button
+              onClick={() => {
+                const requiredKeys = Object.keys(allPossibleOptions);
+                const missingOptions = requiredKeys.filter(key => !selectedAttributes[key]);
+                if (!currentUser) { navigate("/login"); return; }
+                if (missingOptions.length > 0) { showErrorToast(missingOptions); return; }
+                navigate("/checkout");
+              }}
+              className="w-full bg-[#ccff00] text-stone-900 py-4 text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center transition-colors hover:bg-[#bbf000]"
+            >
+              Buy It Now
+            </button>
+          </div>
+
+          {/* Details & Care - Editorial Style List */}
+          <div className="border-t border-stone-200 pt-8 space-y-6">
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <div className="flex items-center gap-2 mb-3 text-stone-900">
+                  <Ruler size={14} strokeWidth={1.5} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Fit</span>
+                </div>
+                <ul className="text-xs text-stone-500 space-y-1.5 font-medium">
+                  <li>Oversized Boxy Fit</li>
+                  <li>Dropped Shoulders</li>
+                  <li>True to Size</li>
+                </ul>
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-2 mb-3 text-stone-900">
+                  <Droplets size={14} strokeWidth={1.5} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Care</span>
+                </div>
+                <ul className="text-xs text-stone-500 space-y-1.5 font-medium">
+                  <li>100% Heavy Cotton</li>
+                  <li>Machine Wash Cold</li>
+                  <li>Do Not Tumble Dry</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Delivery Info */}
+            <div className="border-t border-stone-200 pt-6 mt-2 flex items-center gap-6">
+              <div className="flex items-center gap-2 text-stone-500">
+                <Truck size={14} strokeWidth={1.5} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Free Shipping</span>
+              </div>
+              <div className="flex items-center gap-2 text-stone-500">
+                <RefreshCcw size={14} strokeWidth={1.5} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">14 Day Returns</span>
+              </div>
+            </div>
+          </div>
+          
+        </div>
       </div>
+
+      {/* RELATED PRODUCTS */}
+      <section className="border-t border-stone-200 pt-16 pb-24 bg-white">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+          <ProductGrid
+            products={allProducts.filter((p) => getStrId(p._id) !== getStrId(product._id))}
+            title="Complete The Look"
+            limit={4}
+          />
+        </div>
+      </section>
     </div>
   );
 };
 
-export default ProductDetail;"
+export default ProductDetail;

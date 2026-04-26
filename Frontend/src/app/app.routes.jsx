@@ -9,7 +9,8 @@ import ProductDetail from "../features/products/pages/ProductDetail";
 import Layout from "../components/Layout";
 import SellerProductDetails from "../features/products/pages/SellerProductDeatails";
 import Cart from "../features/cart/pages/Cart";
-
+import ProtectedRoute from "../components/ProtectedRoute";
+import Chackout from "../features/products/pages/Checkout";
 export const routes = createBrowserRouter([
   {
     // Public Layout Routes
@@ -21,7 +22,15 @@ export const routes = createBrowserRouter([
   },
   {
     path:"/bag",
-    element:<Cart />
+    element:<ProtectedRoute>
+      <Cart />
+    </ProtectedRoute>
+  },
+  {
+    path:"/checkout",
+    element:<ProtectedRoute>
+     <Chackout />
+    </ProtectedRoute>
   },
   {
     element: <ProtectedSellerRoute />,
