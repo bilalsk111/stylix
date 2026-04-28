@@ -1,25 +1,35 @@
 import React, { useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { useAuth } from "../../auth/hook/useAuth";
-import { ChevronRight, ChevronLeft, CreditCard, Lock, ShieldCheck } from "lucide-react"; // 🔥 ChevronLeft import kiya
+import { useSelector } from "react-redux"; 
+import { ChevronRight, ChevronLeft, CreditCard, Lock, ShieldCheck } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import { createOrder, verifyPayment } from "../../cart/services/cart.api";
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 const Checkout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
   
-  // 1. DYNAMIC DATA SOURCE LOGIC
+  const { user } = useSelector((state) => state.auth); 
   const cartItems = useSelector((state) => state.cart?.items || []);
+  
   const isBuyNow = location.state?.buyNowItem != null;
   const checkoutItems = isBuyNow ? [location.state.buyNowItem] : cartItems;
 
   const [formData, setFormData] = useState({
-    firstName: currentUser?.firstName || "",
-    lastName: currentUser?.lastName || "",
-    email: currentUser?.email || "",
-    phone: "",
+    firstName: user?.fullname?.split(" ")[0] || "",
+    lastName: user?.fullname?.split(" ")[1] || "",
+    email: user?.email || "",
+    phone: user?.contact || "",
     address: "",
     city: "",
     state: "",
@@ -58,21 +68,16 @@ const Checkout = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // 🔥 CUSTOM VALIDATION LOGIC ADDED HERE
   const validateForm = () => {
     const { firstName, lastName, email, phone, address, city, state, pincode } = formData;
-    
     if (!firstName || !lastName || !email || !phone || !address || !city || !state || !pincode) {
-      toast.error("Please fill in all shipping details.", { style: { background: '#1c1917', color: '#fff', fontSize: '12px' }});
+      toast.error("Please fill in all shipping details.");
       return false;
     }
-    
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(phone)) {
-      toast.error("Please enter a valid 10-digit phone number.", { style: { background: '#1c1917', color: '#fff', fontSize: '12px' }});
+    if (!/^[0-9]{10}$/.test(phone)) {
+      toast.error("Please enter a valid 10-digit phone number.");
       return false;
     }
-
     return true;
   };
 
@@ -83,24 +88,119 @@ const Checkout = () => {
       toast.error("Some items are out of stock. Please check your bag.");
       return;
     }
-
-    // Run Validation
     if (!validateForm()) return;
 
     setIsProcessing(true);
 
     try {
-      toast.loading("Initiating secure payment gateway...");
-      
-      setTimeout(() => {
-        toast.dismiss();
-        toast.success("All Validated! Ready for Razorpay.", { style: { background: '#ccff00', color: '#1c1917', fontSize: '12px', fontWeight: 'bold' }});
+      const res = await loadRazorpayScript();
+      if (!res) {
+        toast.error("Razorpay SDK failed to load. Check your connection.");
         setIsProcessing(false);
-      }, 1500);
+        return;
+      }
+
+      toast.loading("Securing your order...", { id: "payment-toast" });
+
+      const orderPayload = {
+        isBuyNow: isBuyNow,
+        singleItem: isBuyNow ? {
+          productId: checkoutItems[0].product._id,
+          variantId: checkoutItems[0].variant._id || checkoutItems[0].variant,
+          quantity: checkoutItems[0].quantity
+        } : null,
+        items: checkoutItems.map(item => {
+          const v = typeof item.variant === 'object' ? item.variant : { _id: item.variant };
+          return {
+            productId: item.product._id,
+            variantId: v._id,
+            quantity: item.quantity,
+            price: {
+              amount: v?.price?.amount || item.product?.price?.amount,
+              currency: "INR"
+            }
+          };
+        }),
+        shippingAddress: formData
+      };
+
+      const orderResponse = await createOrder(orderPayload);
+
+      if (!orderResponse.success) {
+         toast.error("Failed to create order.", { id: "payment-toast" });
+         setIsProcessing(false);
+         return;
+      }
+
+      const { order: rzpOrder, dbOrderId } = orderResponse;
+      toast.dismiss("payment-toast");
+
+      const options = {
+        key: "rzp_test_ShyXwSBMDuYY3u", 
+        amount: rzpOrder.amount, 
+        currency: rzpOrder.currency,
+        name: "STYLIX",
+        description: "Premium Apparel Purchase",
+        order_id: rzpOrder.id,
+        
+        handler: async function (response) {
+          try {
+            toast.loading("Verifying secure payment...", { id: "verify-toast" });
+            
+            const verifyPayload = {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              dbOrderId: dbOrderId,
+              isBuyNow: isBuyNow
+            };
+
+            const verifyRes = await verifyPayment(verifyPayload);
+
+            if (verifyRes.success) {
+              toast.dismiss("verify-toast");
+              // 🔥 FIX: Navigating to success page with full order details
+              navigate("/success", {
+                state: {
+                  orderId: dbOrderId,
+                  items: checkoutItems,
+                  totalAmount,
+                  currency,
+                  shippingAddress: formData,
+                  transactionId: response.razorpay_payment_id
+                }
+              });
+            } else {
+              toast.error(verifyRes.message || "Verification failed!", { id: "verify-toast" });
+            }
+          } catch (err) {
+             console.error(err);
+             toast.error("Server error during verification.", { id: "verify-toast" });
+          }
+        },
+        prefill: {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: {
+          color: "#ccff00",
+        },
+      };
+
+      const razorpayInstance = new window.Razorpay(options);
+      
+      razorpayInstance.on('payment.failed', function (response){
+         console.error("Payment Failed", response.error);
+         toast.error("Payment Failed: " + response.error.description);
+      });
+
+      razorpayInstance.open();
+      setIsProcessing(false);
 
     } catch (error) {
       console.error(error);
-      toast.error("Payment initiation failed.");
+      toast.error("Payment gateway error.", { id: "payment-toast" });
       setIsProcessing(false);
     }
   };
@@ -119,13 +219,8 @@ const Checkout = () => {
       <Toaster position="top-right" />
       
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-        
-        {/* 🔥 HEADER WITH BACK BUTTON */}
         <div className="mb-12 relative">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="absolute -top-8 left-0 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-900 transition-colors"
-          >
+          <button onClick={() => navigate(-1)} className="absolute -top-8 left-0 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-900 transition-colors">
             <ChevronLeft size={12} /> Go Back
           </button>
           
@@ -138,12 +233,8 @@ const Checkout = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
-          
-          {/* LEFT: SHIPPING FORM */}
           <div className="w-full lg:w-[55%]">
             <form id="checkout-form" onSubmit={handlePayment} className="space-y-10">
-              
-              {/* Contact Info */}
               <div>
                 <div className="flex items-center gap-2 mb-6 border-b border-stone-200 pb-4">
                   <div className="bg-stone-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">1</div>
@@ -157,7 +248,6 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/* Shipping Address */}
               <div>
                 <div className="flex items-center gap-2 mb-6 border-b border-stone-200 pb-4">
                   <div className="bg-stone-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">2</div>
@@ -173,11 +263,11 @@ const Checkout = () => {
             </form>
           </div>
 
-          {/* RIGHT: ORDER SUMMARY */}
           <div className="w-full lg:w-[45%]">
             <div className="bg-white border border-stone-200 rounded-2xl p-6 lg:p-8 shadow-sm sticky top-24">
-              
-              <h2 className="text-sm font-black uppercase tracking-widest text-stone-900 mb-6 border-b border-stone-100 pb-4">Order Summary {isBuyNow && <span className="text-[#a3cc00] ml-2 tracking-normal">(Direct Buy)</span>}</h2>
+              <h2 className="text-sm font-black uppercase tracking-widest text-stone-900 mb-6 border-b border-stone-100 pb-4">
+                Order Summary {isBuyNow && <span className="text-[#a3cc00] ml-2 tracking-normal">(Direct Buy)</span>}
+              </h2>
               
               <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
                 {checkoutItems.map((item, idx) => {

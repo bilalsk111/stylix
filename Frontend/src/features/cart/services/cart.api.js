@@ -7,12 +7,12 @@ const cartApiInstance = axios.create({
 })
 
 
-export const addItem = async ({ productId, variantId }) => {
-    const res = await cartApiInstance.post(`/add/${productId}/${variantId}`, {
-        quantity: 1
-    })
 
-    return res.data
+export const addItem = async ({ productId, variantId, quantity }) => {
+    const res = await cartApiInstance.post(`/add/${productId}/${variantId}`, {
+        quantity: quantity || 1 
+    });
+    return res.data;
 }
 export const getCart = async () => {
     const res = await cartApiInstance.get()
@@ -31,7 +31,12 @@ export const removeCartItem = async({ productId, variantId }) => {
     return res.data;
 }
 
-export const createOrder = async()=>{
-    const res =await cartApiInstance.post('/create-order')
+export const createOrder = async(payload)=>{
+    const res =await cartApiInstance.post('/create-order', payload)
     return res.data
 }
+
+export const verifyPayment = async (payload) => {
+    const res = await cartApiInstance.post('/verify-payment', payload);
+    return res.data;
+};

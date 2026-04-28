@@ -28,7 +28,7 @@ export const useCart = () => {
     handleGetCart();
   }, [handleGetCart]);
 
-  async function handleAddItem({ productId, variantId, quantity = 1 }) {
+  async function handleAddItem({ productId, variantId, quantity }) {
     try {
       const res = await addItemAPI({ productId, variantId, quantity });
       const items = res.items || res.cart?.items || (Array.isArray(res) ? res : []);
@@ -45,9 +45,8 @@ export const useCart = () => {
     }
   }
 
-  // FIX: Proper Name and Optimistic Update
+
   async function handleUpdateItemQty({ productId, variantId, quantity }) {
-    // 1. Optimistic Update: UI ko instantly update kar do
     dispatch(setUpdateQuantity({ productId, variantId, quantity }));
 
     try {

@@ -10,7 +10,9 @@ import {
   Droplets,
   Truck,
   RefreshCcw,
-  ShieldCheck
+  ShieldCheck,
+  Minus, // 🔥 ADDED MINUS
+  Plus   // 🔥 ADDED PLUS
 } from "lucide-react";
 import { useProduct } from "../hook/useProduct";
 import ProductGrid from "../components/ProductGrid";
@@ -38,6 +40,9 @@ const ProductDetail = () => {
 
   const [isAdding, setIsAdding] = useState(false);
   const [localCart, setLocalCart] = useState([]);
+  
+  // 🔥 NAYI STATE: Quantity handle karne ke liye
+  const [buyQty, setBuyQty] = useState(1);
 
   const getProductByIdRef = useRef(handleGetProductById);
   const getAllProductRef = useRef(handleGetAllProduct);
@@ -84,6 +89,11 @@ const ProductDetail = () => {
     fetchAll();
     return () => { isMounted = false; };
   }, []);
+
+  // 🔥 RESET QTY WHEN VARIANT CHANGES
+  useEffect(() => {
+    setBuyQty(1);
+  }, [currentVariant]);
 
   const getStrId = (idObj) => {
     if (!idObj) return "";
@@ -165,6 +175,9 @@ const ProductDetail = () => {
   const displayTitle = currentVariant?.title && currentVariant.title.toUpperCase() !== "DEFAULT"
     ? currentVariant.title
     : product?.title;
+
+  const availableStock = currentVariant?.stock || 0;
+  const isOutOfStock = availableStock === 0;
 
   const showSuccessToast = () => {
     toast.custom(
@@ -279,7 +292,7 @@ const ProductDetail = () => {
         {/* IMAGE SECTION (STICKY) */}
         <div className="lg:col-span-7 lg:sticky lg:top-32 relative flex flex-col-reverse md:flex-row gap-4">
 
-          {/* 🔥 FIX: THUMBNAILS SECTION */}
+          {/* THUMBNAILS SECTION */}
           <div className="flex md:flex-col gap-3 shrink-0 overflow-x-auto md:overflow-y-auto max-h-[650px] no-scrollbar w-full md:w-20 pt-1 pb-4 md:py-1">
             {displayImages?.map((img, i) => (
               <div
@@ -290,7 +303,6 @@ const ProductDetail = () => {
                     : "border-stone-200 opacity-60 hover:opacity-100 hover:scale-95"
                   }`}
               >
-                {/* 🔥 Object-cover ensures image maintains aspect ratio without squishing */}
                 <img
                   src={img.url}
                   className="w-full h-full object-cover object-top mix-blend-multiply"
@@ -307,7 +319,14 @@ const ProductDetail = () => {
               className="w-full h-full object-cover object-top mix-blend-multiply transition-transform duration-[2s] ease-out group-hover:scale-105"
               alt={displayTitle}
             />
-            <div className="absolute flex gap-2 top-6 left-6 bg-white/80 backdrop-blur-md px-4 py-2 border border-stone-200 shadow-sm rounded-full">
+            {isOutOfStock && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] z-10">
+                    <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-md shadow-lg">
+                        Out of Stock
+                    </span>
+                </div>
+            )}
+            <div className="absolute flex gap-2 top-6 left-6 bg-white/80 backdrop-blur-md px-4 py-2 border border-stone-200 shadow-sm rounded-full z-20">
               <ShieldCheck size={14} className="text-[#a3cc00]" />
               <span className="text-[8px] font-black tracking-[0.2em] uppercase text-stone-900 mt-0.5">
                 Stylix Authentic
@@ -345,8 +364,8 @@ const ProductDetail = () => {
             </p>
           </div>
 
-          {/* Attributes Selection - Sleek Pills */}
-          <div className="space-y-6 mb-10">
+          {/* Attributes Selection */}
+          <div className="space-y-6 mb-8">
             {Object.entries(allPossibleOptions).map(([attrKey, attrValues]) => (
               <div key={attrKey} className="space-y-3">
                 <div className="flex justify-between items-end">
@@ -381,10 +400,42 @@ const ProductDetail = () => {
             ))}
           </div>
 
-          {/* Add to Cart Actions - Modern Hover FX */}
+          {/* 🔥 QUANTITY SELECTOR (NEW) */}
+          <div className="mb-10">
+              <h3 className="text-[11px] font-black uppercase tracking-widest text-stone-900 mb-3">Quantity</h3>
+              <div className="flex items-center gap-4 w-fit bg-white border border-stone-200 p-1.5 rounded-xl shadow-sm">
+                  <button
+                      disabled={buyQty <= 1 || isOutOfStock}
+                      onClick={() => setBuyQty(prev => prev - 1)}
+                      className="w-10 h-10 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                      <Minus size={16} strokeWidth={2.5} />
+                  </button>
+                  
+                  <span className="w-8 text-center text-sm font-black text-stone-900">
+                      {isOutOfStock ? 0 : buyQty}
+                  </span>
+                  
+                  <button
+                      disabled={buyQty >= availableStock || isOutOfStock}
+                      onClick={() => setBuyQty(prev => prev + 1)}
+                      className="w-10 h-10 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                      <Plus size={16} strokeWidth={2.5} />
+                  </button>
+              </div>
+
+              {availableStock > 0 && availableStock <= 5 && (
+                  <p className="text-orange-500 text-[10px] font-bold uppercase tracking-widest mt-3 animate-pulse flex items-center gap-1">
+                      <Zap size={12} /> Only {availableStock} left in stock
+                  </p>
+              )}
+          </div>
+
+          {/* Add to Cart / Buy Now Actions */}
           <div className="flex flex-col sm:flex-row gap-4 mb-10">
             <button
-              disabled={isAdding}
+              disabled={isAdding || isOutOfStock}
               onClick={async () => {
                 const requiredKeys = Object.keys(allPossibleOptions);
                 const missingOptions = requiredKeys.filter(key => !selectedAttributes[key]);
@@ -406,7 +457,8 @@ const ProductDetail = () => {
                     const safeProductId = getStrId(product._id);
                     const safeVariantId = getStrId(currentVariant?._id);
                     setIsAdding(true);
-                    await handleAddItem({ productId: safeProductId, variantId: safeVariantId });
+                    // Standard implementation adds item with quantity
+                    await handleAddItem({ productId: safeProductId, variantId: safeVariantId, quantity: buyQty });
                     setLocalCart(prev => [...prev, safeVariantId]);
                     showSuccessToast();
                   } catch (e) {
@@ -417,36 +469,41 @@ const ProductDetail = () => {
                 }
               }}
               className={`flex-1 bg-white border-2 border-stone-900 text-stone-900 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 shadow-sm
-                ${isAdding ? "opacity-70 cursor-wait" : "hover:bg-stone-900 hover:text-white hover:shadow-lg active:scale-95"}`}
+                ${isAdding || isOutOfStock ? "opacity-70 cursor-not-allowed" : "hover:bg-stone-900 hover:text-white hover:shadow-lg active:scale-95"}`}
             >
               {isCurrentlyInCart ? "View In Bag" : isAdding ? "Adding..." : "Add to Bag"}
             </button>
 
             <button
+              disabled={isOutOfStock}
               onClick={() => {
                 const requiredKeys = Object.keys(allPossibleOptions);
                 const missingOptions = requiredKeys.filter(key => !selectedAttributes[key]);
+                
                 if (!currentUser) { navigate("/login"); return; }
                 if (missingOptions.length > 0) { showErrorToast(missingOptions); return; }
 
-                // 🔥 THE FIX: Yahan se data bhej rahe hain Checkout page ko
+                // 🔥 DYNAMIC QUANTITY PASSED HERE
                 navigate("/checkout", {
                   state: {
                     buyNowItem: {
                       product: product,
                       variant: currentVariant,
-                      quantity: 1
+                      quantity: buyQty // <-- Connected to the counter state!
                     }
                   }
                 });
               }}
-              className="flex-1 bg-[#ccff00] text-stone-900 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] hover:bg-[#bbf000] active:scale-95"
+              className={`flex-1 text-stone-900 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 
+                ${isOutOfStock 
+                  ? "bg-stone-200 cursor-not-allowed text-stone-400" 
+                  : "bg-[#ccff00] shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] hover:bg-[#bbf000]"}`}
             >
               <Zap size={14} fill="currentColor" /> Buy It Now
             </button>
           </div>
 
-          {/* Details & Care - Glassmorphic Cards */}
+          {/* Details & Care */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 mb-3 text-stone-900">

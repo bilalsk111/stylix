@@ -1,67 +1,12 @@
 import mongoose from "mongoose";
+import crypto from "crypto"; // 🔥 YE MISSING THA! Iske bina verifyPayment fat jayega.
+import { config } from "../config/config.js"; // 🔥 YE BHI MISSING THA! Signature check ke liye.
 import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
-import { createOrderservice } from "../services/payment.service.js";
+import { createOrderservice } from "../services/payment.service.js"; // 🔥 Ensure Capital 'S' here if you fixed it earlier.
 import orderModel from "../models/order.model.js";
+import { getCartDetail } from "../dao/cart.dao.js";
 
-// Note: Agar aapka getStock function theek se variant check nahi karta, toh humne
-// neeche directly variant.stock use kiya hai (jo zyada safe aur fast hai).
-// import { getStock } from "../dao/product.dao.js";
-
-async function getCartDetail(userId) {
-  let cart = (
-    await cartModel.aggregate([
-      {
-        $match: {
-          user: new mongoose.Types.ObjectId(user._id),
-        },
-      },
-      { $unwind: { path: "$items" } },
-      {
-        $lookup: {
-          from: "products",
-          localField: "items.product",
-          foreignField: "_id",
-          as: "items.product",
-        },
-      },
-      { $unwind: { path: "$items.product" } },
-      {
-        $unwind: { path: "$items.product.variants" },
-      },
-      {
-        $match: {
-          $expr: {
-            $eq: ["$items.variant", "$items.product.variants._id"],
-          },
-        },
-      },
-      {
-        $addFields: {
-          itemPrice: {
-            price: {
-              $multiply: [
-                "$items.quantity",
-                "$items.product.variants.price.amount",
-              ],
-            },
-            currency: "$items.product.variants.price.currency",
-          },
-        },
-      },
-      {
-        $group: {
-          _id: "$_id",
-          totalPrice: { $sum: "$itemPrice.price" },
-          currency: {
-            $first: "$itemPrice.currency",
-          },
-          items: { $push: "$items" },
-        },
-      },
-    ])
-  )[0];
-}
 
 export const addtocart = async (req, res) => {
   try {
@@ -146,6 +91,7 @@ export const addtocart = async (req, res) => {
 export const getCart = async (req, res) => {
   try {
     const user = req.user;
+    let cart = await getCartDetail(user._id);
 
     if (!cart) {
       cart = await cartModel.create({ user: user._id });
@@ -269,160 +215,158 @@ export const removeCartItem = async (req, res) => {
 };
 
 export const createOrder = async (req, res) => {
-  try {
-    const { isBuyNow, singleItem } = req.body;
-    const userId = req.user._id;
+  console.log("INCOMING BODY:", req.body);
+    try {
+        const { isBuyNow, singleItem, items, shippingAddress } = req.body;
+        const userId = req.user._id;
+        
+        let totalAmount = 0;
 
-    let totalAmount = 0;
+        // Backend Calculation for strict security
+        if (isBuyNow && singleItem) {
+            const product = await productModel.findById(singleItem.productId);
+            if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+            
+            const variant = product.variants.id(singleItem.variantId);
+            if (!variant) return res.status(404).json({ success: false, message: "Variant not found" });
 
-    if (isBuyNow && singleItem) {
-      // FLOW 1: SINGLE PRODUCT ("Buy It Now")
-      const product = await Product.findById(singleItem.productId);
-      if (!product)
-        return res
-          .status(404)
-          .json({ success: false, message: "Product not found" });
+            if (variant.stock < singleItem.quantity) {
+                 return res.status(400).json({ success: false, message: "Out of stock" });
+            }
+            totalAmount = variant.price.amount * singleItem.quantity;
 
-      const variant = product.variants.id(singleItem.variantId);
-      if (!variant)
-        return res
-          .status(404)
-          .json({ success: false, message: "Variant not found" });
+        } else {
+            const cartDetails = await getCartDetail(userId);
+            if (!cartDetails || cartDetails.totalPrice === 0) {
+                return res.status(400).json({ success: false, message: "Cart is empty" });
+            }
+            totalAmount = cartDetails.totalPrice;
+        }
 
-      if (variant.stock < singleItem.quantity) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Out of stock" });
-      }
+        // Shipping logic
+        const shippingFee = totalAmount >= 2000 ? 0 : 150;
+        const finalAmountToPay = totalAmount + shippingFee;
 
-      totalAmount = variant.price.amount * singleItem.quantity;
-    } else {
-      // FLOW 2: ENTIRE CART
-      const cartDetails = await getCartDetail(userId);
-      if (!cartDetails || cartDetails.totalPrice === 0) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Cart is empty" });
-      }
-      totalAmount = cartDetails.totalPrice;
+        // 1. Generate Razorpay Order
+       const rzpOrder = await createOrderservice({
+            amount: finalAmountToPay,
+            currency: "INR",
+            receipt: `receipt_${Date.now()}`,
+        });
+
+        // 2. 🔥 CREATE "PENDING" ORDER IN DB FIRST 🔥
+        const newOrder = new orderModel({
+            user: userId,
+            totalAmount: finalAmountToPay,
+            paymentStatus: "Pending", // Set as pending initially
+            orderStatus: "Processing",
+            
+            // Map items explicitly
+            items: items.map(item => ({
+                product: item.productId, 
+                variant: item.variantId, 
+                quantity: item.quantity,
+                price: {
+                      amount: item.price.amount,
+                      currency: item.price.currency
+                } // Expects { amount, currency }
+            })),
+
+            shippingAddress: {
+                firstName: shippingAddress.firstName,
+                lastName: shippingAddress.lastName,
+                email: shippingAddress.email,
+                phone: shippingAddress.phone,
+                address: shippingAddress.address,
+                city: shippingAddress.city,
+                state: shippingAddress.state,
+                pincode: shippingAddress.pincode
+            },
+
+            paymentInfo: {
+                razorpay_order_id: rzpOrder.id,
+            }
+        });
+
+        await newOrder.save();
+
+        // Send Razorpay ID + DB Order ID to frontend
+        return res.status(200).json({ 
+            success: true, 
+            message: "Order initiated", 
+            order: rzpOrder,
+            dbOrderId: newOrder._id // Need this to update it later
+        });
+
+    } catch (error) {
+        console.error("Create Order Error:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
-
-    // Add Shipping (Example: 2000 threshold)
-    const shippingFee = totalAmount >= 2000 ? 0 : 150;
-    const finalAmountToPay = totalAmount + shippingFee;
-
-    // Call Razorpay API
-    const order = await createOrderservice({
-      amount: finalAmountToPay,
-      currency: "INR",
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Order created successfully",
-      order,
-      amountCalculated: finalAmountToPay,
-    });
-  } catch (error) {
-    console.error("Create Order Error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
-  }
 };
 
 
 export const verifyPayment = async (req, res) => {
-  try {
-    // 1. Extract data from Frontend
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      items,
-      shippingAddress,
-      totalAmount,
-      isBuyNow,
-    } = req.body;
+    try {
+        const { 
+            razorpay_order_id, 
+            razorpay_payment_id, 
+            razorpay_signature, 
+            dbOrderId, // Receive the MongoDB Order ID from frontend
+            isBuyNow 
+        } = req.body;
 
-    const userId = req.user._id;
+        const userId = req.user._id;
 
-    // 2. STRICT RAZORPAY SIGNATURE VERIFICATION
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac("sha256", config.RAZORPAY_KEY_SECRET)
-      .update(body.toString())
-      .digest("hex");
+        // Fetch the pending order
+        const order = await orderModel.findById(dbOrderId);
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found in database" });
+        }
 
-    if (expectedSignature !== razorpay_signature) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Payment Verification Failed! Hack attempt detected.",
+        // 1. Verify Signature
+        const body = razorpay_order_id + "|" + razorpay_payment_id;
+        const expectedSignature = crypto
+            .createHmac("sha256", config.RAZORPAY_KEY_SECRET)
+            .update(body.toString())
+            .digest("hex");
+
+        // 🔥 IF PAYMENT FAILED OR HACKED
+        if (expectedSignature !== razorpay_signature) {
+            order.paymentStatus = "Failed";
+            await order.save();
+            return res.status(400).json({ success: false, message: "Payment Verification Failed!" });
+        }
+
+        // 🔥 IF PAYMENT SUCCESS
+        order.paymentStatus = "Paid";
+        order.paymentInfo.razorpay_payment_id = razorpay_payment_id;
+        order.paymentInfo.razorpay_signature = razorpay_signature;
+        
+        await order.save(); // Save updated status
+
+        // 2. DECREASE STOCK FROM PRODUCTS
+        for (const item of order.items) {
+            await productModel.updateOne(
+                { _id: item.product, "variants._id": item.variant },
+                { $inc: { "variants.$.stock": -item.quantity } } 
+            );
+        }
+
+        // 3. CLEAR CART (Only if it came from Cart flow)
+        if (!isBuyNow) {
+            await cartModel.findOneAndUpdate(
+                { user: userId },
+                { $set: { items: [] } } 
+            );
+        }
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Payment verified and Order placed successfully!"
         });
+
+    } catch (error) {
+        console.error("Verify Payment Error:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
-
-    // 3. EXPLICIT SCHEMA MAPPING (Security Measure)
-    const newOrder = new orderModel({
-      user: userId,
-      totalAmount: totalAmount,
-      paymentStatus: "Paid",
-      orderStatus: "Processing",
-
-      // Map items directly to match orderItemSchema
-      items: items.map((item) => ({
-        product: item.productId,
-        variant: item.variantId,
-        quantity: item.quantity,
-        price: item.price, // Expects { amount, currency }
-      })),
-
-      // Map shipping explicitly to prevent mass-assignment
-      shippingAddress: {
-        firstName: shippingAddress.firstName,
-        lastName: shippingAddress.lastName,
-        email: shippingAddress.email,
-        phone: shippingAddress.phone,
-        address: shippingAddress.address,
-        city: shippingAddress.city,
-        state: shippingAddress.state,
-        pincode: shippingAddress.pincode,
-      },
-
-      // Map razorpay details
-      paymentInfo: {
-        razorpay_order_id: razorpay_order_id,
-        razorpay_payment_id: razorpay_payment_id,
-        razorpay_signature: razorpay_signature,
-      },
-    });
-
-    // 4. SAVE TO MONGODB
-    await newOrder.save();
-
-    // 5. DECREASE STOCK FROM PRODUCTS
-    for (const item of items) {
-      await Product.updateOne(
-        { _id: item.productId, "variants._id": item.variantId },
-        { $inc: { "variants.$.stock": -item.quantity } },
-      );
-    }
-
-    // 6. CLEAR CART (Only if it came from Cart flow)
-    if (!isBuyNow) {
-      await Cart.findOneAndUpdate({ user: userId }, { $set: { items: [] } });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Payment verified and Order placed successfully!",
-      orderId: newOrder._id,
-    });
-  } catch (error) {
-    console.error("Verify Payment Error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
-  }
 };

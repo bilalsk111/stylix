@@ -11,6 +11,9 @@ import SellerProductDetails from "../features/products/pages/SellerProductDeatai
 import Cart from "../features/cart/pages/Cart";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Chackout from "../features/products/pages/Checkout";
+import Success from "../features/cart/pages/Success";
+import SellerOrder from "../features/order/pages/SellerOrder";
+import Profile from "../features/products/pages/Profile";
 export const routes = createBrowserRouter([
   {
     // Public Layout Routes
@@ -18,19 +21,29 @@ export const routes = createBrowserRouter([
     children: [
       { path: "/", element: <AllProducts /> },
       { path: "/product/:id", element: <ProductDetail /> },
+      {
+        path: '/profile',
+        element: <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      },
     ],
   },
   {
-    path:"/bag",
-    element:<ProtectedRoute>
+    path: "/bag",
+    element: <ProtectedRoute>
       <Cart />
     </ProtectedRoute>
   },
   {
-    path:"/checkout",
-    element:<ProtectedRoute>
-     <Chackout />
+    path: "/checkout",
+    element: <ProtectedRoute>
+      <Chackout />
     </ProtectedRoute>
+  },
+  {
+    path: '/success',
+    element: <Success />
   },
   {
     element: <ProtectedSellerRoute />,
@@ -38,14 +51,15 @@ export const routes = createBrowserRouter([
       { path: "/seller/dashboard", element: <SellerDashboard /> },
       { path: "/seller/create-product", element: <CreateProduct /> },
       { path: "/seller/productdetail/:id", element: <SellerProductDetails /> },
+      { path: "/seller/orders", element: <SellerOrder /> },
     ],
   },
-  { 
-    path: "/login", 
-    element: <Login /> 
+  {
+    path: "/login",
+    element: <Login />
   },
-  { 
-    path: "/register", 
-    element: <Register /> 
+  {
+    path: "/register",
+    element: <Register />
   },
 ]);

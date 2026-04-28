@@ -4,6 +4,7 @@ import userModel from "../models/user.model.js";
 import { sendTokens } from "../utils/sendtoken.js";
 
 export const register = async (req, res, next) => {
+  console.log(req.body)
   try {
     const { email, contact, password, fullname, isSeller } = req.body;
 

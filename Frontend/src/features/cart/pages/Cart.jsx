@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useCart } from "../hook/useCart";
 import { useRazorpay, RazorpayOrderOptions } from "react-razorpay";
+import toast from "react-hot-toast";
 
 const Cart = () => {
     const navigate = useNavigate();
@@ -89,37 +90,16 @@ const Cart = () => {
             console.error("Failed to remove item", e);
         }
     };
-    async function handleCheckout() {
-        const order = await handleCreateOrder();
-        console.log(order);
-        
-        // 🔥 FIX 1: Removed TypeScript annotation ': RazorpayOrderOptions'
-        const options = {
-            key: "rzp_test_ShyXwSBMDuYY3u",
-            amount: order.amount, 
-            currency: order.currency,
-            name: "STYLIX",
-            description: "Test Transaction",
-            order_id: order.id, 
-            handler: (response) => {
-                console.log(response);
-                alert("Payment Successful!");
-            },
-            prefill: {
-                // 🔥 FIX 2: Corrected Redux state extraction for user details
-                name: user?.user?.fullname || "",
-                email: user?.user?.email || "",
-                contact: user?.user?.contact || "", // Assuming your DB saves phone, not contact
-            },
-            theme: {
-                color: "#ccff00", // Apna Stylix ka theme color laga diya
-            },
-        };
-
-        // Ensure Razorpay instance is created properly from the hook
-        const razorpayInstance = new Razorpay(options);
-        razorpayInstance.open();
+   const handleCheckout = () => {
+    // Agar cart khali hai toh rok do
+    if (!cartItems || cartItems.length === 0) {
+        toast.error("Your cart is empty!");
+        return;
     }
+    
+    // User ko Checkout page par bhej do jahan form aur payment logic likha hai
+    navigate("/checkout");
+};
 
     if (loading) {
         return (
@@ -429,10 +409,7 @@ const Cart = () => {
                                 </div>
 
                                 <button
-                                    onClick={() => {
-                                        // navigate("/checkout");
-                                        handleCheckout()
-                                    }}
+                                   onClick={handleCheckout}
                                     className="w-full bg-stone-900 text-white py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-3 group"
                                 >
                                     Proceed to Checkout

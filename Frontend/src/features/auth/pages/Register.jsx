@@ -1,32 +1,23 @@
 import { useState } from "react";
 import { Eye, EyeOff, ArrowRight, ArrowLeft, Shield, Lock, Zap, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-// 💡 FIX 1: ACTUAL HOOK IMPORT KARNA HAI, MOCK WALA HATA DIYA
 import { useAuth } from "../hook/useAuth";
-
-// Google SVG Icon for the button
-const GoogleIcon = () => (
-  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
-    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-  </svg>
-);
 
 export default function Register() {
   const { handleRegister, currentUser } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
+  
+  // 🔥 FIX 1: Exact backend match - 'fullname' and 'contact'
   const [form, setForm] = useState({
-    fullName: "",
-    phone: "",
+    fullname: "", 
+    contact: "", 
     email: "",
     password: "",
     isSeller: false,
   });
+  
   const [errors, setErrors] = useState({});
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,8 +43,8 @@ export default function Register() {
   const validateStep = () => {
     const newErrors = {};
     if (step === 1) {
-      if (!form.fullName.trim()) newErrors.fullName = "Full name is required";
-      if (!form.phone.trim()) newErrors.phone = "Phone number is required";
+      if (!form.fullname.trim()) newErrors.fullname = "Full name is required";
+      if (!form.contact.trim()) newErrors.contact = "Contact number is required";
     } else {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
         newErrors.email = "Invalid email address";
@@ -74,10 +65,8 @@ export default function Register() {
     if (!validateStep()) return;
     setLoading(true);
     try {
-      // 💡 FIX 2: SAME LOGIN WALA ROBUST LOGIC LAGAYA HAI
       const response = await handleRegister(form);
       
-      // Har possible jagah se role check karenge (Fallback system)
       const rawRole = response?.role || response?.user?.role || response?.data?.user?.role || currentUser?.role || (form.isSeller ? "seller" : "buyer");
       const role = rawRole ? rawRole.toLowerCase() : "buyer";
 
@@ -125,7 +114,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex bg-[#f7f6f4] font-sans selection:bg-stone-900 selection:text-white">
 
-      {/* ── LEFT — editorial panel (Exact match to Login) ─────────────────── */}
+      {/* ── LEFT — editorial panel ─────────────────── */}
       <div className="hidden lg:block w-1/2 fixed inset-y-0 left-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-stone-950 via-stone-900 to-stone-800" />
         <img
@@ -168,7 +157,7 @@ export default function Register() {
               <span className="text-[9px] text-white/25 tracking-[0.4em] font-bold uppercase">Terminal v.2.0</span>
             </div>
             <p className="text-[9px] text-white/20 tracking-widest font-bold uppercase">
-              © 2025 Stylix. All rights reserved.
+              © 2026 Stylix. All rights reserved.
             </p>
           </div>
         </div>
@@ -178,7 +167,6 @@ export default function Register() {
       <div className="w-full lg:w-1/2 lg:ml-[50%] min-h-screen flex items-center justify-center p-8 py-16 bg-white relative">
         <div className="w-full max-w-[400px]">
 
-          {/* Mobile brand */}
           <div className="lg:hidden flex items-center gap-2 mb-10">
             <span className="w-1.5 h-1.5 rounded-full bg-[#c8ff00]" />
             <span className="text-stone-900 text-sm font-black tracking-[0.4em] uppercase">stylix.</span>
@@ -220,49 +208,49 @@ export default function Register() {
 
                 {/* Full Name */}
                 <div>
-                  <label className={labelStyle("fullName", errors.fullName)}>
+                  <label className={labelStyle("fullname", errors.fullname)}>
                     Full Name
                   </label>
                   <input
                     type="text"
-                    value={form.fullName}
-                    onChange={(e) => set("fullName", e.target.value)}
-                    onFocus={() => setFocusedField("fullName")}
+                    value={form.fullname}
+                    onChange={(e) => set("fullname", e.target.value)}
+                    onFocus={() => setFocusedField("fullname")}
                     onBlur={() => setFocusedField(null)}
                     placeholder="JOHN DOE"
-                    className={inputStyle("fullName", errors.fullName)}
+                    className={inputStyle("fullname", errors.fullname)}
                   />
-                  {errors.fullName && (
+                  {errors.fullname && (
                     <p className="text-red-500 text-[9px] mt-1.5 tracking-wide flex items-center gap-1">
                       <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
-                      {errors.fullName}
+                      {errors.fullname}
                     </p>
                   )}
                 </div>
 
-                {/* Phone */}
+                {/* Contact (Previously Phone) */}
                 <div>
-                  <label className={labelStyle("phone", errors.phone)}>
-                    Phone Number
+                  <label className={labelStyle("contact", errors.contact)}>
+                    Contact Number
                   </label>
                   <input
                     type="tel"
-                    value={form.phone}
-                    onChange={(e) => set("phone", e.target.value)}
-                    onFocus={() => setFocusedField("phone")}
+                    value={form.contact}
+                    onChange={(e) => set("contact", e.target.value)}
+                    onFocus={() => setFocusedField("contact")}
                     onBlur={() => setFocusedField(null)}
                     placeholder="+1 (555) 000-0000"
-                    className={inputStyle("phone", errors.phone)}
+                    className={inputStyle("contact", errors.contact)}
                   />
-                  {errors.phone && (
+                  {errors.contact && (
                     <p className="text-red-500 text-[9px] mt-1.5 tracking-wide flex items-center gap-1">
                       <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
-                      {errors.phone}
+                      {errors.contact}
                     </p>
                   )}
                 </div>
 
-                {/* Role Toggle moved below Phone Number */}
+                {/* Role Toggle */}
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-[0.25em] mb-3 block text-stone-900">
                     Account Type
@@ -286,7 +274,6 @@ export default function Register() {
                 </div>
 
                 <div className="pt-2 space-y-4">
-                  {/* Changed "Continue" to "Next Phase" */}
                   <button
                     type="submit"
                     className="group w-full bg-stone-900 text-white font-black py-[18px] rounded-2xl text-[11px] uppercase tracking-[0.35em] hover:bg-stone-700 hover:shadow-[0_8px_30px_rgba(0,0,0,0.20)] hover:-translate-y-[1px] transition-all duration-200 flex items-center justify-center gap-3"
@@ -295,7 +282,6 @@ export default function Register() {
                     <ArrowRight size={15} strokeWidth={2.5} className="transition-transform duration-200 group-hover:translate-x-1.5" />
                   </button>
 
-                  {/* Added Google Auth Divider & Button */}
                   <div className="flex items-center gap-3 pt-3 pb-1">
                     <span className="flex-1 h-px bg-stone-200"></span>
                     <span className="text-[8px] font-black tracking-[0.2em] text-stone-400 uppercase">OR</span>

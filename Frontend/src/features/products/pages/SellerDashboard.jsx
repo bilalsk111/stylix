@@ -64,7 +64,7 @@ const SellerDashboard = () => {
 
       <div className="p-6 lg:p-12 max-w-[1600px] mx-auto pt-32"> 
         
-        {/* MERCHANT PROFILE */}
+        {/* MERCHANT PROFILE & ACTIONS */}
         <header className="mb-20 flex flex-col lg:flex-row lg:items-center justify-between gap-10 bg-white p-8 rounded-xl border border-stone-200 shadow-sm">
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 bg-[#c8ff00] rounded-lg flex items-center justify-center shadow-sm shrink-0">
@@ -86,15 +86,26 @@ const SellerDashboard = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => navigate("/seller/create-product")}
-            className="group relative bg-stone-900 text-white px-10 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all overflow-hidden shrink-0 rounded-md shadow-lg"
-          >
-            <div className="relative z-10 flex items-center gap-3">
-              <Plus size={18} strokeWidth={4} /> Register New Piece
-            </div>
-            <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white/20 opacity-40 group-hover:animate-[shine_1s_ease-in-out]" />
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4 shrink-0">
+            <button
+              onClick={() => navigate("/seller/orders")} // 🛑 Check kar lena tumhara route path yahi hai na
+              className="group relative bg-white border-2 border-stone-900 text-stone-900 px-8 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-stone-900 hover:text-white transition-all overflow-hidden rounded-md shadow-sm"
+            >
+              <div className="relative z-10 flex items-center gap-3">
+                <Package size={18} strokeWidth={3} /> Manage Orders
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate("/seller/create-product")}
+              className="group relative bg-stone-900 text-white px-8 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all overflow-hidden rounded-md shadow-lg"
+            >
+              <div className="relative z-10 flex items-center gap-3">
+                <Plus size={18} strokeWidth={4} /> Register New Piece
+              </div>
+              <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white/20 opacity-40 group-hover:animate-[shine_1s_ease-in-out]" />
+            </button>
+          </div>
         </header>
 
         {/* INVENTORY ARCHIVE SECTION */}
