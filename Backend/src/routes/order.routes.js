@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteOrderAdmin, getAllOrdersAdmin, getMyOrders, updateOrderStatusAdmin } from "../controllers/order.controller.js";
+import { cancelMyOrder, createOrder, deleteOrderAdmin, getAllOrdersAdmin, getMyOrders, razorpayWebhook, updateOrderStatusAdmin } from "../controllers/order.controller.js";
 import { isAuthenticated } from "../middleware/auth.middleware.js"; 
 import { requireSeller } from "../middleware/auth.middleware.js";
 const router = express.Router();
@@ -15,5 +15,10 @@ router.delete("/seller/:id", isAuthenticated, requireSeller, deleteOrderAdmin);
 
 // Get logged-in user's orders (For Buyer Profile)
 router.get("/my-orders", isAuthenticated, getMyOrders);
+router.put('/my-orders/:orderId/cancel',isAuthenticated,cancelMyOrder)
+
+router.post('/create-order',isAuthenticated,createOrder)
+
+router.post("/webhook", razorpayWebhook);
 
 export default router;

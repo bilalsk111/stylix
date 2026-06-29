@@ -1,39 +1,31 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  ShoppingBag,
-  User,
-  LogOut,
-  LayoutDashboard, // 🔥 Naya icon Dashboard ke liye
-} from "lucide-react";
+import { ShoppingBag, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hook/useAuth";
 import { useSelector } from "react-redux";
-import { useCart } from "../features/cart/hook/useCart"; // 🔥 Ensure ye path sahi ho aapke project ke hisaab se
+import { useCart } from "../features/cart/hook/useCart";
 
+// 🔥 UX UPGRADE: Removed redundant "Shop", kept strict categories
 const NAV_LINKS = [
-  { label: "Men", to: "/men" },
-  { label: "Women", to: "/women" },
-  { label: "Kid", to: "/kid" },
-  { label: "Archive", to: "/archive" },
-  { label: "Drops", to: "/drops" },
+  { label: "Men", to: "/shop?category=Men" },
+  { label: "Women", to: "/shop?category=Women" },
+  { label: "Kid", to: "/shop?category=Kid" }
 ];
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, handleLogout } = useAuth();
-  const { handleGetCart } = useCart(); // 🔥 Cart fetch karne ka function nikal liya
+  const { handleGetCart } = useCart(); 
 
   const [scrolled, setScrolled] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const avatarRef = useRef(null);
-
   const cartItems = useSelector((state) => state.cart?.items);
   const cartCount = Array.isArray(cartItems) ? cartItems.length : 0;
 
-  // 🔥 THE CART FIX: Jaise hi user login ho ya page reload ho, Cart fetch kar lo!
   useEffect(() => {
     if (currentUser) {
       handleGetCart();
@@ -69,10 +61,15 @@ const Navbar = () => {
 
   useEffect(() => {
     setMobileOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.search]); // 🔥 FIX: Close mobile menu on query param change too
 
   const getInitials = (name) => (name ? name.charAt(0).toUpperCase() : "U");
-  const isActive = (to) => location.pathname === to;
+
+  // 🔥 THE LOGIC FIX: Pathname + Search combined checks exact match
+  const isActive = (to) => {
+    const currentUrl = location.pathname + location.search;
+    return currentUrl === to;
+  };
 
   const handleCartClick = () => {
     if (!currentUser) {
@@ -85,28 +82,29 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled ? "py-3 bg-white/95 backdrop-blur-xl border-b border-stone-200 shadow-sm" : "py-6 bg-white"
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "py-3 bg-white/95 backdrop-blur-xl border-b border-stone-200 shadow-sm" : "py-6 bg-white"}`}
       >
         <div className="max-w-[1800px] mx-auto px-6 lg:px-12 flex items-center justify-between gap-8 relative">
 
-          {/* Logo */}
+          {/* 🔥 THE ESCAPE HATCH: Logo clicks now take you to All Assets (/shop) */}
           <Link
-            to="/"
+            to="/shop"
             className="text-[22px] font-black italic tracking-tighter uppercase text-stone-900 flex-shrink-0 z-50"
+            title="View All Assets"
           >
             Stylix.
           </Link>
 
-          {/* Desktop Links (Centered beautifully now that Search is gone) */}
+          {/* Desktop Links */}
           <div className="hidden lg:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
             {NAV_LINKS.map(({ label, to }) => (
               <Link
                 key={to}
                 to={to}
                 className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors ${
-                  isActive(to) ? "text-stone-900 border-b-2 border-stone-900 pb-1" : "text-stone-400 hover:text-stone-900"
+                  isActive(to) 
+                    ? "text-stone-900 border-b-2 border-stone-900 pb-1" 
+                    : "text-stone-400 hover:text-stone-900"
                 }`}
               >
                 {label}
@@ -152,8 +150,7 @@ const Navbar = () => {
                         {currentUser.fullname}
                       </p>
                     </div>
-                    
-                    {/* 🔥 SELLER DASHBOARD LOGIC ADDED */}
+
                     {(currentUser.role === "seller" || currentUser.role === "admin") && (
                       <Link
                         to="/seller/dashboard"
@@ -169,7 +166,7 @@ const Navbar = () => {
                     >
                       <User size={12} /> Profile
                     </Link>
-                    
+
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-4 py-3 text-[9px] font-bold text-red-500 hover:bg-red-50 transition-all uppercase tracking-widest border-t border-stone-100"
@@ -201,33 +198,31 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ========================================= */}
-      {/* MOBILE MENU DRAWER                        */}
-      {/* ========================================= */}
+      {/* MOBILE MENU DRAWER */}
       <div
-        className={`fixed inset-0 bg-[#f7f6f4] z-40 lg:hidden flex flex-col transition-all duration-500 ease-in-out ${
-          mobileOpen ? "translate-y-0 opacity-100 visible" : "-translate-y-full opacity-0 invisible"
-        }`}
+        className={`fixed inset-0 bg-[#f7f6f4] z-40 lg:hidden flex flex-col transition-all duration-500 ease-in-out ${mobileOpen ? "translate-y-0 opacity-100 visible" : "-translate-y-full opacity-0 invisible"}`}
         style={{ paddingTop: "100px" }}
       >
         <div className="flex flex-col px-8 py-4 h-full overflow-y-auto pb-20">
-
-          {/* Mobile Links */}
           <div className="flex flex-col gap-8 mt-4">
+            {/* Mobile "Shop All" Fallback */}
+            <Link
+                to="/shop"
+                className={`text-2xl font-black uppercase tracking-[0.2em] transition-colors ${isActive("/shop") ? "text-stone-900" : "text-stone-400 hover:text-stone-900"}`}
+            >
+                Shop All
+            </Link>
             {NAV_LINKS.map(({ label, to }) => (
               <Link
                 key={to}
                 to={to}
-                className={`text-2xl font-black uppercase tracking-[0.2em] transition-colors ${
-                  isActive(to) ? "text-stone-900" : "text-stone-400 hover:text-stone-900"
-                }`}
+                className={`text-2xl font-black uppercase tracking-[0.2em] transition-colors ${isActive(to) ? "text-stone-900" : "text-stone-400 hover:text-stone-900"}`}
               >
                 {label}
               </Link>
             ))}
           </div>
 
-          {/* Mobile Authentication / Profile */}
           <div className="mt-auto pt-10">
             {currentUser ? (
               <div className="flex flex-col gap-4">

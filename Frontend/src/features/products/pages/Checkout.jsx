@@ -5,6 +5,7 @@ import { ChevronRight, ChevronLeft, CreditCard, Lock, ShieldCheck } from "lucide
 import toast, { Toaster } from "react-hot-toast";
 import { createOrder, verifyPayment } from "../../cart/services/cart.api";
 
+
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     const script = document.createElement("script");
@@ -90,6 +91,7 @@ const Checkout = () => {
     }
     if (!validateForm()) return;
 
+    // 🔥 BUTTON LOCKED 🔥
     setIsProcessing(true);
 
     try {
@@ -127,7 +129,7 @@ const Checkout = () => {
       const orderResponse = await createOrder(orderPayload);
 
       if (!orderResponse.success) {
-         toast.error("Failed to create order.", { id: "payment-toast" });
+         toast.error(orderResponse.message || "Failed to create order.", { id: "payment-toast" });
          setIsProcessing(false);
          return;
       }
@@ -136,7 +138,8 @@ const Checkout = () => {
       toast.dismiss("payment-toast");
 
       const options = {
-        key: "rzp_test_ShyXwSBMDuYY3u", 
+        // 🔥 FIX 1: API KEY HIDDEN IN ENVIRONMENT VARIABLE 🔥
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, 
         amount: rzpOrder.amount, 
         currency: rzpOrder.currency,
         name: "STYLIX",
@@ -159,23 +162,26 @@ const Checkout = () => {
 
             if (verifyRes.success) {
               toast.dismiss("verify-toast");
-              // 🔥 FIX: Navigating to success page with full order details
+              setIsProcessing(false); // Unlock state before navigating
+              
               navigate("/success", {
                 state: {
                   orderId: dbOrderId,
                   items: checkoutItems,
                   totalAmount,
-                  currency,
+                  currency, // Make sure currency is defined in your component scope
                   shippingAddress: formData,
                   transactionId: response.razorpay_payment_id
                 }
               });
             } else {
               toast.error(verifyRes.message || "Verification failed!", { id: "verify-toast" });
+              setIsProcessing(false);
             }
           } catch (err) {
              console.error(err);
              toast.error("Server error during verification.", { id: "verify-toast" });
+             setIsProcessing(false);
           }
         },
         prefill: {
@@ -186,6 +192,13 @@ const Checkout = () => {
         theme: {
           color: "#ccff00",
         },
+        // 🔥 FIX 2: MODAL DISMISS HANDLER (Jab user popup kat de) 🔥
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false); // Button wapas zinda
+            toast.error("Payment cancelled by user.");
+          }
+        }
       };
 
       const razorpayInstance = new window.Razorpay(options);
@@ -193,10 +206,13 @@ const Checkout = () => {
       razorpayInstance.on('payment.failed', function (response){
          console.error("Payment Failed", response.error);
          toast.error("Payment Failed: " + response.error.description);
+         // 🔥 Unlock button on failure
+         setIsProcessing(false); 
       });
 
       razorpayInstance.open();
-      setIsProcessing(false);
+      
+      // 🔥 FIX 3: Yahan se setIsProcessing(false) udha diya, kyunki ab control handler/modal/failed block ke paas hai.
 
     } catch (error) {
       console.error(error);

@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema(
         return !this.googleId; // required only for normal users
       },
       unique: true,
-      sparse: true, // important when field is optional + unique
+      sparse: true, 
     },
 
     password: {
@@ -48,6 +48,12 @@ const userSchema = new mongoose.Schema(
       enum: ["buyer", "seller"],
       default: "buyer",
     },
+    wishlist: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "product",
+      }
+    ],
 
     refreshToken: {
       type: String,
@@ -57,14 +63,16 @@ const userSchema = new mongoose.Schema(
 );
 
 // 🔐 Hash password
-userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
 
   this.password = await bcrypt.hash(this.password, 10);
+  next(); // 🔥 Clean practice: next() call karna zaroori hota hai middleware mein
 });
 
 userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
+
 const userModel = mongoose.model("user", userSchema);
 export default userModel;

@@ -12,7 +12,7 @@ import {
   RefreshCcw,
   ShieldCheck,
   Minus, // 🔥 ADDED MINUS
-  Plus   // 🔥 ADDED PLUS
+  Plus,Heart   // 🔥 ADDED PLUS
 } from "lucide-react";
 import { useProduct } from "../hook/useProduct";
 import ProductGrid from "../components/ProductGrid";
@@ -20,11 +20,13 @@ import { useCart } from "../../cart/hook/useCart";
 import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import { useAuth } from "../../auth/hook/useAuth";
+import { useWishlist } from "../../wishlist/hook/useWishList";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { handleGetProductById, handleGetAllProduct } = useProduct();
+  const { handleToggleWishlist, isWishlisted } = useWishlist();
   const { handleAddItem } = useCart();
   const EMPTY_CART = [];
   const { currentUser } = useAuth()
@@ -262,16 +264,6 @@ const ProductDetail = () => {
         }
       `}</style>
 
-      <Toaster
-        position="top-right"
-        reverseOrder={false}
-        toastOptions={{ duration: 5000 }}
-        containerStyle={{
-          top: '90px',
-          right: '24px'
-        }}
-      />
-
       {/* BREADCRUMB */}
       <nav className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-6 flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 overflow-x-auto no-scrollbar whitespace-nowrap">
         <span className="hover:text-stone-900 cursor-pointer transition-colors bg-stone-200/50 px-3 py-1.5 rounded-full" onClick={() => navigate("/")}>
@@ -339,30 +331,46 @@ const ProductDetail = () => {
         <div className="lg:col-span-5 flex flex-col justify-start">
 
           {/* Title & Price */}
-          <div className="mb-8">
-            <div className="inline-block bg-stone-900 text-white text-[9px] font-black uppercase tracking-[0.3em] px-3 py-1.5 rounded-full mb-4">
-              New Drop
-            </div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tighter leading-[1] text-stone-900 mb-6 drop-shadow-sm">
-              {displayTitle}
-            </h1>
+{/* Title & Price Section */}
+<div className="mb-8">
+  <div className="inline-block bg-stone-900 text-white text-[9px] font-black uppercase tracking-[0.3em] px-3 py-1.5 rounded-full mb-4">
+    New Drop
+  </div>
 
-            <div className="flex items-center gap-4 mb-6 bg-white w-fit px-6 py-3 rounded-2xl shadow-sm border border-stone-100">
-              <span className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
-                {displayPrice?.currency} {displayPrice?.amount}
-              </span>
-              <span className="text-stone-400 line-through text-sm font-bold pt-1">
-                {displayPrice?.currency} {Math.round(displayPrice?.amount * 1.5)}
-              </span>
-              <span className="bg-[#ccff00]/20 text-[#8cb300] text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ml-2">
-                -33% OFF
-              </span>
-            </div>
+  <div className="flex justify-between items-start gap-4 mb-6">
+    <h1 className="text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tighter leading-[1] text-stone-900 drop-shadow-sm">
+      {displayTitle}
+    </h1>
+    
+    {/* 🔥 WISHLIST BUTTON (Title ke saath side-aligned) */}
+    <button
+      onClick={(e) => handleToggleWishlist(e, product._id)}
+      className="p-3.5 bg-white border border-stone-200 rounded-full shadow-sm hover:border-red-500 group transition-all shrink-0"
+    >
+      <Heart
+        size={20}
+        className={isWishlisted(product._id) ? "text-red-500 fill-red-500" : "text-stone-400 group-hover:text-red-500"}
+        strokeWidth={2}
+      />
+    </button>
+  </div>
 
-            <p className="text-stone-500 font-medium text-sm leading-relaxed bg-stone-100/50 p-4 rounded-2xl border border-stone-100">
-              {product.description || "A curated essential crafted with premium materials. Precision cut for a relaxed, structural fit. Designed to elevate your daily rotation."}
-            </p>
-          </div>
+  <div className="flex items-center gap-4 mb-6 bg-white w-fit px-6 py-3 rounded-2xl shadow-sm border border-stone-100">
+    <span className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
+      {displayPrice?.currency} {displayPrice?.amount}
+    </span>
+    <span className="text-stone-400 line-through text-sm font-bold pt-1">
+      {displayPrice?.currency} {Math.round(displayPrice?.amount * 1.5)}
+    </span>
+    <span className="bg-[#ccff00]/20 text-[#8cb300] text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ml-2">
+      -33% OFF
+    </span>
+  </div>
+  
+  <p className="text-stone-500 font-medium text-sm leading-relaxed bg-stone-100/50 p-4 rounded-2xl border border-stone-100">
+    {product.description || "A curated essential crafted with premium materials. Precision cut for a relaxed, structural fit."}
+  </p>
+</div>
 
           {/* Attributes Selection */}
           <div className="space-y-6 mb-8">

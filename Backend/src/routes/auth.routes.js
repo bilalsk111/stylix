@@ -5,6 +5,7 @@ import passport from "passport";
 import { config } from "../config/config.js";
 import {isAuthenticated} from "../middleware/auth.middleware.js"
 import { refreshToken } from "../controllers/refresh.controller.js";
+import { logout } from "../controllers/logout.controller.js";
 
 const router = Router();
 
@@ -20,5 +21,5 @@ router.get("/google/callback",
     googleCallback,
 )
 router.get('/me',isAuthenticated,getMe)
-
+router.post('/logout',isAuthenticated,logout)
 export default router;

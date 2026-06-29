@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   adminOrders: [],
+  buyerOrders: [],
   isLoading: false,
   error: null,
 };
@@ -37,7 +38,14 @@ const orderSlice = createSlice({
     },
     setBuyerOrders: (state, action) => {
       state.buyerOrders = action.payload;
-      state.error = null;
+    },
+    cancelBuyerOrderLocally: (state, action) => {
+      const orderIndex = state.buyerOrders.findIndex(
+        (o) => o._id === action.payload,
+      );
+      if (orderIndex !== -1) {
+        state.buyerOrders[orderIndex].orderStatus = "Cancelled";
+      }
     },
   },
 });
@@ -48,6 +56,7 @@ export const {
   setError,
   updateOrderStatusLocally,
   removeOrderLocally,
-  setBuyerOrders
+  setBuyerOrders,
+  cancelBuyerOrderLocally
 } = orderSlice.actions;
 export default orderSlice.reducer;

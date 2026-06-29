@@ -7,7 +7,8 @@ import {
   getAllProducts,
   getProductDetail,
   getSellerProducts,
-  editProductVariant, // ✅ FIXED
+  editProductVariant,
+  getFilteredProductsPro, 
 } from "../controllers/product.controller.js";
 
 import {
@@ -19,7 +20,6 @@ import { ProductValidate } from "../validator/product.validator.js";
 
 const router = Router();
 
-// ✅ Better multer config
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -44,14 +44,14 @@ router.post(
   requireSeller,
   upload.array("images", 7),
   ProductValidate,
-  createProduct
+  createProduct,
 );
 
 router.get(
   "/seller-products",
   authenticateSeller,
-  requireSeller, // ✅ FIXED
-  getSellerProducts
+  requireSeller, 
+  getSellerProducts,
 );
 
 router.get("/", getAllProducts);
@@ -66,7 +66,7 @@ router.post(
   authenticateSeller,
   requireSeller,
   upload.array("images", 7),
-  addProductVariant
+  addProductVariant,
 );
 
 router.put(
@@ -74,7 +74,8 @@ router.put(
   authenticateSeller,
   requireSeller,
   upload.array("images", 7),
-  editProductVariant
+  editProductVariant,
 );
+router.get("/shop",getFilteredProductsPro);
 
 export default router;

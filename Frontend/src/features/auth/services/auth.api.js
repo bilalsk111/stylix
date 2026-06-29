@@ -44,7 +44,10 @@ export const getMe = async () => {
     const res = await authApiInstance.get('/me'); 
     return res.data;
 };
-
+export const logoutApi = async () => {
+    const res = await authApiInstance.post('/logout'); 
+    return res.data;
+}
 // export async function register({ email, contact, password, fullname, isSeller }) {
 
 //     const response = await authApiInstance.post("/register", {

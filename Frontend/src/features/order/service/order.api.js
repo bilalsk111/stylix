@@ -2,7 +2,7 @@ import axios from "axios";
 
 const orderApiInstance = axios.create({
     baseURL: "/api/orders",
-    withCredentials: true;
+    withCredentials: true
 });
 
 export const fetchAllAdminOrders = async () => {
@@ -22,5 +22,10 @@ export const deleteOrderApi = async (orderId) => {
 
 export const getMyOrdersApi = async () => {
     const res = await orderApiInstance.get('/my-orders');
+    return res.data;
+};
+
+export const cancelMyOrderApi = async (orderId) => {
+    const res = await orderApiInstance.put(`/my-orders/${orderId}/cancel`);
     return res.data;
 };

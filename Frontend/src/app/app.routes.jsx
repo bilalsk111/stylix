@@ -20,6 +20,7 @@ export const routes = createBrowserRouter([
     element: <Layout />,
     children: [
       { path: "/", element: <AllProducts /> },
+      { path: "/shop", element: <AllProducts /> },
       { path: "/product/:id", element: <ProductDetail /> },
       {
         path: '/profile',

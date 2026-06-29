@@ -1,9 +1,11 @@
 import { useDispatch, useSelector } from "react-redux";
 import { setUser, setLoading, setError } from "../state/auth.slice";
-import { login, register } from "../services/auth.api";
+import { login, logoutApi, register } from "../services/auth.api";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 export const useAuth = () => {
+  let navigate = useNavigate();
   const dispatch = useDispatch();
 
   const { user, loading, error, isAuthChecked } = useSelector((state) => state.auth);
@@ -42,13 +44,28 @@ export const useAuth = () => {
       dispatch(setLoading(false));
     }
   };
-
+// Example of logout function
+ const handleLogout = async () => {
+    try {
+        // Agar backend api hai logout ki (cookies clear karne ke liye)
+        await logoutApi(); 
+        
+        // Redux/Context state clear karo
+        dispatch(logoutApi()); 
+        
+        toast.success("Logged out successfully");
+        navigate("/login");
+    } catch (error) {
+        toast.error(`Logout failed: ${error.message}`);
+    }
+};
 return { 
   currentUser: user, 
   isLoading: loading,
   isAuthChecked,
   authError: error,
   handleRegister, 
-  handleLogin 
+  handleLogin,
+  handleLogout,
 };
 };

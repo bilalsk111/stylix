@@ -8,7 +8,7 @@ import {
     ArrowRight,
     ShieldCheck,
     Lock,
-    ArrowLeft,
+    ChevronLeft,
     ShoppingBag,
     Ticket,
     RefreshCcw,
@@ -20,9 +20,9 @@ import toast from "react-hot-toast";
 
 const Cart = () => {
     const navigate = useNavigate();
-     const user = useSelector((state) => state.auth);
+    const user = useSelector((state) => state.auth);
     const { error, isLoading, Razorpay } = useRazorpay();
-    const { handleGetCart, handleUpdateItemQty, handleRemoveItem, handleCreateOrder } = useCart();
+    const { handleGetCart, handleUpdateItemQty, handleRemoveItem } = useCart();
     const EMPTY_CART = []; // 🔥 Naya constant banaya
     const cartItems = useSelector((state) => state.cart?.items || EMPTY_CART);
     const [loading, setLoading] = useState(true);
@@ -90,16 +90,16 @@ const Cart = () => {
             console.error("Failed to remove item", e);
         }
     };
-   const handleCheckout = () => {
-    // Agar cart khali hai toh rok do
-    if (!cartItems || cartItems.length === 0) {
-        toast.error("Your cart is empty!");
-        return;
-    }
-    
-    // User ko Checkout page par bhej do jahan form aur payment logic likha hai
-    navigate("/checkout");
-};
+    const handleCheckout = () => {
+        // Agar cart khali hai toh rok do
+        if (!cartItems || cartItems.length === 0) {
+            toast.error("Your cart is empty!");
+            return;
+        }
+
+        // User ko Checkout page par bhej do jahan form aur payment logic likha hai
+        navigate("/checkout");
+    };
 
     if (loading) {
         return (
@@ -116,21 +116,21 @@ const Cart = () => {
             <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
 
                 {/* HEADER */}
-                <div className="flex items-center justify-between mb-10 border-b border-stone-200 pb-6">
+                <div className="mb-10 border-b border-stone-200 pb-6 flex flex-col items-start gap-6">
+                    <Link
+                        to="/"
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-900 transition-colors"
+                    >
+                        <ChevronLeft size={14} strokeWidth={2.5}/> Continue Shopping
+                    </Link>
                     <div>
-                        <h1 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter italic">
+                        <h1 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter italic text-stone-900">
                             Your Bag
                         </h1>
                         <p className="text-stone-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">
                             {cartItems.length} {cartItems.length === 1 ? "Asset" : "Assets"} Secured
                         </p>
                     </div>
-                    <Link
-                        to="/"
-                        className="hidden md:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-900 transition-colors"
-                    >
-                        <ArrowLeft size={14} /> Continue Shopping
-                    </Link>
                 </div>
 
                 {cartItems.length === 0 ? (
@@ -184,8 +184,6 @@ const Cart = () => {
                                 const product = item.product || {};
                                 const safeProductId = typeof product === "object" ? product._id : product;
                                 const safeVariantId = typeof item.variant === "object" ? item.variant?._id : item.variant;
-
-                                // 🔥 FIX 2 AGAIN: Bulletproof map logic
                                 const variantsList = Array.isArray(product?.variants)
                                     ? product.variants
                                     : (product?.variants ? [product.variants] : []);
@@ -409,7 +407,7 @@ const Cart = () => {
                                 </div>
 
                                 <button
-                                   onClick={handleCheckout}
+                                    onClick={handleCheckout}
                                     className="w-full bg-stone-900 text-white py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-3 group"
                                 >
                                     Proceed to Checkout

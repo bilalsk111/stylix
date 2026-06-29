@@ -85,19 +85,6 @@ export async function createProduct(req, res) {
   }
 }
 
-// export async function EditProduct(req, res) {
-//   const { id } = req.params
-
-//   const product = productModel.findById(id)
-//   if (!product) {
-//     return res.status(401).json({
-//       message: "Product not found",
-//       success: false,
-//       product
-//     })
-//   }
-//   const editproduct = productModel.findByIdAndUpdate()
-// }
 export async function getSellerProducts(req, res) {
   try {
     const products = await productModel
@@ -212,8 +199,8 @@ export const addProductVariant = async (req, res) => {
     }
 
     product.variants.push({
-      title: variantTitle, 
-      images: images.length > 0 ? images : product.images, 
+      title: variantTitle,
+      images: images.length > 0 ? images : product.images,
       stock,
       attributes,
       price: {
@@ -245,12 +232,16 @@ export const editProductVariant = async (req, res) => {
     });
 
     if (!product) {
-      return res.status(404).json({ message: "Product not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Product not found", success: false });
     }
 
     const variant = product.variants.id(variantId);
     if (!variant) {
-      return res.status(404).json({ message: "Variant not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Variant not found", success: false });
     }
 
     // 📦 Images update logic (same as before)
@@ -258,9 +249,12 @@ export const editProductVariant = async (req, res) => {
     if (files.length > 0) {
       const uploaded = await Promise.all(
         files.map(async (file) => {
-          const url = await uploadFile({ buffer: file.buffer, fileName: file.originalname });
+          const url = await uploadFile({
+            buffer: file.buffer,
+            fileName: file.originalname,
+          });
           return { url };
-        })
+        }),
       );
       variant.images = uploaded;
     }
@@ -278,7 +272,9 @@ export const editProductVariant = async (req, res) => {
     variant.title = req.body.title || variant.title;
     variant.stock = req.body.stock ? Number(req.body.stock) : variant.stock;
 
-    const newPriceAmount = req.body.priceAmount ? Number(req.body.priceAmount) : variant.price.amount;
+    const newPriceAmount = req.body.priceAmount
+      ? Number(req.body.priceAmount)
+      : variant.price.amount;
     const newCurrency = req.body.priceCurrency || variant.price.currency;
 
     variant.price = {
@@ -288,12 +284,12 @@ export const editProductVariant = async (req, res) => {
 
     // 🔥 SYNC LOGIC: Agar ye "Default" variant hai, toh Main Product ka price bhi update karo
     if (variant.title.toLowerCase() === "default") {
-        product.price = {
-            amount: newPriceAmount,
-            currency: newCurrency
-        };
-        // Option: Agar main title bhi update karna chahte ho toh:
-        // product.title = variant.title === "Default" ? product.title : variant.title;
+      product.price = {
+        amount: newPriceAmount,
+        currency: newCurrency,
+      };
+      // Option: Agar main title bhi update karna chahte ho toh:
+      // product.title = variant.title === "Default" ? product.title : variant.title;
     }
 
     // 💾 Save Product (Parent document save hote hi variant bhi save ho jayega)
@@ -307,5 +303,182 @@ export const editProductVariant = async (req, res) => {
   } catch (err) {
     console.error("editProductVariant error:", err);
     return res.status(500).json({ message: "Server error", success: false });
+  }
+};
+
+// export const getFilteredProducts = async (req, res) => {
+//     try {
+//         // 1. URL se saare query parameters extract karo
+//         // Example URL: /api/products?category=men&size=L,M&sort=price_asc&minPrice=1000
+//         const { category, size, color, minPrice, maxPrice, sort, search } = req.query;
+
+//         let query = {};
+
+//         // 2. Search Logic (Regex for partial matching)
+//         if (search) {
+//             query.title = { $regex: search, $options: "i" }; // 'i' means case-insensitive
+//         }
+
+//         // 3. Category Filter (Supports multiple categories like category=men,women)
+//         if (category) {
+//             query.category = { $in: category.split(',') };
+//         }
+
+//         // 4. Variant Filters (Size & Color)
+//         // Assume kar raha hu size/color tere variants array ke andar hain
+//         if (size) {
+//             query["variants.size"] = { $in: size.split(',') };
+//         }
+//         if (color) {
+//             query["variants.color"] = { $in: color.split(',') };
+//         }
+
+//         // 5. Price Filter (Min and Max)
+//         if (minPrice || maxPrice) {
+//             // Check kar tera schema mein price kahan hai.
+//             // Agar nested hai toh "price.amount" likh, agar direct hai toh sirf "price" likh.
+//             query["price.amount"] = {};
+//             if (minPrice) query["price.amount"].$gte = Number(minPrice);
+//             if (maxPrice) query["price.amount"].$lte = Number(maxPrice);
+//         }
+
+//         // 6. Sorting Logic
+//         let sortOption = {};
+//         switch (sort) {
+//             case "price_asc":
+//                 sortOption = { "price.amount": 1 }; // Sasta pehle
+//                 break;
+//             case "price_desc":
+//                 sortOption = { "price.amount": -1 }; // Mehenga pehle
+//                 break;
+//             case "newest":
+//                 sortOption = { createdAt: -1 }; // Naya stock pehle
+//                 break;
+//             default:
+//                 sortOption = { createdAt: -1 }; // Default sorting
+//         }
+
+//         // 7. Execute the Query
+//         // Sirf active products dikhao jo hide nahi kiye gaye hain
+//         query.status = "Active";
+
+//         const products = await productModel.find(query).sort(sortOption);
+
+//         return res.status(200).json({
+//             success: true,
+//             count: products.length,
+//             products
+//         });
+
+//     } catch (error) {
+//         console.error("Filter Engine Error:", error);
+//         return res.status(500).json({ success: false, message: "Database query failed" });
+//     }
+// };
+
+export const getFilteredProductsPro = async (req, res) => {
+  try {
+    const {
+      category,
+      size,
+      color,
+      minPrice,
+      maxPrice,
+      sort,
+      search,
+      page = 1,
+      limit = 12,
+    } = req.query;
+
+    // 1. Build the Match Stage
+    let matchStage = {}; // 🔥 FIX 1: Status check hata diya kyunki DB mein status nahi hai.
+
+    if (search) {
+      matchStage.title = { $regex: search, $options: "i" };
+    }
+
+    if (category) {
+      const categories = category
+        .split(",")
+        .map((c) => new RegExp(`^${c.trim()}$`, "i"));
+      matchStage.category = { $in: categories };
+    }
+
+    // 🔥 FIX 2: Correct Path & Case-Insensitive Regex for SIZE
+    if (size) {
+      const sizes = size
+        .split(",")
+        .map((s) => new RegExp(`^${s.trim()}$`, "i"));
+      matchStage["variants.attributes.SIZE"] = { $in: sizes };
+    }
+
+    // 🔥 FIX 3: Correct Path & Case-Insensitive Regex for COLOR
+    if (color) {
+      const colors = color
+        .split(",")
+        .map((c) => new RegExp(`^${c.trim()}$`, "i"));
+      matchStage["variants.attributes.COLOR"] = { $in: colors };
+    }
+
+    if (minPrice || maxPrice) {
+      // Price root par bhi hai aur variants mein bhi. Root wala filter kar rahe hain.
+      matchStage["price.amount"] = {};
+      if (minPrice) matchStage["price.amount"].$gte = Number(minPrice);
+      if (maxPrice) matchStage["price.amount"].$lte = Number(maxPrice);
+    }
+
+    // 2. Build the Sort Stage
+    let sortStage = { createdAt: -1 };
+    if (sort === "price_asc") sortStage = { "price.amount": 1 };
+    if (sort === "price_desc") sortStage = { "price.amount": -1 };
+
+    // 3. Pagination Logic
+    const skip = (Number(page) - 1) * Number(limit);
+    const pageSize = Number(limit);
+
+    // ==========================================
+    // 🔥 THE PRO WAY: MONGODB AGGREGATION PIPELINE 🔥
+    // ==========================================
+    const pipeline = [
+      { $match: matchStage }, // Pehle filter karo
+      { $sort: sortStage }, // Phir sort karo
+      {
+        // $facet 2 alag queries ek sath chalata hai parallel mein
+        $facet: {
+          metadata: [
+            { $count: "totalDocuments" }, // Total count nikalta hai pagination ke liye
+          ],
+          data: [
+            { $skip: skip }, // Page ke hisaab se skip karo
+            { $limit: pageSize }, // Sirf limit jitne items uthao
+          ],
+        },
+      },
+    ];
+
+    const result = await productModel.aggregate(pipeline);
+
+    // Data format theek karna (kyunki $facet array return karta hai)
+    const products = result[0].data;
+    const totalProducts = result[0].metadata[0]
+      ? result[0].metadata[0].totalDocuments
+      : 0;
+    const totalPages = Math.ceil(totalProducts / pageSize);
+
+    return res.status(200).json({
+      success: true,
+      pagination: {
+        totalProducts,
+        totalPages,
+        currentPage: Number(page),
+        limit: pageSize,
+      },
+      products,
+    });
+  } catch (error) {
+    console.error("Pro Filter Engine Error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Database query failed" });
   }
 };
