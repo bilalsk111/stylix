@@ -11,8 +11,9 @@ import {
   Truck,
   RefreshCcw,
   ShieldCheck,
-  Minus, // 🔥 ADDED MINUS
-  Plus,Heart   // 🔥 ADDED PLUS
+  Minus,
+  Plus, 
+  Heart 
 } from "lucide-react";
 import { useProduct } from "../hook/useProduct";
 import ProductGrid from "../components/ProductGrid";
@@ -42,8 +43,7 @@ const ProductDetail = () => {
 
   const [isAdding, setIsAdding] = useState(false);
   const [localCart, setLocalCart] = useState([]);
-  
-  // 🔥 NAYI STATE: Quantity handle karne ke liye
+
   const [buyQty, setBuyQty] = useState(1);
 
   const getProductByIdRef = useRef(handleGetProductById);
@@ -92,7 +92,6 @@ const ProductDetail = () => {
     return () => { isMounted = false; };
   }, []);
 
-  // 🔥 RESET QTY WHEN VARIANT CHANGES
   useEffect(() => {
     setBuyQty(1);
   }, [currentVariant]);
@@ -264,8 +263,8 @@ const ProductDetail = () => {
         }
       `}</style>
 
-      {/* BREADCRUMB */}
-      <nav className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-6 flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 overflow-x-auto no-scrollbar whitespace-nowrap">
+      {/* 🔥 FIX: Changed max-w to 1280px (max-w-7xl) for better container width */}
+      <nav className="max-w-7xl mx-auto px-6 lg:px-12 mb-6 flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 overflow-x-auto no-scrollbar whitespace-nowrap">
         <span className="hover:text-stone-900 cursor-pointer transition-colors bg-stone-200/50 px-3 py-1.5 rounded-full" onClick={() => navigate("/")}>
           Shop
         </span>
@@ -279,10 +278,11 @@ const ProductDetail = () => {
         </span>
       </nav>
 
-      <div className="max-w-[1450px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 px-6 lg:px-12 pb-24 items-start">
+      {/* 🔥 FIX: Adjusted Grid to perfect 50/50 (lg:col-span-6) and max-width to max-w-7xl */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 px-6 lg:px-12 pb-24 items-start">
 
-        {/* IMAGE SECTION (STICKY) */}
-        <div className="lg:col-span-7 lg:sticky lg:top-32 relative flex flex-col-reverse md:flex-row gap-4">
+        {/* IMAGE SECTION (lg:col-span-6 instead of 7) */}
+        <div className="lg:col-span-6 lg:sticky lg:top-32 relative flex flex-col-reverse md:flex-row gap-4">
 
           {/* THUMBNAILS SECTION */}
           <div className="flex md:flex-col gap-3 shrink-0 overflow-x-auto md:overflow-y-auto max-h-[650px] no-scrollbar w-full md:w-20 pt-1 pb-4 md:py-1">
@@ -291,8 +291,8 @@ const ProductDetail = () => {
                 key={i}
                 onClick={() => setActiveImg(i)}
                 className={`w-16 h-20 md:w-full md:aspect-[3/4] md:h-auto shrink-0 cursor-pointer overflow-hidden transition-all duration-300 rounded-xl bg-white shadow-sm border ${activeImg === i
-                    ? "border-stone-900 ring-1 ring-stone-900 opacity-100 scale-100"
-                    : "border-stone-200 opacity-60 hover:opacity-100 hover:scale-95"
+                  ? "border-stone-900 ring-1 ring-stone-900 opacity-100 scale-100"
+                  : "border-stone-200 opacity-60 hover:opacity-100 hover:scale-95"
                   }`}
               >
                 <img
@@ -312,11 +312,11 @@ const ProductDetail = () => {
               alt={displayTitle}
             />
             {isOutOfStock && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] z-10">
-                    <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-md shadow-lg">
-                        Out of Stock
-                    </span>
-                </div>
+              <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] z-10">
+                <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-md shadow-lg">
+                  Out of Stock
+                </span>
+              </div>
             )}
             <div className="absolute flex gap-2 top-6 left-6 bg-white/80 backdrop-blur-md px-4 py-2 border border-stone-200 shadow-sm rounded-full z-20">
               <ShieldCheck size={14} className="text-[#a3cc00]" />
@@ -327,50 +327,53 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* INFO SECTION (SCROLLABLE) */}
-        <div className="lg:col-span-5 flex flex-col justify-start">
+        {/* INFO SECTION (lg:col-span-6 instead of 5) */}
+        <div className="lg:col-span-6 flex flex-col justify-start">
 
-          {/* Title & Price */}
-{/* Title & Price Section */}
-<div className="mb-8">
-  <div className="inline-block bg-stone-900 text-white text-[9px] font-black uppercase tracking-[0.3em] px-3 py-1.5 rounded-full mb-4">
-    New Drop
-  </div>
+          {/* Title & Price Section */}
+          <div className="mb-8">
+            <div className="inline-block bg-stone-900 text-white text-[9px] font-black uppercase tracking-[0.3em] px-3 py-1.5 rounded-full mb-4">
+              New Drop
+            </div>
 
-  <div className="flex justify-between items-start gap-4 mb-6">
-    <h1 className="text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tighter leading-[1] text-stone-900 drop-shadow-sm">
-      {displayTitle}
-    </h1>
-    
-    {/* 🔥 WISHLIST BUTTON (Title ke saath side-aligned) */}
-    <button
-      onClick={(e) => handleToggleWishlist(e, product._id)}
-      className="p-3.5 bg-white border border-stone-200 rounded-full shadow-sm hover:border-red-500 group transition-all shrink-0"
-    >
-      <Heart
-        size={20}
-        className={isWishlisted(product._id) ? "text-red-500 fill-red-500" : "text-stone-400 group-hover:text-red-500"}
-        strokeWidth={2}
-      />
-    </button>
-  </div>
+            <div className="flex justify-between items-start gap-6 mb-6">
+              {/* 🔥 FIX: Reduced font sizes and improved line height for readability */}
+              <h1 className="flex-1 text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-tight leading-[1.15] text-stone-900 drop-shadow-sm break-words">
+                {displayTitle}
+              </h1>
 
-  <div className="flex items-center gap-4 mb-6 bg-white w-fit px-6 py-3 rounded-2xl shadow-sm border border-stone-100">
-    <span className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
-      {displayPrice?.currency} {displayPrice?.amount}
-    </span>
-    <span className="text-stone-400 line-through text-sm font-bold pt-1">
-      {displayPrice?.currency} {Math.round(displayPrice?.amount * 1.5)}
-    </span>
-    <span className="bg-[#ccff00]/20 text-[#8cb300] text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ml-2">
-      -33% OFF
-    </span>
-  </div>
-  
-  <p className="text-stone-500 font-medium text-sm leading-relaxed bg-stone-100/50 p-4 rounded-2xl border border-stone-100">
-    {product.description || "A curated essential crafted with premium materials. Precision cut for a relaxed, structural fit."}
-  </p>
-</div>
+              {/* WISHLIST BUTTON */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault(); 
+                  handleToggleWishlist(e, getStrId(product._id)); 
+                }}
+                className="p-3.5 bg-white border border-stone-200 rounded-full shadow-sm hover:border-red-500 group transition-all shrink-0 z-10 mt-1"
+              >
+                <Heart
+                  size={20}
+                  className={isWishlisted(getStrId(product._id)) ? "text-red-500 fill-red-500" : "text-stone-400 group-hover:text-red-500"}
+                  strokeWidth={2}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4 mb-6 bg-white w-fit px-6 py-3 rounded-2xl shadow-sm border border-stone-100">
+              <span className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
+                {displayPrice?.currency} {displayPrice?.amount}
+              </span>
+              <span className="text-stone-400 line-through text-sm font-bold pt-1">
+                {displayPrice?.currency} {Math.round(displayPrice?.amount * 1.5)}
+              </span>
+              <span className="bg-[#ccff00]/20 text-[#8cb300] text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ml-2">
+                -33% OFF
+              </span>
+            </div>
+
+            <p className="text-stone-500 font-medium text-sm leading-relaxed bg-stone-100/50 p-4 rounded-2xl border border-stone-100">
+              {product.description || "A curated essential crafted with premium materials. Precision cut for a relaxed, structural fit."}
+            </p>
+          </div>
 
           {/* Attributes Selection */}
           <div className="space-y-6 mb-8">
@@ -408,36 +411,36 @@ const ProductDetail = () => {
             ))}
           </div>
 
-          {/* 🔥 QUANTITY SELECTOR (NEW) */}
+          {/* QUANTITY SELECTOR */}
           <div className="mb-10">
-              <h3 className="text-[11px] font-black uppercase tracking-widest text-stone-900 mb-3">Quantity</h3>
-              <div className="flex items-center gap-4 w-fit bg-white border border-stone-200 p-1.5 rounded-xl shadow-sm">
-                  <button
-                      disabled={buyQty <= 1 || isOutOfStock}
-                      onClick={() => setBuyQty(prev => prev - 1)}
-                      className="w-10 h-10 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                      <Minus size={16} strokeWidth={2.5} />
-                  </button>
-                  
-                  <span className="w-8 text-center text-sm font-black text-stone-900">
-                      {isOutOfStock ? 0 : buyQty}
-                  </span>
-                  
-                  <button
-                      disabled={buyQty >= availableStock || isOutOfStock}
-                      onClick={() => setBuyQty(prev => prev + 1)}
-                      className="w-10 h-10 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                      <Plus size={16} strokeWidth={2.5} />
-                  </button>
-              </div>
+            <h3 className="text-[11px] font-black uppercase tracking-widest text-stone-900 mb-3">Quantity</h3>
+            <div className="flex items-center gap-4 w-fit bg-white border border-stone-200 p-1.5 rounded-xl shadow-sm">
+              <button
+                disabled={buyQty <= 1 || isOutOfStock}
+                onClick={() => setBuyQty(prev => prev - 1)}
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Minus size={16} strokeWidth={2.5} />
+              </button>
 
-              {availableStock > 0 && availableStock <= 5 && (
-                  <p className="text-orange-500 text-[10px] font-bold uppercase tracking-widest mt-3 animate-pulse flex items-center gap-1">
-                      <Zap size={12} /> Only {availableStock} left in stock
-                  </p>
-              )}
+              <span className="w-8 text-center text-sm font-black text-stone-900">
+                {isOutOfStock ? 0 : buyQty}
+              </span>
+
+              <button
+                disabled={buyQty >= availableStock || isOutOfStock}
+                onClick={() => setBuyQty(prev => prev + 1)}
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Plus size={16} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            {availableStock > 0 && availableStock <= 5 && (
+              <p className="text-orange-500 text-[10px] font-bold uppercase tracking-widest mt-3 animate-pulse flex items-center gap-1">
+                <Zap size={12} /> Only {availableStock} left in stock
+              </p>
+            )}
           </div>
 
           {/* Add to Cart / Buy Now Actions */}
@@ -465,7 +468,6 @@ const ProductDetail = () => {
                     const safeProductId = getStrId(product._id);
                     const safeVariantId = getStrId(currentVariant?._id);
                     setIsAdding(true);
-                    // Standard implementation adds item with quantity
                     await handleAddItem({ productId: safeProductId, variantId: safeVariantId, quantity: buyQty });
                     setLocalCart(prev => [...prev, safeVariantId]);
                     showSuccessToast();
@@ -487,24 +489,23 @@ const ProductDetail = () => {
               onClick={() => {
                 const requiredKeys = Object.keys(allPossibleOptions);
                 const missingOptions = requiredKeys.filter(key => !selectedAttributes[key]);
-                
+
                 if (!currentUser) { navigate("/login"); return; }
                 if (missingOptions.length > 0) { showErrorToast(missingOptions); return; }
 
-                // 🔥 DYNAMIC QUANTITY PASSED HERE
                 navigate("/checkout", {
                   state: {
                     buyNowItem: {
                       product: product,
                       variant: currentVariant,
-                      quantity: buyQty // <-- Connected to the counter state!
+                      quantity: buyQty 
                     }
                   }
                 });
               }}
               className={`flex-1 text-stone-900 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 
-                ${isOutOfStock 
-                  ? "bg-stone-200 cursor-not-allowed text-stone-400" 
+                ${isOutOfStock
+                  ? "bg-stone-200 cursor-not-allowed text-stone-400"
                   : "bg-[#ccff00] shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] hover:bg-[#bbf000]"}`}
             >
               <Zap size={14} fill="currentColor" /> Buy It Now
@@ -562,7 +563,7 @@ const ProductDetail = () => {
 
       {/* RELATED PRODUCTS */}
       <section className="pt-16 pb-24 bg-white border-t border-stone-200">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <ProductGrid
             products={allProducts.filter((p) => getStrId(p._id) !== getStrId(product._id))}
             title="Curated For You"

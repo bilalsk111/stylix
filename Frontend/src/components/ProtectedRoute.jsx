@@ -2,7 +2,6 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 const ProtectedRoute = ({children}) => {
-    // 🔥 FIX: Correctly extract 'isAuthChecked' instead of 'authChecked'
     const { user, loading, isAuthChecked } = useSelector((state) => state.auth);
     const location = useLocation();
 

@@ -14,6 +14,7 @@ import Chackout from "../features/products/pages/Checkout";
 import Success from "../features/cart/pages/Success";
 import SellerOrder from "../features/order/pages/SellerOrder";
 import Profile from "../features/products/pages/Profile";
+import { WishlistPage } from "../features/wishlist/pages/WishlistPage";
 export const routes = createBrowserRouter([
   {
     // Public Layout Routes
@@ -40,6 +41,12 @@ export const routes = createBrowserRouter([
     path: "/checkout",
     element: <ProtectedRoute>
       <Chackout />
+    </ProtectedRoute>
+  },
+  {
+    path: "/wishlist",
+    element: <ProtectedRoute>
+      <WishlistPage />
     </ProtectedRoute>
   },
   {

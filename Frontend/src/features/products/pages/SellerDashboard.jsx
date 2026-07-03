@@ -2,28 +2,134 @@ import React, { useEffect, useState } from "react";
 import { useProduct } from "../hook/useProduct";
 import { useAuth } from "../../auth/hook/useAuth";
 import { useSelector } from "react-redux";
-import { Plus, Package, ExternalLink, Trash2, Edit3, ArrowLeft, LogOut, Store, ShieldCheck, LayoutGrid, Box, Layers } from "lucide-react";
+import {
+  Plus, Package, ExternalLink, Trash2, Edit3, ArrowLeft,
+  LogOut, Store, ShieldCheck, LayoutGrid, Box, Layers, AlertTriangle, X
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
+import { logoutApi } from "../../auth/services/auth.api";
 
+/* ─── Delete Confirm Modal ─────────────────────────────────────── */
+const DeleteProductModal = ({ product, onConfirm, onCancel }) => (
+  <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-stone-900/40 backdrop-blur-sm">
+    <div className="bg-white border border-stone-200 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+
+      {/* Header */}
+      <div className="p-5 border-b border-stone-100 flex items-center justify-between bg-stone-50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-red-50 border border-red-200 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={14} className="text-red-500" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-stone-900">
+            Delete Product
+          </span>
+        </div>
+        <button onClick={onCancel} className="text-stone-400 hover:text-stone-900 transition-colors">
+          <X size={15} />
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="p-6">
+        <p className="text-[12px] text-stone-600 leading-relaxed">
+          Are you sure you want to permanently delete this product?
+        </p>
+
+        {/* Product preview */}
+        <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-xl p-3 mt-4">
+          <div className="w-10 h-12 bg-stone-200 rounded-md overflow-hidden flex-shrink-0">
+            {product?.images?.[0]?.url && (
+              <img src={product.images[0].url} className="w-full h-full object-cover grayscale" alt="" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase text-stone-900 truncate">
+              {product?.title}
+            </p>
+            <p className="text-[8px] text-stone-400 font-bold uppercase tracking-widest mt-0.5">
+              {product?.price?.currency} {product?.price?.amount} · {product?.variants?.length || 0} variants
+            </p>
+          </div>
+        </div>
+
+        <p className="text-[9px] text-red-400 font-black uppercase tracking-widest mt-4">
+          ⚠ All variants and images will be erased. Cannot be undone.
+        </p>
+      </div>
+
+      {/* Actions */}
+      <div className="px-6 pb-6 flex gap-3">
+        <button onClick={onCancel}
+          className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl
+                     border border-stone-200 text-stone-500 hover:border-stone-400 hover:text-stone-900 transition-all">
+          Cancel
+        </button>
+        <button onClick={onConfirm}
+          className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl
+                     bg-red-500 text-white hover:bg-red-600 transition-all">
+          Yes, Delete
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+/* ─── Main Dashboard ───────────────────────────────────────────── */
 const SellerDashboard = () => {
-  const { handleGetSellerProduct } = useProduct();
+  const { handleGetSellerProduct, handleDeleteProduct } = useProduct();
   const { currentUser } = useAuth();
   const sellerProduct = useSelector((state) => state.product.sellerProducts);
   const [loading, setLoading] = useState(true);
-  
+  const [deleteTarget, setDeleteTarget] = useState(null); // product object
   const navigate = useNavigate();
   const displayProducts = sellerProduct || [];
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        await handleGetSellerProduct();
-      } finally {
-        setLoading(false);
-      }
+    const fetch = async () => {
+      try { await handleGetSellerProduct(); }
+      finally { setLoading(false); }
     };
-    fetchProducts();
+    fetch();
   }, []);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logoutApi();
+      toast.success("Logged out successfully.", {
+        style: { background: '#1c1917', color: '#fff', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }
+      });
+      setShowLogoutModal(false);
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Logout failed. Please try again.", {
+        style: { background: '#1c1917', color: '#ef4444', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await handleDeleteProduct(deleteTarget._id);
+      await handleGetSellerProduct();
+      toast.success("Asset erased from the vault.", {
+        style: { background: '#1c1917', color: '#fff', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }
+      });
+    } catch {
+      toast.error("Failed to delete asset.", {
+        style: { background: '#1c1917', color: '#ef4444', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }
+      });
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
 
   if (loading) return (
     <div className="h-screen bg-[#f7f6f4] flex items-center justify-center">
@@ -32,15 +138,13 @@ const SellerDashboard = () => {
   );
 
   return (
-    // LIGHT THEME BASE
     <div className="min-h-screen w-full bg-[#f7f6f4] text-stone-900 font-sans selection:bg-stone-900 selection:text-white">
-      
-      {/* FIXED NAVIGATION */}
+      <Toaster position="top-right" />
+
+      {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-[#f7f6f4]/80 backdrop-blur-xl border-b border-stone-200 px-6 lg:px-10 h-20 flex items-center justify-between">
-        <button 
-          onClick={() => navigate("/")}
-          className="flex items-center gap-3 text-stone-500 hover:text-stone-900 transition-all group"
-        >
+        <button onClick={() => navigate("/")}
+          className="flex items-center gap-3 text-stone-500 hover:text-stone-900 transition-all group">
           <div className="w-9 h-9 rounded-full border border-stone-300 bg-white flex items-center justify-center group-hover:border-stone-900 group-hover:bg-stone-100 transition-colors">
             <ArrowLeft size={16} />
           </div>
@@ -52,19 +156,19 @@ const SellerDashboard = () => {
             <span className="text-[9px] font-black uppercase tracking-widest text-[#a3d100]">Authorized Merchant</span>
             <span className="text-[10px] text-stone-400 font-bold lowercase italic truncate max-w-[150px]">{currentUser?.email}</span>
           </div>
-          <div className="h-8 w-[1px] bg-stone-200"></div>
-          <button 
-            onClick={() => navigate("/")}
-            className="p-2.5 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all rounded-full border border-stone-200 shadow-sm"
+          <div className="h-8 w-px bg-stone-200" />
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="flex items-center gap-2 text-red-500 hover:text-red-700 bg-red-50 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors shadow-sm"
           >
-            <LogOut size={16} />
+            <LogOut size={14} /> Log Out
           </button>
         </div>
       </nav>
 
-      <div className="p-6 lg:p-12 max-w-[1600px] mx-auto pt-32"> 
-        
-        {/* MERCHANT PROFILE & ACTIONS */}
+      <div className="p-6 lg:p-12 max-w-[1600px] mx-auto pt-32">
+
+        {/* Header */}
         <header className="mb-20 flex flex-col lg:flex-row lg:items-center justify-between gap-10 bg-white p-8 rounded-xl border border-stone-200 shadow-sm">
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 bg-[#c8ff00] rounded-lg flex items-center justify-center shadow-sm shrink-0">
@@ -79,41 +183,31 @@ const SellerDashboard = () => {
                 {currentUser?.fullname || "Authorized User"}
               </h1>
               <div className="flex gap-4 pt-2">
-                 <span className="text-[10px] font-black uppercase text-stone-400 tracking-widest">{displayProducts.length} Active Assets</span>
-                 <span className="text-stone-300">|</span>
-                 <span className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Premium Tier 01</span>
+                <span className="text-[10px] font-black uppercase text-stone-400 tracking-widest">{displayProducts.length} Active Assets</span>
+                <span className="text-stone-300">|</span>
+                <span className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Premium Tier 01</span>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 shrink-0">
-            <button
-              onClick={() => navigate("/seller/orders")} // 🛑 Check kar lena tumhara route path yahi hai na
-              className="group relative bg-white border-2 border-stone-900 text-stone-900 px-8 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-stone-900 hover:text-white transition-all overflow-hidden rounded-md shadow-sm"
-            >
-              <div className="relative z-10 flex items-center gap-3">
-                <Package size={18} strokeWidth={3} /> Manage Orders
-              </div>
+            <button onClick={() => navigate("/seller/orders")}
+              className="bg-white border-2 border-stone-900 text-stone-900 px-8 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-stone-900 hover:text-white transition-all rounded-md shadow-sm flex items-center gap-3">
+              <Package size={18} strokeWidth={3} /> Manage Orders
             </button>
-
-            <button
-              onClick={() => navigate("/seller/create-product")}
-              className="group relative bg-stone-900 text-white px-8 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all overflow-hidden rounded-md shadow-lg"
-            >
-              <div className="relative z-10 flex items-center gap-3">
-                <Plus size={18} strokeWidth={4} /> Register New Piece
-              </div>
-              <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white/20 opacity-40 group-hover:animate-[shine_1s_ease-in-out]" />
+            <button onClick={() => navigate("/seller/create-product")}
+              className="bg-stone-900 text-white px-8 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all rounded-md shadow-lg flex items-center gap-3">
+              <Plus size={18} strokeWidth={4} /> Register New Piece
             </button>
           </div>
         </header>
 
-        {/* INVENTORY ARCHIVE SECTION */}
+        {/* Inventory */}
         <section className="space-y-10">
           <div className="flex items-center gap-4">
             <LayoutGrid size={18} className="text-stone-900" />
             <h2 className="text-[12px] font-black uppercase tracking-[0.5em] text-stone-900">Inventory Archive</h2>
-            <div className="h-[1px] flex-1 bg-gradient-to-r from-stone-300 to-transparent"></div>
+            <div className="h-px flex-1 bg-gradient-to-r from-stone-300 to-transparent" />
           </div>
 
           {displayProducts.length === 0 ? (
@@ -121,74 +215,74 @@ const SellerDashboard = () => {
               <p className="text-stone-400 text-[10px] uppercase tracking-[0.5em] font-black italic">Vault currently empty</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
               {displayProducts.map((product) => (
-                <div 
-                  key={product._id} 
+                <div key={product._id}
                   className="group relative bg-white border border-stone-200 hover:border-stone-400 transition-all duration-500 cursor-pointer overflow-hidden rounded-xl shadow-sm hover:shadow-xl"
-                  onClick={() => navigate(`/seller/productdetail/${product._id}`)}
-                >
+                  onClick={() => navigate(`/seller/productdetail/${product._id}`)}>
+
                   <div className="aspect-[4/5] overflow-hidden relative bg-stone-100">
-                    <img
-                      src={product.images?.[0]?.url}
-                      alt={product.title}
-                      className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
-                    />
-                    
-                    {/* Price Badge */}
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md border border-stone-200 px-3 py-1.5 z-10 rounded shadow-sm">
-                       <span className="text-stone-900 text-[12px] font-black italic uppercase">
+                    <img src={product.images?.[0]?.url} alt={product.title}
+                      className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
+
+                    {/* Price Tag - Scaled for mobile */}
+                    <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-white/90 backdrop-blur-md border border-stone-200 px-2 py-1 sm:px-3 sm:py-1.5 z-10 rounded shadow-sm">
+                      <span className="text-stone-900 text-[10px] sm:text-[12px] font-black italic uppercase tracking-tight">
                         {product.price?.currency} {product.price?.amount}
                       </span>
                     </div>
 
-                    {/* Stock & Variant Badges */}
-                    <div className="absolute bottom-4 left-4 flex flex-col gap-2 z-10">
-                      <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-stone-200 px-2 py-1 rounded shadow-sm">
+                    {/* Badges - Adjusted positioning and padding for small screens */}
+                    <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 flex flex-col gap-1 sm:gap-2 z-10">
+                      <div className="flex items-center gap-1 sm:gap-1.5 bg-white/90 backdrop-blur-sm border border-stone-200 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded shadow-sm">
                         <Box size={10} className={product.stock > 0 ? "text-[#a3d100]" : "text-red-500"} />
-                        <span className="text-[8px] font-black uppercase tracking-tighter text-stone-700">
-                          Qty: {product.stock || 0}
-                        </span>
+                        <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-tighter text-stone-700">Qty: {product.stock || 0}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-stone-200 px-2 py-1 rounded shadow-sm">
+                      <div className="flex items-center gap-1 sm:gap-1.5 bg-white/90 backdrop-blur-sm border border-stone-200 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded shadow-sm">
                         <Layers size={10} className="text-stone-400" />
-                        <span className="text-[8px] font-black uppercase tracking-tighter text-stone-700">
-                          {product.varinate?.length || 0} Variants
-                        </span>
+                        <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-tighter text-stone-700">{product.variants?.length || 0} Var</span>
                       </div>
                     </div>
 
-                    {/* Action Overlay */}
-                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-3">
-                      <button className="p-4 bg-stone-900 text-white rounded-full hover:bg-[#c8ff00] hover:text-stone-900 shadow-lg transition-all active:scale-90"><Edit3 size={20} /></button>
-                      <button className="p-4 bg-white text-red-500 rounded-full border border-red-200 hover:bg-red-500 hover:text-white shadow-lg transition-all active:scale-90"><Trash2 size={20} /></button>
+                    {/* Action overlay - Responsive button scaling */}
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/seller/productdetail/${product._id}`); }}
+                        className="p-2.5 sm:p-4 bg-stone-900 text-white rounded-full hover:bg-[#c8ff00] hover:text-stone-900 shadow-lg transition-all active:scale-90">
+                        <Edit3 className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(product); }}
+                        className="p-2.5 sm:p-4 bg-white text-red-500 rounded-full border border-red-200 hover:bg-red-500 hover:text-white shadow-lg transition-all active:scale-90">
+                        <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </button>
                     </div>
                   </div>
 
-                  <div className="p-6 space-y-4">
+                  {/* Content Area - Clean, fluid padding that stops text squishing */}
+                  <div className="p-3 sm:p-4 md:p-6 space-y-2 sm:space-y-4">
                     <div className="space-y-1">
-                      <h3 className="text-[11px] font-black uppercase tracking-widest truncate text-stone-900 group-hover:text-stone-500 transition-colors">
+                      <h3 className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest truncate text-stone-900 group-hover:text-stone-500 transition-colors">
                         {product.title}
                       </h3>
-                      <p className="text-[10px] text-stone-500 line-clamp-2 italic leading-relaxed font-medium">
+                      <p className="text-[9px] sm:text-[10px] text-stone-500 line-clamp-2 italic leading-relaxed font-medium">
                         {product.description}
                       </p>
                     </div>
-                    
-                    {/* Tags / Attributes Preview */}
+
                     {product.attributes && Object.keys(product.attributes).length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-1">
+                      <div className="flex flex-wrap gap-1 sm:gap-2 pt-0.5">
                         {Object.entries(product.attributes).slice(0, 2).map(([key, value]) => (
-                          <span key={key} className="text-[7px] font-black uppercase border border-stone-200 bg-stone-50 px-2 py-0.5 text-stone-500 tracking-widest rounded-sm">
+                          <span key={key} className="text-[6px] sm:text-[7px] font-black uppercase border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-stone-500 tracking-wider sm:tracking-widest rounded-sm truncate max-w-full">
                             {key}: {value}
                           </span>
                         ))}
                       </div>
                     )}
 
-                    <div className="pt-4 border-t border-stone-100 flex items-center justify-between">
-                      <span className="text-[9px] font-black uppercase text-stone-400 tracking-tighter">Ref: {product._id?.slice(-8)}</span>
-                      <ExternalLink size={14} className="text-stone-300 group-hover:text-stone-900 transition-colors" />
+                    <div className="pt-2 sm:pt-4 border-t border-stone-100 flex items-center justify-between">
+                      <span className="text-[8px] sm:text-[9px] font-black uppercase text-stone-400 tracking-tighter">Ref: {product._id?.slice(-8)}</span>
+                      <ExternalLink size={13} className="text-stone-300 group-hover:text-stone-900 transition-colors" />
                     </div>
                   </div>
                 </div>
@@ -197,13 +291,65 @@ const SellerDashboard = () => {
           )}
         </section>
       </div>
+      <style>{`
+  @keyframes shine {
+    0% { left: -100%; }
+    100% { left: 125%; }
+  }
+`}</style>
+      {/* Delete Modal */}
+      {deleteTarget && (
+        <DeleteProductModal
+          product={deleteTarget}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300">
+          <div
+            className="bg-white border border-stone-200 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-5 transform scale-100 transition-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="space-y-1">
+              <h3 className="text-[12px] font-black uppercase tracking-widest text-stone-900">
+                Confirm Logout
+              </h3>
+              <p className="text-[10px] text-stone-500 italic leading-relaxed font-medium">
+                Are you sure you want to exit your account? You will need to log back in to access your seller dashboard.
+              </p>
+            </div>
 
-      <style jsx>{`
-        @keyframes shine {
-          0% { left: -100%; }
-          100% { left: 125%; }
-        }
-      `}</style>
+            {/* Divider line matches your product ref divider */}
+            <div className="border-t border-stone-100" />
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                disabled={isLoggingOut}
+                onClick={() => setShowLogoutModal(false)}
+                className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest border border-stone-200 bg-white rounded-lg text-stone-500 hover:bg-stone-50 hover:text-stone-900 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                disabled={isLoggingOut}
+                onClick={handleLogout}
+                className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest bg-stone-900 text-white rounded-lg hover:bg-red-500 transition-colors flex items-center gap-2 shadow-md disabled:opacity-50"
+              >
+                {isLoggingOut ? (
+                  <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <LogOut size={12} />
+                )}
+                {isLoggingOut ? "Logging Out..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

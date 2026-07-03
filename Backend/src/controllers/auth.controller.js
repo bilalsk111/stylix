@@ -95,7 +95,7 @@ export const googleCallback = async (req, res, next) => {
 
     return await sendTokens(user, res, "Google login success");
 
-    res.redirect("http://localhost:5173/");
+    res.redirect("http://localhost:5174/");
   } catch (err) {
     next(err);
   }

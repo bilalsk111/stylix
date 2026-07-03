@@ -1,5 +1,8 @@
 import productModel from "../models/product.model.js";
 import { uploadFile } from "../services/storage.service.js";
+import Wishlist from "../models/wishlist.model.js";
+import  Cart  from "../models/cart.model.js";
+import { deleteCloudinaryImages } from "../dao/deleteimage.dao.js";
 
 export async function createProduct(req, res) {
   try {
@@ -133,19 +136,24 @@ export async function getAllProducts(req, res) {
 }
 
 export async function getProductDetail(req, res) {
-  const { id } = req.params;
-  const product = await productModel.findById(id);
-  if (!product) {
-    return res.status(400).json({
-      message: "product not found",
-      success: false,
+  try {
+    const { id } = req.params;
+    const product = await productModel.findById(id);
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found",
+        success: false,
+      });
+    }
+    return res.status(200).json({
+      message: "Product details fetched successfully",
+      success: true,
+      product,
     });
+  } catch (err) {
+    console.error("getProductDetail error:", err);
+    return res.status(500).json({ message: err.message, success: false });
   }
-  return res.status(200).json({
-    message: "Product details fetched succeddfully",
-    success: true,
-    product,
-  });
 }
 
 export const addProductVariant = async (req, res) => {
@@ -181,11 +189,11 @@ export const addProductVariant = async (req, res) => {
       if (!cat) return "MEN";
       return cat.toUpperCase();
     };
+    const category = req.body.category || "MEN";
     const categoryNormalized = normalizeCategory(category);
     const variantTitle =
-      req.body.title || `Variant ${product.varinate.length + 1}`;
+      req.body.title || `Variant ${product.variants.length + 1}`;
     const stock = Number(req.body.stock) || 0;
-    const category = req.body.category || "MEN";
     const priceAmt = Number(req.body.priceAmount) || product.price.amount;
     const priceCurr = req.body.priceCurrency || product.price.currency;
 
@@ -306,6 +314,93 @@ export const editProductVariant = async (req, res) => {
   }
 };
 
+export const deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await productModel.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found.",
+      });
+    }
+
+    // 🔥 Flatten all images into a single array
+    const allImages = [
+      ...(product.images || []),
+      ...(product.variants?.flatMap((v) => v.images || []) || []),
+    ];
+
+    // Delete all images from Cloudinary
+    const deletedImagesCount = await deleteCloudinaryImages(allImages);
+
+    // Delete from DB
+    await productModel.findByIdAndDelete(productId);
+
+    // Parallel DB Cleanup
+    await Promise.all([
+      Wishlist.updateMany(
+        { items: productId },
+        { $pull: { items: productId } }
+      ),
+      Cart.updateMany(
+        { "items.productId": productId },
+        { $pull: { items: { productId } } }
+      ),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: `Product and ${deletedImagesCount} images deleted successfully.`,
+    });
+  } catch (error) {
+    console.error("Delete Product Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const deleteVariant = async (req, res) => {
+  try {
+    const { productId, variantId } = req.params;
+
+    const product = await productModel.findById(productId);
+
+    if (!product)
+      return res.status(404).json({ message: "Product not found." });
+
+    const variant = product.variants.id(variantId);
+
+    if (!variant)
+      return res.status(404).json({ message: "Variant not found." });
+
+    await deleteCloudinaryImages(variant.images);
+
+    variant.deleteOne(); // remove variant
+    await product.save();
+
+    await Cart.updateMany(
+      { "items.variantId": variantId },
+      { $pull: { items: { variantId } } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Variant deleted successfully.",
+    });
+  } catch (error) {
+    console.error("deleteVariant error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // export const getFilteredProducts = async (req, res) => {
 //     try {
 //         // 1. URL se saare query parameters extract karo
@@ -391,7 +486,7 @@ export const getFilteredProductsPro = async (req, res) => {
     } = req.query;
 
     // 1. Build the Match Stage
-    let matchStage = {}; // 🔥 FIX 1: Status check hata diya kyunki DB mein status nahi hai.
+    let matchStage = {}; // 1: Status check hata diya kyunki DB mein status nahi hai.
 
     if (search) {
       matchStage.title = { $regex: search, $options: "i" };
@@ -404,7 +499,7 @@ export const getFilteredProductsPro = async (req, res) => {
       matchStage.category = { $in: categories };
     }
 
-    // 🔥 FIX 2: Correct Path & Case-Insensitive Regex for SIZE
+    // 2: Correct Path & Case-Insensitive Regex for SIZE
     if (size) {
       const sizes = size
         .split(",")
@@ -412,7 +507,7 @@ export const getFilteredProductsPro = async (req, res) => {
       matchStage["variants.attributes.SIZE"] = { $in: sizes };
     }
 
-    // 🔥 FIX 3: Correct Path & Case-Insensitive Regex for COLOR
+    // 3: Correct Path & Case-Insensitive Regex for COLOR
     if (color) {
       const colors = color
         .split(",")

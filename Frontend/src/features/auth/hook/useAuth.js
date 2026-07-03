@@ -16,12 +16,18 @@ export const useAuth = () => {
     try {
       const data = await register(payload);
       dispatch(setUser(data.user));
-      toast.success("Account created successfully!");
+      toast.success("Account created successfully!", {
+        style: { background: '#000000', color: '#ccff00', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' },
+        duration: 2000
+      });
       return data.user; 
     } catch (err) {
       const msg = err.response?.data?.message || "Registration failed.";
       dispatch(setError(msg));
-      toast.error(msg);
+      toast.error(msg, {
+        style: { background: '#000000', color: '#ff4444', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' },
+        duration: 2000
+      });
       throw new Error(msg);
     } finally {
       dispatch(setLoading(false));
@@ -33,12 +39,18 @@ export const useAuth = () => {
     try {
       const data = await login(payload);
       dispatch(setUser(data.user));
-      toast.success("Welcome back!");
+      toast.success("Welcome back!", {
+        style: { background: '#000000', color: '#ccff00', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' },
+        duration: 2000
+      });
       return data.user;
     } catch (err) {
       const msg = err.response?.data?.message || "Login failed.";
       dispatch(setError(msg));
-      toast.error(msg);
+      toast.error(msg, {
+        style: { background: '#000000', color: '#ff4444', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' },
+        duration: 2000
+      });
       throw new Error(msg);
     } finally {
       dispatch(setLoading(false));
@@ -53,10 +65,16 @@ export const useAuth = () => {
         // Redux/Context state clear karo
         dispatch(logoutApi()); 
         
-        toast.success("Logged out successfully");
+        toast.success("Logged out successfully", {
+          style: { background: '#000000', color: '#ccff00', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' },
+          duration: 2000
+        });
         navigate("/login");
     } catch (error) {
-        toast.error(`Logout failed: ${error.message}`);
+        toast.error(`Logout failed: ${error.message}`, {
+          style: { background: '#000000', color: '#ff4444', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' },
+          duration: 2000
+        });
     }
 };
 return { 

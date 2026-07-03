@@ -8,7 +8,9 @@ import {
   getProductDetail,
   getSellerProducts,
   editProductVariant,
-  getFilteredProductsPro, 
+  getFilteredProductsPro,
+  deleteVariant,
+  deleteProduct, 
 } from "../controllers/product.controller.js";
 
 import {
@@ -77,5 +79,8 @@ router.put(
   editProductVariant,
 );
 router.get("/shop",getFilteredProductsPro);
+
+router.delete('/:productId/variant/:variantId', authenticateSeller, requireSeller,deleteVariant);
+router.delete('/:productId', authenticateSeller, requireSeller,deleteProduct);
 
 export default router;

@@ -1,58 +1,94 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../auth/hook/useAuth";
 import { useOrder } from "../../order/hook/UseOrder";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // Link imported for product cards
+import { getWishlistApi } from "../../wishlist/services/wishlist.api"; // API import (path verify kar lena)
+import { useWishlist } from "../../wishlist/hook/useWishList"; // Hook import for removal logic
 import {
     User, Mail, Phone, Package, LayoutGrid, LogOut,
-    ArrowRight, Clock, ShieldCheck, Heart, MapPin, Settings, LifeBuoy, ArrowLeft, AlertTriangle
-} from "lucide-react";
-
-// 🔥 OPTIMIZATION 1: Moved outside component so it doesn't re-create on every render
-const getStatusStyle = (status) => {
-    switch (status) {
-        case "Processing": return "bg-orange-100 text-orange-700";
-        case "Shipped": return "bg-blue-100 text-blue-700";
-        case "Delivered": return "bg-[#ccff00]/30 text-[#8cb300]";
-        case "Cancelled": return "bg-red-100 text-red-700";
-        default: return "bg-stone-100 text-stone-500";
-    }
-};
+    ArrowRight, Clock, ShieldCheck, Heart, MapPin, LifeBuoy, AlertTriangle,
+    ChevronLeft, Trash2
+} from "lucide-react"; // Removed Settings, added Trash2
+import { logoutApi } from "../../auth/services/auth.api";
+import toast from "react-hot-toast";
 
 const Profile = () => {
-    // Make sure your useAuth hook actually exports a logout function!
-    const { currentUser, logout } = useAuth(); 
+    const { currentUser, logout } = useAuth();
     const { buyerOrders, isLoading, handleFetchMyOrders, handleCancelMyOrder } = useOrder();
+    const { handleToggleWishlist } = useWishlist(); // Global wishlist toggle
     const navigate = useNavigate();
 
     // UI States
     const [activeTab, setActiveTab] = useState("orders");
     const [cancelModalOpen, setCancelModalOpen] = useState(null);
 
+    // Wishlist Local States
+    const [wishlistData, setWishlistData] = useState([]);
+    const [loadingWishlist, setLoadingWishlist] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
     const isSeller = currentUser?.role === "seller";
 
+    // 1. Fetch Orders
     useEffect(() => {
         if (!isSeller) {
             handleFetchMyOrders();
         }
     }, [isSeller]);
 
-    // 🔥 OPTIMIZATION 2: useMemo limits array filtering only when buyerOrders changes
+    // 2. Fetch Wishlist ONLY when tab is active
+    useEffect(() => {
+        if (activeTab === "wishlist") {
+            const fetchDetailedWishlist = async () => {
+                try {
+                    setLoadingWishlist(true);
+                    const data = await getWishlistApi();
+                    if (data.success) {
+                        setWishlistData(data.wishlist);
+                    }
+                } catch (error) {
+                    console.error("Failed to load wishlist details in profile", error);
+                } finally {
+                    setLoadingWishlist(false);
+                }
+            };
+            fetchDetailedWishlist();
+        }
+    }, [activeTab]);
+
+    const handleRemoveWishlistItem = (e, productId) => {
+        handleToggleWishlist(e, productId); // Global update
+        setWishlistData((prev) => prev.filter((item) => item._id !== productId)); // Local instant UI update
+    };
+
     const safeOrders = Array.isArray(buyerOrders) ? buyerOrders : [];
     const activeOrders = useMemo(() => {
         return safeOrders.filter(
             order => order.orderStatus === "Processing" || order.orderStatus === "Shipped"
         );
     }, [safeOrders]);
-    
+
     const hasActiveOrders = activeOrders.length > 0;
 
-    // 🔥 FIXED LOGOUT BUG: Removed undefined handleLo() and added proper handler
-    const handleLogoutClick = async () => {
-        if (window.confirm("Are you sure you want to log out?")) {
-            if(logout) {
-                await logout(); // Calls the actual logout function from useAuth
-            }
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        try {
+            await logoutApi();
+            toast.success("Logged out successfully.", {
+                style: { background: '#000000', color: '#ccff00', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' },
+                duration: 2000
+            });
+            setShowLogoutModal(false); // Close modal on success
             navigate("/login");
+        } catch (error) {
+            console.error("Logout failed:", error);
+            toast.error("Logout failed. Please try again.", {
+                style: { background: '#000000', color: '#ff4444', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' },
+                duration: 2000
+            });
+        } finally {
+            setIsLoggingOut(false);
         }
     };
 
@@ -71,7 +107,7 @@ const Profile = () => {
                     className="flex items-center gap-3 text-stone-500 hover:text-stone-900 transition-all group py-6"
                 >
                     <div className="w-9 h-9 rounded-full border border-stone-300 bg-white flex items-center justify-center group-hover:border-stone-900 group-hover:bg-stone-100 transition-colors">
-                        <ArrowLeft size={16} />
+                        <ChevronLeft size={14} strokeWidth={2.5} />
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden sm:block">Exit Profile</span>
                 </button>
@@ -108,8 +144,9 @@ const Profile = () => {
                         </div>
 
                         <button
-                            onClick={handleLogoutClick}
-                            className="flex items-center gap-2 text-red-500 hover:text-red-700 bg-red-50 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors shadow-sm">
+                            onClick={() => setShowLogoutModal(true)}
+                            className="flex items-center gap-2 text-red-500 hover:text-red-700 bg-red-50 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors shadow-sm"
+                        >
                             <LogOut size={14} /> Log Out
                         </button>
                     </div>
@@ -165,15 +202,6 @@ const Profile = () => {
                                         className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === "wishlist" ? "bg-stone-900 text-[#ccff00]" : "text-stone-500 hover:bg-stone-50 hover:text-stone-900"}`}
                                     >
                                         <div className="flex items-center gap-3"><Heart size={16} /> Wishlist</div>
-                                        <span className="bg-stone-200 text-stone-500 text-[8px] px-1.5 py-0.5 rounded font-bold">SOON</span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => setActiveTab("settings")}
-                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === "settings" ? "bg-stone-900 text-[#ccff00]" : "text-stone-500 hover:bg-stone-50 hover:text-stone-900"}`}
-                                    >
-                                        <div className="flex items-center gap-3"><Settings size={16} /> Profile Settings</div>
-                                        <span className="bg-stone-200 text-stone-500 text-[8px] px-1.5 py-0.5 rounded font-bold">SOON</span>
                                     </button>
                                 </div>
                             </div>
@@ -193,8 +221,8 @@ const Profile = () => {
 
                         {/* RIGHT CONTENT */}
                         <div className="w-full lg:w-[70%] bg-white border border-stone-200 rounded-2xl p-6 lg:p-8 shadow-sm">
-                            
-                            {/* 🔥 OPTIMIZATION 3: Removed the dirty IIFE (() => {})() logic */}
+
+                            {/* ── ORDERS TAB ── */}
                             {activeTab === "orders" && (
                                 <>
                                     <div className="flex items-center justify-between mb-8 border-b border-stone-100 pb-4">
@@ -303,26 +331,76 @@ const Profile = () => {
                                 </>
                             )}
 
-                            {activeTab !== "orders" && (
-                                <div className="py-20 text-center flex flex-col items-center justify-center">
-                                    <div className="text-stone-200 mb-4">
-                                        {activeTab === "wishlist" && <Heart size={48} />}
-                                        {activeTab === "address" && <MapPin size={48} />}
-                                        {activeTab === "settings" && <Settings size={48} />}
+                            {/* ── WISHLIST TAB ── */}
+                            {activeTab === "wishlist" && (
+                                <>
+                                    <div className="flex items-center justify-between mb-8 border-b border-stone-100 pb-4">
+                                        <div className="flex items-center gap-3">
+                                            <Heart size={18} className="text-stone-900" />
+                                            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-stone-900">Your Archive</h2>
+                                        </div>
                                     </div>
-                                    <h2 className="text-sm font-black uppercase tracking-[0.2em] text-stone-900 mb-2">
-                                        {activeTab} Module
-                                    </h2>
-                                    <p className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">
-                                        This sector is currently under construction.
-                                    </p>
-                                </div>
+
+                                    {loadingWishlist ? (
+                                        <div className="py-16 text-center text-[10px] font-black uppercase tracking-[0.4em] text-stone-400 animate-pulse">
+                                            Loading Archive...
+                                        </div>
+                                    ) : wishlistData.length === 0 ? (
+                                        <div className="py-20 text-center">
+                                            <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-5 border border-stone-200">
+                                                <Heart size={28} className="text-stone-300" />
+                                            </div>
+                                            <p className="text-stone-400 text-[11px] uppercase tracking-[0.3em] font-black mb-6">Archive is Empty</p>
+                                            <button
+                                                onClick={() => navigate("/shop")}
+                                                className="bg-stone-900 text-white px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#ccff00] hover:text-stone-900 transition-all shadow-md hover:shadow-lg"
+                                            >
+                                                Explore Assets
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6">
+                                            {wishlistData.map(item => (
+                                                <div key={item._id} className="group relative bg-white rounded-2xl overflow-hidden border border-stone-100 shadow-sm flex flex-col">
+
+                                                    <button
+                                                        onClick={(e) => handleRemoveWishlistItem(e, item._id)}
+                                                        className="absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-full text-stone-400 hover:text-red-500 hover:border-red-500 transition-all opacity-0 group-hover:opacity-100"
+                                                        title="Remove from Archive"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+
+                                                    <Link to={`/product/${item._id}`} className="aspect-[3/4] overflow-hidden bg-stone-100">
+                                                        <img
+                                                            src={item.images?.[0]?.url || "fallback-image-url-here"}
+                                                            alt={item.title}
+                                                            className="w-full h-full object-cover mix-blend-multiply group-hover:scale-105 transition-transform duration-[2s]"
+                                                        />
+                                                    </Link>
+
+                                                    <div className="p-4 flex flex-col flex-1">
+                                                        <Link to={`/product/${item._id}`}>
+                                                            <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-900 truncate mb-1">
+                                                                {item.title}
+                                                            </h3>
+                                                        </Link>
+                                                        <p className="text-stone-500 text-[9px] font-bold mt-auto pt-2">
+                                                            {item.price?.currency} {item.price?.amount}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
                 )}
             </div>
 
+            {/* ── CANCEL MODAL ── */}
             {cancelModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in-up border border-stone-200">
@@ -347,6 +425,51 @@ const Profile = () => {
                                 className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-colors"
                             >
                                 Confirm Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showLogoutModal && (
+                <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300">
+                    <div
+                        className="bg-white border border-stone-200 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-5 transform scale-100 transition-all"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="space-y-1">
+                            <h3 className="text-[12px] font-black uppercase tracking-widest text-stone-900">
+                                Confirm Logout
+                            </h3>
+                            <p className="text-[10px] text-stone-500 italic leading-relaxed font-medium">
+                                Are you sure you want to exit your account? You will need to log back in to access your seller dashboard.
+                            </p>
+                        </div>
+
+                        {/* Divider line matches your product ref divider */}
+                        <div className="border-t border-stone-100" />
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                disabled={isLoggingOut}
+                                onClick={() => setShowLogoutModal(false)}
+                                className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest border border-stone-200 bg-white rounded-lg text-stone-500 hover:bg-stone-50 hover:text-stone-900 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                disabled={isLoggingOut}
+                                onClick={handleLogout}
+                                className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest bg-stone-900 text-white rounded-lg hover:bg-red-500 transition-colors flex items-center gap-2 shadow-md disabled:opacity-50"
+                            >
+                                {isLoggingOut ? (
+                                    <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <LogOut size={12} />
+                                )}
+                                {isLoggingOut ? "Logging Out..." : "Confirm"}
                             </button>
                         </div>
                     </div>

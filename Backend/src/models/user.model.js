@@ -48,13 +48,6 @@ const userSchema = new mongoose.Schema(
       enum: ["buyer", "seller"],
       default: "buyer",
     },
-    wishlist: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "product",
-      }
-    ],
-
     refreshToken: {
       type: String,
     },

@@ -4,19 +4,22 @@ import { getWishlistApi, toggleWishlistApi } from "../services/wishlist.api";
 import { useAuth } from "../../auth/hook/useAuth"; 
 import { useNavigate } from "react-router-dom";
 
+// 🔥 FIX: Constant memory reference for empty array
+const EMPTY_WISHLIST = []; 
+
 export const useWishlist = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const wishlistItems = useSelector((state) => state.wishlist?.items || []);
+  
+  // 🔥 FIX: Use the stable constant
+  const wishlistItems = useSelector((state) => state.wishlist?.items || EMPTY_WISHLIST);
 
-  // 1. Fetch data on login/load
   const handleGetWishlist = async () => {
     if (!currentUser) return;
     try {
       const data = await getWishlistApi();
       if (data.success) {
-        // Backend se pure kapde aayenge, humein sirf unki _id nikalni hai redux ke liye
         const ids = data.wishlist.map((item) => item._id || item);
         dispatch(setWishlist(ids));
       }
@@ -25,29 +28,21 @@ export const useWishlist = () => {
     }
   };
 
-  // 2. Toggle Engine (Optimistic Update)
   const handleToggleWishlist = async (e, productId) => {
-    e.stopPropagation(); // Card ko click hone se rokega
-
+    e.stopPropagation(); 
     if (!currentUser) {
       navigate("/login");
       return;
     }
-
-    // 🔥 Optimistic UI: API ka wait kiye bina turant UI red kar do
     dispatch(toggleLocalWishlist(productId));
-
     try {
       await toggleWishlistApi(productId);
-      // Agar backend se remove/add ho gaya toh badhiya hai
     } catch (error) {
-      // ⚠️ Agar network issue aya, toh jo change kiya tha usko revert/undo kar do
       console.error("Wishlist toggle failed, reverting UI:", error);
       dispatch(toggleLocalWishlist(productId));
     }
   };
 
-  // 3. Helper function for UI to easily check status
   const isWishlisted = (productId) => {
     return wishlistItems.includes(productId);
   };

@@ -1,9 +1,33 @@
 import axios from "axios";
 
 const productApi = axios.create({
-    baseURL: "/api/products",
-    withCredentials: true,
-})
+  baseURL: "/api/products",
+  withCredentials: true,
+});
+
+// Auto-refresh accessToken when it expires, then retry the original request
+productApi.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    const originalRequest = err.config;
+
+    if (
+      err.response?.status === 401 &&
+      err.response?.data?.message === "TOKEN_EXPIRED" &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+      try {
+        await axios.post("/api/auth/refresh-token", {}, { withCredentials: true });
+        return productApi(originalRequest);
+      } catch {
+        window.location.href = "/login";
+      }
+    }
+
+    return Promise.reject(err);
+  }
+);
 
 
 export async function createProduct(formData) {
@@ -68,3 +92,13 @@ export async function editVariant(productId, variantId, data) {
     return res.data
 
 }
+
+export const deleteProductApi = async (productId) => {
+  const response = await productApi.delete(`/${productId}`);
+  return response.data;
+};
+
+export const deleteVariantApi = async (productId, variantId) => {
+  const response = await productApi.delete(`/${productId}/variant/${variantId}`);
+  return response.data;
+};

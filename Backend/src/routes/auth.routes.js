@@ -15,7 +15,7 @@ router.post('/refresh-token' ,refreshToken)
 router.get("/google/", passport.authenticate("google", { scope: ["profile", "email"] }))
 router.get("/google/callback",
     passport.authenticate("google", { session: false,
-         failurRedirect:config.NODE_ENV === "development" ? "http://localhost:5173/login":"/login",
+         failurRedirect:config.NODE_ENV === "development" ? "http://localhost:5174/login":"/login",
      }),
    
     googleCallback,

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ShoppingBag, User, LogOut, LayoutDashboard } from "lucide-react";
+import { ShoppingBag, User, LogOut, LayoutDashboard, Heart } from "lucide-react"; 
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hook/useAuth";
 import { useSelector } from "react-redux";
 import { useCart } from "../features/cart/hook/useCart";
+import { useWishlist } from "../features/wishlist/hook/useWishlist"; 
 
-// 🔥 UX UPGRADE: Removed redundant "Shop", kept strict categories
 const NAV_LINKS = [
   { label: "Men", to: "/shop?category=Men" },
   { label: "Women", to: "/shop?category=Women" },
@@ -16,19 +16,28 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, handleLogout } = useAuth();
-  const { handleGetCart } = useCart(); 
+  const { handleGetCart } = useCart();
+  const { handleGetWishlist } = useWishlist(); 
 
   const [scrolled, setScrolled] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const avatarRef = useRef(null);
+
+  // Cart State
   const cartItems = useSelector((state) => state.cart?.items);
   const cartCount = Array.isArray(cartItems) ? cartItems.length : 0;
 
+  // Wishlist State
+  const wishlistItems = useSelector((state) => state.wishlist?.items || []);
+  const wishlistCount = wishlistItems.length;
+
+  // Fetch Cart & Wishlist on mount/login
   useEffect(() => {
     if (currentUser) {
       handleGetCart();
+      handleGetWishlist();
     }
   }, [currentUser]);
 
@@ -61,22 +70,18 @@ const Navbar = () => {
 
   useEffect(() => {
     setMobileOpen(false);
-  }, [location.pathname, location.search]); // 🔥 FIX: Close mobile menu on query param change too
+  }, [location.pathname, location.search]);
 
   const getInitials = (name) => (name ? name.charAt(0).toUpperCase() : "U");
 
-  // 🔥 THE LOGIC FIX: Pathname + Search combined checks exact match
   const isActive = (to) => {
     const currentUrl = location.pathname + location.search;
     return currentUrl === to;
   };
 
   const handleCartClick = () => {
-    if (!currentUser) {
-      navigate("/login");
-    } else {
-      navigate("/bag");
-    }
+    if (!currentUser) navigate("/login");
+    else navigate("/bag");
   };
 
   return (
@@ -86,7 +91,6 @@ const Navbar = () => {
       >
         <div className="max-w-[1800px] mx-auto px-6 lg:px-12 flex items-center justify-between gap-8 relative">
 
-          {/* 🔥 THE ESCAPE HATCH: Logo clicks now take you to All Assets (/shop) */}
           <Link
             to="/shop"
             className="text-[22px] font-black italic tracking-tighter uppercase text-stone-900 flex-shrink-0 z-50"
@@ -101,11 +105,10 @@ const Navbar = () => {
               <Link
                 key={to}
                 to={to}
-                className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors ${
-                  isActive(to) 
-                    ? "text-stone-900 border-b-2 border-stone-900 pb-1" 
+                className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors ${isActive(to)
+                    ? "text-stone-900 border-b-2 border-stone-900 pb-1"
                     : "text-stone-400 hover:text-stone-900"
-                }`}
+                  }`}
               >
                 {label}
               </Link>
@@ -122,6 +125,7 @@ const Navbar = () => {
                 handleCartClick();
               }}
               className="relative p-2 text-stone-400 hover:text-stone-900 transition-colors group"
+              title="View Bag"
             >
               <ShoppingBag size={20} strokeWidth={2.5} />
               {cartCount > 0 && (
@@ -143,6 +147,7 @@ const Navbar = () => {
                   </div>
                 </button>
 
+                {/* Avatar Dropdown */}
                 {avatarOpen && (
                   <div className="absolute right-0 top-full mt-4 w-52 bg-white border border-stone-200 shadow-xl rounded-md overflow-hidden animate-in fade-in zoom-in-95">
                     <div className="px-4 py-3 border-b border-stone-100 bg-stone-50">
@@ -150,6 +155,22 @@ const Navbar = () => {
                         {currentUser.fullname}
                       </p>
                     </div>
+
+                    {/* 🔥 WISHLIST MOVED HERE (Inside Dropdown) */}
+                    <Link
+                      to="/wishlist"
+                      onClick={() => setAvatarOpen(false)}
+                      className="flex items-center justify-between px-4 py-3 text-[9px] font-bold text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition-all uppercase tracking-widest border-b border-stone-100"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Heart size={12} /> Wishlist
+                      </div>
+                      {wishlistCount > 0 && (
+                        <span className="text-[9px] font-black text-stone-900 bg-stone-200 px-1.5 py-0.5 rounded-sm">
+                          {wishlistCount}
+                        </span>
+                      )}
+                    </Link>
 
                     {(currentUser.role === "seller" || currentUser.role === "admin") && (
                       <Link
@@ -205,13 +226,13 @@ const Navbar = () => {
       >
         <div className="flex flex-col px-8 py-4 h-full overflow-y-auto pb-20">
           <div className="flex flex-col gap-8 mt-4">
-            {/* Mobile "Shop All" Fallback */}
             <Link
-                to="/shop"
-                className={`text-2xl font-black uppercase tracking-[0.2em] transition-colors ${isActive("/shop") ? "text-stone-900" : "text-stone-400 hover:text-stone-900"}`}
+              to="/shop"
+              className={`text-2xl font-black uppercase tracking-[0.2em] transition-colors ${isActive("/shop") ? "text-stone-900" : "text-stone-400 hover:text-stone-900"}`}
             >
-                Shop All
+              Shop All
             </Link>
+
             {NAV_LINKS.map(({ label, to }) => (
               <Link
                 key={to}
@@ -235,9 +256,24 @@ const Navbar = () => {
                   </p>
                 </div>
 
+                {/* 🔥 MOBILE WISHLIST MOVED TO PROFILE SECTION */}
+                <button
+                  onClick={() => { setMobileOpen(false); navigate("/wishlist"); }}
+                  className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-stone-500 hover:text-stone-900 flex items-center justify-between border-b border-stone-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <Heart size={16} /> Wishlist
+                  </div>
+                  {wishlistCount > 0 && (
+                    <span className="text-[10px] font-black text-stone-900 bg-stone-200 px-2 py-1 rounded-sm">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </button>
+
                 {(currentUser.role === "seller" || currentUser.role === "admin") && (
                   <button
-                    onClick={() => navigate("/seller/dashboard")}
+                    onClick={() => { setMobileOpen(false); navigate("/seller/dashboard"); }}
                     className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-stone-500 hover:text-stone-900 flex items-center gap-3 border-b border-stone-200"
                   >
                     <LayoutDashboard size={16} /> Dashboard
@@ -245,11 +281,12 @@ const Navbar = () => {
                 )}
 
                 <button
-                  onClick={() => navigate("/profile")}
+                  onClick={() => { setMobileOpen(false); navigate("/profile"); }}
                   className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-stone-500 hover:text-stone-900 flex items-center gap-3 border-b border-stone-200"
                 >
                   <User size={16} /> My Profile
                 </button>
+
                 <button
                   onClick={handleLogout}
                   className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-red-500 hover:text-red-600 flex items-center gap-3"
@@ -259,7 +296,7 @@ const Navbar = () => {
               </div>
             ) : (
               <button
-                onClick={() => navigate("/login")}
+                onClick={() => { setMobileOpen(false); navigate("/login"); }}
                 className="w-full text-[12px] font-black uppercase tracking-[0.3em] border border-stone-900 bg-stone-900 rounded-xl py-5 text-white hover:bg-transparent hover:text-stone-900 transition-all shadow-md"
               >
                 Login / Register

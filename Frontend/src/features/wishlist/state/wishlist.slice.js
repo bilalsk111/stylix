@@ -12,10 +12,8 @@ const wishlistSlice = createSlice({
     toggleLocalWishlist: (state, action) => {
       const productId = action.payload;
       if (state.items.includes(productId)) {
-        // Agar hai toh nikal do
         state.items = state.items.filter((id) => id !== productId);
       } else {
-        // Nahi hai toh daal do
         state.items.push(productId);
       }
     },
