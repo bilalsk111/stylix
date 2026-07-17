@@ -76,8 +76,6 @@ const OrderHistory = () => {
                         <XCircle size={14} /> Cancelled
                     </button>
                 </div>
-
-                {/* RENDER LIST */}
                 {isLoading ? (
                     <div className="py-20 text-center text-[10px] font-black uppercase tracking-[0.4em] text-stone-400 animate-pulse">
                         Accessing Database...

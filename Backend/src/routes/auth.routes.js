@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, register,googleCallback, getMe } from "../controllers/auth.controller.js";
+import { login, register,googleCallback, getMe, updateProfile, forgotPassword, resetPassword } from "../controllers/auth.controller.js";
 import { validateLoginUser, validateRegisterUser } from "../validator/auth.validator.js";
 import passport from "passport";
 import { config } from "../config/config.js";
@@ -22,4 +22,7 @@ router.get("/google/callback",
 )
 router.get('/me',isAuthenticated,getMe)
 router.post('/logout',isAuthenticated,logout)
+router.put("/update-profile", isAuthenticated, updateProfile);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 export default router;

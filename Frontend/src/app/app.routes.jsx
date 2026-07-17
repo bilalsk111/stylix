@@ -14,7 +14,11 @@ import Chackout from "../features/products/pages/Checkout";
 import Success from "../features/cart/pages/Success";
 import SellerOrder from "../features/order/pages/SellerOrder";
 import Profile from "../features/products/pages/Profile";
+import OrderHistory from "../features/order/pages/OrderHistory";
 import { WishlistPage } from "../features/wishlist/pages/WishlistPage";
+import ForgotPassword from "../features/auth/pages/ForgotPassword";
+import ResetPassword from "../features/auth/pages/ResetPassword";
+
 export const routes = createBrowserRouter([
   {
     // Public Layout Routes
@@ -50,6 +54,12 @@ export const routes = createBrowserRouter([
     </ProtectedRoute>
   },
   {
+    path: "/order-history",
+    element: <ProtectedRoute>
+      <OrderHistory />
+    </ProtectedRoute>
+  },
+  {
     path: '/success',
     element: <Success />
   },
@@ -70,4 +80,12 @@ export const routes = createBrowserRouter([
     path: "/register",
     element: <Register />
   },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPassword />
+  }
 ]);

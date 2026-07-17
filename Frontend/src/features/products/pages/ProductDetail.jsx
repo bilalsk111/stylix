@@ -4,6 +4,9 @@ import {
   ShoppingBag,
   Zap,
   ChevronRight,
+  ChevronLeft,
+  ChevronUp,
+  ChevronDown,
   ArrowUpRight,
   X,
   Ruler,
@@ -19,7 +22,7 @@ import { useProduct } from "../hook/useProduct";
 import ProductGrid from "../components/ProductGrid";
 import { useCart } from "../../cart/hook/useCart";
 import { useSelector } from "react-redux";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useAuth } from "../../auth/hook/useAuth";
 import { useWishlist } from "../../wishlist/hook/useWishList";
 
@@ -30,7 +33,7 @@ const ProductDetail = () => {
   const { handleToggleWishlist, isWishlisted } = useWishlist();
   const { handleAddItem } = useCart();
   const EMPTY_CART = [];
-  const { currentUser } = useAuth()
+  const { currentUser } = useAuth();
   const cartItems = useSelector((state) => state.cart?.items || EMPTY_CART);
 
   const [product, setProduct] = useState(null);
@@ -48,6 +51,8 @@ const ProductDetail = () => {
 
   const getProductByIdRef = useRef(handleGetProductById);
   const getAllProductRef = useRef(handleGetAllProduct);
+  
+  const thumbnailRef = useRef(null);
 
   useEffect(() => {
     getProductByIdRef.current = handleGetProductById;
@@ -62,10 +67,51 @@ const ProductDetail = () => {
         setLoading(true);
         const data = await getProductByIdRef.current(id);
         if (isMounted) {
-          setProduct(data);
+          
           if (data?.variants?.length > 0) {
-            setCurrentVariant(data.variants[0]);
-            setSelectedAttributes(data.variants[0].attributes);
+            const globalFallbackAttributes = {};
+            
+            data.variants.forEach((v) => {
+              if (!v.attributes) return;
+              Object.entries(v.attributes).forEach(([key, value]) => {
+                const strVal = value ? value.toString().trim() : "";
+                if (strVal && strVal.toUpperCase() !== "DEFAULT" && strVal.toUpperCase() !== "N/A") {
+                  if (!globalFallbackAttributes[key]) {
+                    globalFallbackAttributes[key] = strVal;
+                  }
+                }
+              });
+            });
+
+            data.variants = data.variants.map((v) => {
+              const patchedAttrs = { ...(v.attributes || {}) };
+              Object.keys(globalFallbackAttributes).forEach((key) => {
+                const currentVal = patchedAttrs[key] ? patchedAttrs[key].toString().trim() : "";
+                if (!currentVal || currentVal.toUpperCase() === "DEFAULT" || currentVal.toUpperCase() === "N/A") {
+                  patchedAttrs[key] = globalFallbackAttributes[key]; 
+                }
+              });
+              return { ...v, attributes: patchedAttrs };
+            });
+
+            setProduct(data); 
+
+            const initialAttrs = { ...globalFallbackAttributes };
+            
+            let bestVariant = data.variants[0];
+            const exactMatch = data.variants.find(v => {
+              let isMatch = true;
+              Object.entries(initialAttrs).forEach(([k, val]) => {
+                const vVal = v.attributes?.[k] ? v.attributes[k].toString().trim().toUpperCase() : "";
+                if (vVal !== val.toUpperCase()) isMatch = false;
+              });
+              return isMatch;
+            });
+
+            setCurrentVariant(exactMatch || bestVariant);
+            setSelectedAttributes(exactMatch ? exactMatch.attributes : initialAttrs);
+          } else {
+             setProduct(data);
           }
         }
       } catch (err) {
@@ -112,13 +158,22 @@ const ProductDetail = () => {
     product.variants.forEach((v) => {
       if (!v.attributes) return;
       Object.entries(v.attributes).forEach(([key, value]) => {
-        if (!options[key]) options[key] = new Set();
-        options[key].add(value.toString().toUpperCase());
+        const strVal = value ? value.toString().trim() : "";
+        if (strVal !== "" && strVal.toUpperCase() !== "DEFAULT" && strVal.toUpperCase() !== "N/A") {
+          if (!options[key]) options[key] = new Set();
+          options[key].add(strVal.toUpperCase());
+        }
       });
     });
+    
     Object.keys(options).forEach(
-      (key) => (options[key] = Array.from(options[key])),
+      (key) => (options[key] = Array.from(options[key]))
     );
+
+    Object.keys(options).forEach(key => {
+      if (options[key].length === 0) delete options[key];
+    });
+
     return options;
   }, [product]);
 
@@ -126,20 +181,25 @@ const ProductDetail = () => {
     const targetValue = value.toLowerCase();
 
     let bestMatch = product.variants.find((v) => {
-      if (v.attributes[key]?.toString().toLowerCase() !== targetValue) return false;
+      const currentVal = v.attributes[key] ? v.attributes[key].toString().toLowerCase() : "";
+      if (currentVal !== targetValue) return false;
       let otherMatch = true;
       Object.entries(selectedAttributes).forEach(([selKey, selVal]) => {
-        if (selKey !== key && v.attributes[selKey]?.toString().toLowerCase() !== selVal?.toString().toLowerCase()) {
-          otherMatch = false;
+        if (selKey !== key) {
+          const compVal = v.attributes[selKey] ? v.attributes[selKey].toString().toLowerCase() : "";
+          if (compVal !== selVal?.toString().toLowerCase()) {
+            otherMatch = false;
+          }
         }
       });
       return otherMatch;
     });
 
     if (!bestMatch) {
-      bestMatch = product.variants.find((v) =>
-        v.attributes[key]?.toString().toLowerCase() === targetValue
-      );
+      bestMatch = product.variants.find((v) => {
+        const currentVal = v.attributes[key] ? v.attributes[key].toString().toLowerCase() : "";
+        return currentVal === targetValue;
+      });
     }
 
     if (bestMatch) {
@@ -167,30 +227,58 @@ const ProductDetail = () => {
   }, [cartItems, product, currentVariant, localCart]);
 
 
+  const displayTitle = currentVariant?.title && 
+    currentVariant.title.trim() !== "" && 
+    currentVariant.title.toUpperCase() !== "DEFAULT" && 
+    !currentVariant.title.toUpperCase().includes("VARIANT") 
+      ? currentVariant.title 
+      : (product?.title || "Untitled Product");
+
   const displayImages = currentVariant?.images?.length > 0 && currentVariant.images[0]?.url
     ? currentVariant.images
-    : product?.images;
+    : (product?.images?.length > 0 ? product.images : [{ url: "https://via.placeholder.com/600x800" }]);
 
-  const displayPrice = currentVariant?.price || product?.price;
+  const displayPrice = currentVariant?.price?.amount
+    ? currentVariant.price
+    : product?.price;
 
-  const displayTitle = currentVariant?.title && currentVariant.title.toUpperCase() !== "DEFAULT"
-    ? currentVariant.title
-    : product?.title;
-
-  const availableStock = currentVariant?.stock || 0;
+  const availableStock = (currentVariant?.stock !== undefined && currentVariant?.stock !== null)
+    ? currentVariant.stock
+    : (product?.stock || 0);
+    
   const isOutOfStock = availableStock === 0;
+
+  const handleScrollThumbnails = (direction) => {
+    if (thumbnailRef.current) {
+      const scrollAmount = 150;
+      thumbnailRef.current.scrollBy({
+        top: direction === 'up' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleNextImg = () => {
+    if (!displayImages?.length) return;
+    setActiveImg((prev) => (prev + 1) % displayImages.length);
+  };
+
+  const handlePrevImg = () => {
+    if (!displayImages?.length) return;
+    setActiveImg((prev) => (prev - 1 + displayImages.length) % displayImages.length);
+  };
 
   const showSuccessToast = () => {
     toast.custom(
       (t) => (
-        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white/80 backdrop-blur-xl border border-stone-200 shadow-2xl flex flex-col overflow-hidden rounded-2xl`}>
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white/95 backdrop-blur-xl border border-stone-200 shadow-2xl flex flex-col overflow-hidden rounded-2xl`}>
           <div className="flex p-4 gap-4 items-center">
             <div className="h-16 w-12 shrink-0 bg-stone-100 overflow-hidden rounded-lg">
               <img src={displayImages?.[0]?.url} className="w-full h-full object-cover mix-blend-multiply" alt="Product" />
             </div>
 
             <div className="flex-1 flex flex-col justify-center">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-[#a3cc00] mb-1">Added to Vault</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-[#a3cc00] mb-1">Added to Bag</p>
               <p className="text-xs font-black uppercase tracking-tight text-stone-900 line-clamp-1 mb-2">{displayTitle}</p>
               <button
                 onClick={() => { toast.dismiss(t.id); navigate("/bag"); }}
@@ -204,37 +292,14 @@ const ProductDetail = () => {
               <X size={12} strokeWidth={3} />
             </button>
           </div>
-          <div className="h-[2px] w-full bg-stone-100">
-            <div className="h-full bg-[#ccff00]" style={{ animation: "shrink-timeline 5s linear forwards" }} />
-          </div>
         </div>
       ),
-      { duration: 2000, id: "cart-success" }
+      { duration: 2500, id: "cart-success" }
     );
   };
 
   const showErrorToast = (missingOptions) => {
-    toast.custom(
-      (t) => (
-        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white/80 backdrop-blur-xl border border-stone-200 shadow-2xl flex flex-col overflow-hidden rounded-2xl`}>
-          <div className="flex p-4 gap-3 items-start">
-            <div className="flex-1">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-red-500 mb-1">Selection Required</p>
-              <p className="text-xs text-stone-600 font-medium">
-                Please select <span className="text-stone-900 font-black uppercase">{missingOptions.join(" & ")}</span>
-              </p>
-            </div>
-            <button onClick={() => toast.dismiss(t.id)} className="text-stone-400 hover:text-stone-900 bg-stone-100 p-1.5 rounded-full">
-              <X size={12} strokeWidth={3} />
-            </button>
-          </div>
-          <div className="h-[2px] w-full bg-stone-100">
-            <div className="h-full bg-red-500" style={{ animation: "shrink-timeline 5s linear forwards" }} />
-          </div>
-        </div>
-      ),
-      { duration: 2000, id: "cart-error" }
-    );
+    toast.error(`Please select ${missingOptions.join(" & ")}`, { position: "bottom-center" });
   };
 
   if (loading)
@@ -255,62 +320,89 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#f7f6f4] text-stone-900 selection:bg-[#ccff00] selection:text-stone-900 pt-[100px] lg:pt-[130px]">
-
-      <style>{`
-        @keyframes shrink-timeline {
-          from { width: 100%; }
-          to { width: 0%; }
-        }
-      `}</style>
-
-      {/* 🔥 FIX: Changed max-w to 1280px (max-w-7xl) for better container width */}
-      <nav className="max-w-7xl mx-auto px-6 lg:px-12 mb-6 flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 overflow-x-auto no-scrollbar whitespace-nowrap">
-        <span className="hover:text-stone-900 cursor-pointer transition-colors bg-stone-200/50 px-3 py-1.5 rounded-full" onClick={() => navigate("/")}>
+      <nav className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-8 flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 overflow-x-auto no-scrollbar whitespace-nowrap">
+        <span className="hover:text-stone-900 cursor-pointer transition-colors" onClick={() => navigate("/shop")}>
           Shop
         </span>
         <ChevronRight size={10} />
-        <span className="hover:text-stone-900 cursor-pointer transition-colors bg-stone-200/50 px-3 py-1.5 rounded-full" onClick={() => navigate("/")}>
+        <span className="hover:text-stone-900 cursor-pointer transition-colors" onClick={() => navigate("/shop")}>
           {product.category || "Apparel"}
         </span>
         <ChevronRight size={10} />
-        <span className="text-stone-900 truncate max-w-[200px] font-black bg-white shadow-sm px-3 py-1.5 rounded-full">
+        <span className="text-stone-900 truncate max-w-[200px] font-black">
           {displayTitle}
         </span>
       </nav>
 
-      {/* 🔥 FIX: Adjusted Grid to perfect 50/50 (lg:col-span-6) and max-width to max-w-7xl */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 px-6 lg:px-12 pb-24 items-start">
+      {/* Reduced pb-24 to pb-10 here to fix the vertical gap */}
+      <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 px-6 lg:px-12 pb-10 items-start">
+        
+        <div className="lg:col-span-6 lg:sticky lg:top-32 relative flex flex-col-reverse md:flex-row gap-4 h-fit">
+          
+          <div className="flex md:flex-col items-center gap-2 shrink-0 w-full md:w-20">
+            <button 
+              onClick={() => handleScrollThumbnails('up')} 
+              className="hidden md:flex items-center justify-center bg-white p-2 rounded-full shadow-sm hover:shadow-md border border-stone-200 text-stone-900 hover:bg-stone-50 transition-all z-10"
+            >
+              <ChevronUp size={16} strokeWidth={2.5}/>
+            </button>
 
-        {/* IMAGE SECTION (lg:col-span-6 instead of 7) */}
-        <div className="lg:col-span-6 lg:sticky lg:top-32 relative flex flex-col-reverse md:flex-row gap-4">
-
-          {/* THUMBNAILS SECTION */}
-          <div className="flex md:flex-col gap-3 shrink-0 overflow-x-auto md:overflow-y-auto max-h-[650px] no-scrollbar w-full md:w-20 pt-1 pb-4 md:py-1">
-            {displayImages?.map((img, i) => (
-              <div
-                key={i}
-                onClick={() => setActiveImg(i)}
-                className={`w-16 h-20 md:w-full md:aspect-[3/4] md:h-auto shrink-0 cursor-pointer overflow-hidden transition-all duration-300 rounded-xl bg-white shadow-sm border ${activeImg === i
-                  ? "border-stone-900 ring-1 ring-stone-900 opacity-100 scale-100"
-                  : "border-stone-200 opacity-60 hover:opacity-100 hover:scale-95"
+            <div 
+              ref={thumbnailRef} 
+              className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto md:max-h-[500px] no-scrollbar w-full md:w-full py-1 scroll-smooth"
+            >
+              {displayImages?.map((img, i) => (
+                <div
+                  key={i}
+                  onClick={() => setActiveImg(i)}
+                  className={`w-16 h-20 md:w-full md:aspect-[3/4] md:h-auto shrink-0 cursor-pointer overflow-hidden transition-all duration-300 rounded-xl bg-stone-200/50 border ${
+                    activeImg === i
+                      ? "border-stone-900 ring-1 ring-stone-900 opacity-100"
+                      : "border-transparent opacity-60 hover:opacity-100"
                   }`}
-              >
-                <img
-                  src={img.url}
-                  className="w-full h-full object-cover object-top mix-blend-multiply"
-                  alt={`Thumbnail ${i + 1}`}
-                />
-              </div>
-            ))}
+                >
+                  <img
+                    src={img.url}
+                    className="w-full h-full object-cover object-top mix-blend-multiply"
+                    alt={`Thumbnail ${i + 1}`}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => handleScrollThumbnails('down')} 
+              className="hidden md:flex items-center justify-center bg-white p-2 rounded-full shadow-sm hover:shadow-md border border-stone-200 text-stone-900 hover:bg-stone-50 transition-all z-10"
+            >
+              <ChevronDown size={16} strokeWidth={2.5}/>
+            </button>
           </div>
 
-          {/* Main Image */}
-          <div className="w-full aspect-[3/4] md:aspect-[4/5] bg-white rounded-3xl relative overflow-hidden flex-1 shadow-[0_8px_30px_rgb(0,0,0,0.04)] group cursor-crosshair border border-stone-100">
+          <div className="w-full aspect-[3/4] md:aspect-[4/5] bg-[#ececec] md:bg-stone-200/40 rounded-[2rem] relative overflow-hidden flex-1 group">
             <img
               src={displayImages?.[activeImg]?.url}
-              className="w-full h-full object-cover object-top mix-blend-multiply transition-transform duration-[2s] ease-out group-hover:scale-105"
+              className="w-full h-full object-cover object-top mix-blend-multiply transition-transform duration-[0.5s] ease-out"
               alt={displayTitle}
             />
+
+            {displayImages?.length > 1 && (
+              <>
+                {/* Added opacity-0 and group-hover:opacity-100 to toggle on hover */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handlePrevImg(); }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white p-2.5 rounded-full shadow-md border border-stone-200 text-stone-900 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 hover:scale-105"
+                >
+                  <ChevronLeft size={18} strokeWidth={3} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleNextImg(); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white p-2.5 rounded-full shadow-md border border-stone-200 text-stone-900 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 hover:scale-105"
+                >
+                  <ChevronRight size={18} strokeWidth={3} />
+                </button>
+              </>
+            )}
+
             {isOutOfStock && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] z-10">
                 <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-md shadow-lg">
@@ -318,88 +410,77 @@ const ProductDetail = () => {
                 </span>
               </div>
             )}
-            <div className="absolute flex gap-2 top-6 left-6 bg-white/80 backdrop-blur-md px-4 py-2 border border-stone-200 shadow-sm rounded-full z-20">
-              <ShieldCheck size={14} className="text-[#a3cc00]" />
-              <span className="text-[8px] font-black tracking-[0.2em] uppercase text-stone-900 mt-0.5">
+            
+            <div className="absolute flex items-center justify-center gap-2 top-6 left-6 bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-full z-20 shadow-sm border border-stone-200/60 pointer-events-none hidden md:flex">
+              <ShieldCheck size={14} className="text-[#a3cc00]" strokeWidth={2.5} />
+              <span className="text-[9px] font-black tracking-[0.2em] uppercase text-stone-900 mt-0.5">
                 Stylix Authentic
               </span>
             </div>
           </div>
         </div>
 
-        {/* INFO SECTION (lg:col-span-6 instead of 5) */}
-        <div className="lg:col-span-6 flex flex-col justify-start">
-
-          {/* Title & Price Section */}
-          <div className="mb-8">
-            <div className="inline-block bg-stone-900 text-white text-[9px] font-black uppercase tracking-[0.3em] px-3 py-1.5 rounded-full mb-4">
-              New Drop
-            </div>
-
-            <div className="flex justify-between items-start gap-6 mb-6">
-              {/* 🔥 FIX: Reduced font sizes and improved line height for readability */}
-              <h1 className="flex-1 text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-tight leading-[1.15] text-stone-900 drop-shadow-sm break-words">
-                {displayTitle}
-              </h1>
-
-              {/* WISHLIST BUTTON */}
-              <button
-                onClick={(e) => {
-                  e.preventDefault(); 
-                  handleToggleWishlist(e, getStrId(product._id)); 
-                }}
-                className="p-3.5 bg-white border border-stone-200 rounded-full shadow-sm hover:border-red-500 group transition-all shrink-0 z-10 mt-1"
-              >
-                <Heart
-                  size={20}
-                  className={isWishlisted(getStrId(product._id)) ? "text-red-500 fill-red-500" : "text-stone-400 group-hover:text-red-500"}
-                  strokeWidth={2}
-                />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4 mb-6 bg-white w-fit px-6 py-3 rounded-2xl shadow-sm border border-stone-100">
-              <span className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
-                {displayPrice?.currency} {displayPrice?.amount}
-              </span>
-              <span className="text-stone-400 line-through text-sm font-bold pt-1">
-                {displayPrice?.currency} {Math.round(displayPrice?.amount * 1.5)}
-              </span>
-              <span className="bg-[#ccff00]/20 text-[#8cb300] text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ml-2">
-                -33% OFF
-              </span>
-            </div>
-
-            <p className="text-stone-500 font-medium text-sm leading-relaxed bg-stone-100/50 p-4 rounded-2xl border border-stone-100">
-              {product.description || "A curated essential crafted with premium materials. Precision cut for a relaxed, structural fit."}
-            </p>
+        <div className="lg:col-span-6 flex flex-col justify-start pt-2">
+          <div className="flex justify-between items-start gap-6 mb-8">
+            <h1 className="flex-1 text-3xl md:text-5xl lg:text-[2.75rem] font-black uppercase tracking-tighter leading-[1.1] text-stone-900 break-words">
+              {displayTitle}
+            </h1>
+            <button
+              onClick={(e) => {
+                e.preventDefault(); 
+                handleToggleWishlist(e, getStrId(product._id)); 
+              }}
+              className="p-3.5 bg-white border border-stone-200 rounded-full shadow-sm hover:border-red-500 group transition-all shrink-0 z-10"
+            >
+              <Heart
+                size={22}
+                className={isWishlisted(getStrId(product._id)) ? "text-red-500 fill-red-500" : "text-stone-300 group-hover:text-red-500"}
+                strokeWidth={2}
+              />
+            </button>
           </div>
 
-          {/* Attributes Selection */}
-          <div className="space-y-6 mb-8">
+          <div className="flex items-center gap-4 mb-8 bg-white w-fit px-6 py-4 rounded-[1.25rem] border border-stone-100 shadow-sm">
+            <span className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
+              {displayPrice?.currency || "INR"} {displayPrice?.amount || "0"}
+            </span>
+            <span className="text-stone-400 line-through text-xs font-bold pt-1">
+              {displayPrice?.currency || "INR"} {Math.round((displayPrice?.amount || 0) * 1.5)}
+            </span>
+            <span className="bg-[#ccff00]/20 text-[#8cb300] text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-md ml-1">
+              -33% OFF
+            </span>
+          </div>
+
+          <p className="text-stone-500 font-medium text-sm leading-relaxed mb-10 max-w-xl">
+            {product.description || "A curated essential crafted with premium materials. Precision cut for a relaxed, structural fit."}
+          </p>
+
+          <div className="space-y-8 mb-10">
             {Object.entries(allPossibleOptions).map(([attrKey, attrValues]) => (
-              <div key={attrKey} className="space-y-3">
+              <div key={attrKey} className="space-y-4">
                 <div className="flex justify-between items-end">
-                  <h3 className="text-[11px] font-black uppercase tracking-widest text-stone-900">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-900">
                     Select {attrKey}
                   </h3>
                   {attrKey.toLowerCase() === 'size' && (
-                    <button className="text-[9px] text-stone-400 uppercase tracking-widest hover:text-stone-900 flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-stone-200 shadow-sm">
-                      <Ruler size={10} /> Size Guide
+                    <button className="text-[9px] text-stone-400 uppercase tracking-widest hover:text-stone-900 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-stone-200 shadow-sm transition-colors">
+                      <Ruler size={12} /> Size Guide
                     </button>
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-3 p-1 bg-white border border-stone-200 rounded-2xl shadow-inner w-fit">
+                <div className="flex flex-wrap gap-2 p-1.5 bg-white border border-stone-200 rounded-2xl w-fit shadow-sm">
                   {attrValues.map((val) => {
-                    const isSelected = selectedAttributes[attrKey]?.toString().toLowerCase() === val.toLowerCase();
+                    const isSelected = selectedAttributes[attrKey] && 
+                                       selectedAttributes[attrKey].toString().toLowerCase() === val.toLowerCase();
                     return (
                       <button
                         key={val}
                         onClick={() => handleAttributeClick(attrKey, val)}
-                        className={`px-6 py-2.5 min-w-[3.5rem] text-[11px] font-black uppercase tracking-wider transition-all duration-300 rounded-xl
+                        className={`px-6 py-2.5 min-w-[3.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 rounded-xl
                           ${isSelected
-                            ? "bg-stone-900 text-white shadow-md transform scale-100"
+                            ? "bg-stone-900 text-white shadow-md"
                             : "bg-transparent text-stone-500 hover:bg-stone-100 hover:text-stone-900"}`}
                       >
                         {val}
@@ -411,40 +492,32 @@ const ProductDetail = () => {
             ))}
           </div>
 
-          {/* QUANTITY SELECTOR */}
           <div className="mb-10">
-            <h3 className="text-[11px] font-black uppercase tracking-widest text-stone-900 mb-3">Quantity</h3>
-            <div className="flex items-center gap-4 w-fit bg-white border border-stone-200 p-1.5 rounded-xl shadow-sm">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-900 mb-4">Quantity</h3>
+            <div className="flex items-center gap-6 w-fit bg-white border border-stone-200 px-2 py-2 rounded-2xl shadow-sm">
               <button
                 disabled={buyQty <= 1 || isOutOfStock}
                 onClick={() => setBuyQty(prev => prev - 1)}
-                className="w-10 h-10 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-10 h-8 flex items-center justify-center rounded-xl text-stone-400 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 transition-colors"
               >
-                <Minus size={16} strokeWidth={2.5} />
+                <Minus size={14} strokeWidth={3} />
               </button>
 
-              <span className="w-8 text-center text-sm font-black text-stone-900">
+              <span className="w-4 text-center text-[13px] font-black text-stone-900">
                 {isOutOfStock ? 0 : buyQty}
               </span>
 
               <button
                 disabled={buyQty >= availableStock || isOutOfStock}
                 onClick={() => setBuyQty(prev => prev + 1)}
-                className="w-10 h-10 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-10 h-8 flex items-center justify-center rounded-xl text-stone-400 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 transition-colors"
               >
-                <Plus size={16} strokeWidth={2.5} />
+                <Plus size={14} strokeWidth={3} />
               </button>
             </div>
-
-            {availableStock > 0 && availableStock <= 5 && (
-              <p className="text-orange-500 text-[10px] font-bold uppercase tracking-widest mt-3 animate-pulse flex items-center gap-1">
-                <Zap size={12} /> Only {availableStock} left in stock
-              </p>
-            )}
           </div>
 
-          {/* Add to Cart / Buy Now Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-10">
+          <div className="flex flex-col sm:flex-row gap-4 mb-12">
             <button
               disabled={isAdding || isOutOfStock}
               onClick={async () => {
@@ -478,8 +551,8 @@ const ProductDetail = () => {
                   }
                 }
               }}
-              className={`flex-1 bg-white border-2 border-stone-900 text-stone-900 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 shadow-sm
-                ${isAdding || isOutOfStock ? "opacity-70 cursor-not-allowed" : "hover:bg-stone-900 hover:text-white hover:shadow-lg active:scale-95"}`}
+              className={`flex-1 bg-white border-[1.5px] border-stone-900 text-stone-900 py-4 sm:py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 shadow-sm
+                ${isAdding || isOutOfStock ? "opacity-70 cursor-not-allowed" : "hover:bg-stone-50 active:scale-[0.98]"}`}
             >
               {isCurrentlyInCart ? "View In Bag" : isAdding ? "Adding..." : "Add to Bag"}
             </button>
@@ -503,16 +576,15 @@ const ProductDetail = () => {
                   }
                 });
               }}
-              className={`flex-1 text-stone-900 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 
+              className={`flex-1 text-stone-900 py-4 sm:py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2.5 transition-all duration-300 active:scale-[0.98] 
                 ${isOutOfStock
                   ? "bg-stone-200 cursor-not-allowed text-stone-400"
-                  : "bg-[#ccff00] shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] hover:bg-[#bbf000]"}`}
+                  : "bg-[#ccff00] hover:bg-[#bbf000] shadow-sm"}`}
             >
-              <Zap size={14} fill="currentColor" /> Buy It Now
+              <Zap size={14} fill="currentColor" strokeWidth={0} /> Buy It Now
             </button>
           </div>
 
-          {/* Details & Care */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 mb-3 text-stone-900">
@@ -538,32 +610,12 @@ const ProductDetail = () => {
               </ul>
             </div>
           </div>
-
-          {/* Delivery Badges */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-4 p-5 bg-stone-100/50 rounded-2xl border border-stone-100">
-            <div className="flex items-center gap-3 text-stone-600 flex-1">
-              <Truck size={18} strokeWidth={1.5} />
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-900">Express Delivery</span>
-                <span className="text-[9px] font-medium text-stone-500">Dispatches in 24 hours</span>
-              </div>
-            </div>
-            <div className="w-px h-8 bg-stone-200 hidden sm:block"></div>
-            <div className="flex items-center gap-3 text-stone-600 flex-1">
-              <RefreshCcw size={18} strokeWidth={1.5} />
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-900">Free Returns</span>
-                <span className="text-[9px] font-medium text-stone-500">14-day return policy</span>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
 
-      {/* RELATED PRODUCTS */}
-      <section className="pt-16 pb-24 bg-white border-t border-stone-200">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12">
+      {/* Reduced pt-16 to pt-10 and pb-24 to pb-16 here to fix the vertical gap */}
+      <section className="pt-10 pb-16 bg-white border-t border-stone-200">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
           <ProductGrid
             products={allProducts.filter((p) => getStrId(p._id) !== getStrId(product._id))}
             title="Curated For You"
@@ -574,5 +626,5 @@ const ProductDetail = () => {
     </div>
   );
 };
-
+ 
 export default ProductDetail;

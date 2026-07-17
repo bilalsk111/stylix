@@ -101,11 +101,11 @@ const SellerOrder = () => {
                                 <tr className="bg-stone-50 border-b border-stone-200 text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">
                                     <th className="p-5 whitespace-nowrap">Order ID</th>
                                     <th className="p-5 whitespace-nowrap">Timestamp</th>
-                                    <th className="p-5 whitespace-nowrap">Items</th> {/* 🔥 Naya Column */}
+                                    <th className="p-5 whitespace-nowrap">Items</th>
                                     <th className="p-5 whitespace-nowrap">Customer Info</th>
                                     <th className="p-5 whitespace-nowrap">Value</th>
                                     <th className="p-5 whitespace-nowrap">Payment</th>
-                                    <th className="p-5 whitespace-nowrap text-right">Actions</th> {/* 🔥 Updated Column */}
+                                    <th className="p-5 whitespace-nowrap text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="text-sm font-medium">

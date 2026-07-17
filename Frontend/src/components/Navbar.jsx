@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ShoppingBag, User, LogOut, LayoutDashboard, Heart } from "lucide-react"; 
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hook/useAuth";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useCart } from "../features/cart/hook/useCart";
 import { useWishlist } from "../features/wishlist/hook/useWishlist"; 
 
@@ -15,6 +15,7 @@ const NAV_LINKS = [
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
   const { currentUser, handleLogout } = useAuth();
   const { handleGetCart } = useCart();
   const { handleGetWishlist } = useWishlist(); 
@@ -22,6 +23,10 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  
+  // 🔥 Logout Modal States
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const avatarRef = useRef(null);
 
@@ -82,6 +87,19 @@ const Navbar = () => {
   const handleCartClick = () => {
     if (!currentUser) navigate("/login");
     else navigate("/bag");
+  };
+
+  // 🔥 Execute Logout
+  const executeLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await handleLogout();
+      setShowLogoutModal(false);
+    } catch (error) {
+      console.error("Logout error", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -156,7 +174,6 @@ const Navbar = () => {
                       </p>
                     </div>
 
-                    {/* 🔥 WISHLIST MOVED HERE (Inside Dropdown) */}
                     <Link
                       to="/wishlist"
                       onClick={() => setAvatarOpen(false)}
@@ -188,11 +205,12 @@ const Navbar = () => {
                       <User size={12} /> Profile
                     </Link>
 
+                    {/* 🔥 DESKTOP LOGOUT BUTTON */}
                     <button
-                      onClick={handleLogout}
+                      onClick={() => { setAvatarOpen(false); setShowLogoutModal(true); }}
                       className="w-full flex items-center gap-3 px-4 py-3 text-[9px] font-bold text-red-500 hover:bg-red-50 transition-all uppercase tracking-widest border-t border-stone-100"
                     >
-                      <LogOut size={12} /> Sign Out
+                      <LogOut size={12} /> Logout
                     </button>
                   </div>
                 )}
@@ -256,7 +274,6 @@ const Navbar = () => {
                   </p>
                 </div>
 
-                {/* 🔥 MOBILE WISHLIST MOVED TO PROFILE SECTION */}
                 <button
                   onClick={() => { setMobileOpen(false); navigate("/wishlist"); }}
                   className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-stone-500 hover:text-stone-900 flex items-center justify-between border-b border-stone-200"
@@ -287,11 +304,12 @@ const Navbar = () => {
                   <User size={16} /> My Profile
                 </button>
 
+                {/* 🔥 MOBILE LOGOUT BUTTON */}
                 <button
-                  onClick={handleLogout}
+                  onClick={() => { setMobileOpen(false); setShowLogoutModal(true); }}
                   className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-red-500 hover:text-red-600 flex items-center gap-3"
                 >
-                  <LogOut size={16} /> Sign Out
+                  <LogOut size={16} /> Logout
                 </button>
               </div>
             ) : (
@@ -305,6 +323,28 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {/* 🔥 LOGOUT CONFIRMATION MODAL - EXACT MATCH */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white border border-stone-200 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-5 animate-fade-in-up">
+            <div>
+              <h3 className="text-[12px] font-black uppercase tracking-widest text-stone-900">Confirm Logout</h3>
+              <p className="text-[10px] text-stone-500 italic mt-1">Are you sure you want to exit?</p>
+            </div>
+            <div className="border-t border-stone-100" />
+            <div className="flex justify-end gap-3">
+              <button disabled={isLoggingOut} onClick={() => setShowLogoutModal(false)} className="px-4 py-2.5 text-[9px] font-black uppercase border border-stone-200 rounded-lg text-stone-500 hover:bg-stone-50">
+                Cancel
+              </button>
+              <button disabled={isLoggingOut} onClick={executeLogout} className="px-4 py-2.5 text-[9px] font-black uppercase bg-stone-900 text-white rounded-lg hover:bg-red-500 flex items-center gap-2">
+                {isLoggingOut ? <span className="w-3 h-3 border-2 border-t-white rounded-full animate-spin" /> : <LogOut size={12} />}
+                {isLoggingOut ? "Logging Out..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -48,6 +48,21 @@ export const logoutApi = async () => {
     const res = await authApiInstance.post('/logout'); 
     return res.data;
 }
+
+export const updateProfileAPI = async (data) => {
+  const res = await authApiInstance.put("/update-profile", data);
+  return res.data;
+};
+
+export const forgotPasswordAPI = async (email) => {
+  const res = await authApiInstance.post("/forgot-password", { email });
+  return res.data;
+};
+
+export const resetPasswordAPI = async (token, newPassword) => {
+  const res = await authApiInstance.post("/reset-password", { token, newPassword });
+  return res.data;
+};
 // export async function register({ email, contact, password, fullname, isSeller }) {
 
 //     const response = await authApiInstance.post("/register", {

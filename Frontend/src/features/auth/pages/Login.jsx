@@ -6,7 +6,7 @@ import { useAuth } from "../hook/useAuth";
 
 
 export default function Login() {
-  const { handleLogin,currentUser} = useAuth();
+  const { handleLogin, currentUser } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -31,26 +31,24 @@ export default function Login() {
     if (errors.auth) setErrors((prev) => ({ ...prev, auth: null }));
   };
 
- const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
     setIsLoading(true);
     try {
       const response = await handleLogin({ email: formData.email, password: formData.password });
-      
+
       // 💡 DEBUG: Console me dekho backend exactly kya bhej raha hai
       console.log("Login Response Data:", response);
 
       // 🛡️ SAFE EXTRACTION: Har possible jagah se role dhundhne ki koshish karega
       const rawRole = response?.role || response?.user?.role || response?.data?.user?.role || currentUser?.role;
-      
       // 🛡️ CASE INSENSITIVE: "SELLER", "Seller", "seller" sabko handle karega
-      const role = rawRole ? rawRole.toLowerCase() : "buyer"; 
+      const role = rawRole ? rawRole.toLowerCase() : "buyer";
 
       if (role === "seller") {
         navigate("/seller/dashboard");
       } else {
-        // Agar buyer hai ya role nahi bhi mila, toh default Home par bhej do
         navigate("/");
       }
 
@@ -70,8 +68,8 @@ export default function Login() {
       error
         ? "border-red-400"
         : isFocused
-        ? "border-stone-900"
-        : "border-stone-200 hover:border-stone-300",
+          ? "border-stone-900"
+          : "border-stone-200 hover:border-stone-300",
     ].join(" ");
   };
 
@@ -224,6 +222,7 @@ export default function Login() {
                 </label>
                 <button
                   type="button"
+                  onClick={() => navigate("/forgot-password")}
                   className="text-[9px] text-stone-400 hover:text-stone-700 uppercase tracking-widest font-bold transition-colors cursor-pointer"
                 >
                   Forgot?
