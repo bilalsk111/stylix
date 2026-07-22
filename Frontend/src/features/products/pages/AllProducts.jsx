@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux"; // 🔥 Essential for Cart State
+import { useSelector } from "react-redux"; 
 import { LayoutGrid, SlidersHorizontal, Plus, Search, X, Heart, ShoppingBag, ArrowRight } from "lucide-react";
 import { useShopFilters } from "../hook/useShopFilters";
 import FilterSidebar from "../components/FilterSidebar";
 import { useWishlist } from "../../wishlist/hook/useWishList";
 import { useCart } from "../../cart/hook/useCart";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast"; // 🔥 Toaster import kiya yahan
 
 /* ─── Premium Wishlist Toast (Handles Both Add & Remove) ─────── */
 const WishlistToast = ({ product, isRemoving }) => (
@@ -164,7 +164,6 @@ const AllProducts = () => {
   const { handleToggleWishlist, isWishlisted } = useWishlist();
   const { handleAddItem } = useCart();
   
-  // 🔥 FIX: Directly tied to Redux! No more setTimeouts resetting your UI.
   const cartItems = useSelector((state) => state.cart?.items || []);
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -178,7 +177,7 @@ const AllProducts = () => {
 
   const handleClearFilters = () => { setLocalSearch(""); navigate("/shop"); };
 
-  // 🔥 Bulletproof Cart Checker
+  // Bulletproof Cart Checker
   const checkInCart = useCallback((productId) => {
     if (!cartItems || cartItems.length === 0) return false;
     return cartItems.some(item => {
@@ -242,6 +241,10 @@ const AllProducts = () => {
     <div className="min-h-screen w-full bg-[#f7f6f4] text-stone-900 font-sans
                     [&::selection]:bg-[#ccff00] [&::selection]:text-stone-900
                     [&_*::selection]:bg-[#ccff00] [&_*::selection]:text-stone-900">
+      
+      {/* 🔥 MAIN FIX: Add Toaster component here so toasts actually render on this page */}
+      <Toaster position="bottom-center" reverseOrder={false} />
+
       <main className="max-w-[1800px] mx-auto px-6 md:px-12 lg:px-16 pt-32 pb-24">
 
         {/* Hero */}
