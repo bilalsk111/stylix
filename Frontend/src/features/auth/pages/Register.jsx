@@ -9,7 +9,6 @@ export default function Register() {
 
   const [step, setStep] = useState(1);
   
-  // 🔥 FIX 1: Exact backend match - 'fullname' and 'contact'
   const [form, setForm] = useState({
     fullname: "", 
     contact: "", 
@@ -92,7 +91,7 @@ export default function Register() {
   const inputStyle = (fieldName, error) => {
     const isFocused = focusedField === fieldName;
     return [
-      "w-full text-stone-900 text-sm px-3 pb-3 rounded-t-md py-3 outline-none bg-transparent",
+      "w-full text-stone-900 text-sm px-3 pb-3 rounded-none-md py-3 outline-none bg-transparent",
       "border-0 border-b-2 transition-all duration-300",
       "placeholder:text-stone-300 placeholder:uppercase placeholder:tracking-widest placeholder:text-[10px]",
       error
@@ -197,7 +196,7 @@ export default function Register() {
           <form onSubmit={step === 1 ? handleNext : handleSubmit} className="space-y-7" noValidate>
 
             {errors.auth && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-[9px] p-3.5 rounded-xl tracking-widest uppercase text-center font-bold">
+              <div className="bg-red-50 border border-red-200 text-red-600 text-[9px] p-3.5 rounded-none tracking-widest uppercase text-center font-bold">
                 ✕ {errors.auth}
               </div>
             )}
@@ -255,18 +254,18 @@ export default function Register() {
                   <label className="text-[9px] font-black uppercase tracking-[0.25em] mb-3 block text-stone-900">
                     Account Type
                   </label>
-                  <div className="flex p-1 bg-stone-100 rounded-lg">
+                  <div className="flex p-1 bg-stone-100 rounded-none">
                     <button
                       type="button"
                       onClick={() => set("isSeller", false)}
-                      className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${!form.isSeller ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"}`}
+                      className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-none transition-all ${!form.isSeller ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"}`}
                     >
                       Buyer
                     </button>
                     <button
                       type="button"
                       onClick={() => set("isSeller", true)}
-                      className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${form.isSeller ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"}`}
+                      className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-none transition-all ${form.isSeller ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"}`}
                     >
                       Seller
                     </button>
@@ -276,7 +275,7 @@ export default function Register() {
                 <div className="pt-2 space-y-4">
                   <button
                     type="submit"
-                    className="group w-full bg-stone-900 text-white font-black py-[18px] rounded-2xl text-[11px] uppercase tracking-[0.35em] hover:bg-stone-700 hover:shadow-[0_8px_30px_rgba(0,0,0,0.20)] hover:-translate-y-[1px] transition-all duration-200 flex items-center justify-center gap-3"
+                    className="group w-full bg-stone-900 text-white font-black py-[18px] rounded-none text-[11px] uppercase tracking-[0.35em] hover:bg-stone-700 hover:shadow-[0_8px_30px_rgba(0,0,0,0.20)] hover:-translate-y-[1px] transition-all duration-200 flex items-center justify-center gap-3"
                   >
                     Next Phase
                     <ArrowRight size={15} strokeWidth={2.5} className="transition-transform duration-200 group-hover:translate-x-1.5" />
@@ -386,14 +385,14 @@ export default function Register() {
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="px-6 bg-stone-100 text-stone-900 hover:bg-stone-200 rounded-2xl transition-colors flex items-center justify-center"
+                    className="px-6 bg-stone-100 text-stone-900 hover:bg-stone-200 rounded-none transition-colors flex items-center justify-center"
                   >
                     <ArrowLeft size={16} strokeWidth={2.5} />
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group flex-1 bg-stone-900 text-white font-black py-[18px] rounded-2xl text-[11px] uppercase tracking-[0.35em] hover:bg-stone-700 hover:shadow-[0_8px_30px_rgba(0,0,0,0.20)] hover:-translate-y-[1px] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-3"
+                    className="group flex-1 bg-stone-900 text-white font-black py-[18px] rounded-none text-[11px] uppercase tracking-[0.35em] hover:bg-stone-700 hover:shadow-[0_8px_30px_rgba(0,0,0,0.20)] hover:-translate-y-[1px] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-3"
                   >
                     {loading ? (
                       <span className="flex items-center gap-2">

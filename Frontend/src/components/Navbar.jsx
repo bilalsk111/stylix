@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { ShoppingBag, User, LogOut, LayoutDashboard, Heart } from "lucide-react"; 
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hook/useAuth";
@@ -167,7 +167,7 @@ const Navbar = () => {
 
                 {/* Avatar Dropdown */}
                 {avatarOpen && (
-                  <div className="absolute right-0 top-full mt-4 w-52 bg-white border border-stone-200 shadow-xl rounded-md overflow-hidden animate-in fade-in zoom-in-95">
+                  <div className="absolute right-0 top-full mt-4 w-52 bg-white border border-stone-200 shadow-xl rounded-none overflow-hidden animate-in fade-in zoom-in-95">
                     <div className="px-4 py-3 border-b border-stone-100 bg-stone-50">
                       <p className="text-[10px] font-black text-stone-900 uppercase tracking-widest truncate">
                         {currentUser.fullname}
@@ -183,7 +183,7 @@ const Navbar = () => {
                         <Heart size={12} /> Wishlist
                       </div>
                       {wishlistCount > 0 && (
-                        <span className="text-[9px] font-black text-stone-900 bg-stone-200 px-1.5 py-0.5 rounded-sm">
+                        <span className="text-[9px] font-black text-stone-900 bg-stone-200 px-1.5 py-0.5 rounded-none">
                           {wishlistCount}
                         </span>
                       )}
@@ -218,7 +218,7 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={() => navigate("/login")}
-                className="hidden md:block text-[10px] font-black uppercase tracking-[0.2em] border border-stone-200 rounded-md px-6 py-2.5 text-stone-900 hover:border-stone-900 hover:bg-stone-900 hover:text-white transition-all"
+                className="hidden md:block text-[10px] font-black uppercase tracking-[0.2em] border border-stone-200 rounded-none px-6 py-2.5 text-stone-900 hover:border-stone-900 hover:bg-stone-900 hover:text-white transition-all"
               >
                 Login
               </button>
@@ -265,7 +265,7 @@ const Navbar = () => {
           <div className="mt-auto pt-10">
             {currentUser ? (
               <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-4 p-4 border border-stone-200 bg-white rounded-xl shadow-sm mb-2">
+                <div className="flex items-center gap-4 p-4 border border-stone-200 bg-white rounded-none shadow-sm mb-2">
                   <div className="h-10 w-10 rounded-full bg-[#ccff00] text-stone-900 flex items-center justify-center text-[14px] font-black">
                     {getInitials(currentUser.fullname)}
                   </div>
@@ -282,7 +282,7 @@ const Navbar = () => {
                     <Heart size={16} /> Wishlist
                   </div>
                   {wishlistCount > 0 && (
-                    <span className="text-[10px] font-black text-stone-900 bg-stone-200 px-2 py-1 rounded-sm">
+                    <span className="text-[10px] font-black text-stone-900 bg-stone-200 px-2 py-1 rounded-none">
                       {wishlistCount}
                     </span>
                   )}
@@ -315,7 +315,7 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={() => { setMobileOpen(false); navigate("/login"); }}
-                className="w-full text-[12px] font-black uppercase tracking-[0.3em] border border-stone-900 bg-stone-900 rounded-xl py-5 text-white hover:bg-transparent hover:text-stone-900 transition-all shadow-md"
+                className="w-full text-[12px] font-black uppercase tracking-[0.3em] border border-stone-900 bg-stone-900 rounded-none py-5 text-white hover:bg-transparent hover:text-stone-900 transition-all shadow-md"
               >
                 Login / Register
               </button>
@@ -327,17 +327,17 @@ const Navbar = () => {
       {/* 🔥 LOGOUT CONFIRMATION MODAL - EXACT MATCH */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white border border-stone-200 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-5 animate-fade-in-up">
+          <div className="bg-white border border-stone-200 rounded-none max-w-sm w-full p-6 shadow-2xl space-y-5 animate-fade-in-up">
             <div>
               <h3 className="text-[12px] font-black uppercase tracking-widest text-stone-900">Confirm Logout</h3>
               <p className="text-[10px] text-stone-500 italic mt-1">Are you sure you want to exit?</p>
             </div>
             <div className="border-t border-stone-100" />
             <div className="flex justify-end gap-3">
-              <button disabled={isLoggingOut} onClick={() => setShowLogoutModal(false)} className="px-4 py-2.5 text-[9px] font-black uppercase border border-stone-200 rounded-lg text-stone-500 hover:bg-stone-50">
+              <button disabled={isLoggingOut} onClick={() => setShowLogoutModal(false)} className="px-4 py-2.5 text-[9px] font-black uppercase border border-stone-200 rounded-none text-stone-500 hover:bg-stone-50">
                 Cancel
               </button>
-              <button disabled={isLoggingOut} onClick={executeLogout} className="px-4 py-2.5 text-[9px] font-black uppercase bg-stone-900 text-white rounded-lg hover:bg-red-500 flex items-center gap-2">
+              <button disabled={isLoggingOut} onClick={executeLogout} className="px-4 py-2.5 text-[9px] font-black uppercase bg-stone-900 text-white rounded-none hover:bg-red-500 flex items-center gap-2">
                 {isLoggingOut ? <span className="w-3 h-3 border-2 border-t-white rounded-full animate-spin" /> : <LogOut size={12} />}
                 {isLoggingOut ? "Logging Out..." : "Confirm"}
               </button>

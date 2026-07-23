@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+﻿import React, { useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { CheckCircle2, Package, MapPin, CreditCard, ArrowRight } from "lucide-react";
 
@@ -33,7 +33,7 @@ const Success = () => {
       </div>
 
       {/* Main Receipt Container */}
-      <div className="w-full max-w-3xl bg-white border border-stone-200 rounded-3xl p-8 lg:p-12 shadow-sm">
+      <div className="w-full max-w-3xl bg-white border border-stone-200 rounded-none p-8 lg:p-12 shadow-sm">
         
         {/* Order Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 pb-10 border-b border-stone-100">
@@ -43,7 +43,7 @@ const Success = () => {
               <MapPin size={16} />
               <span className="text-[10px] font-black uppercase tracking-widest">Shipping To</span>
             </div>
-            <div className="bg-stone-50 p-4 rounded-xl text-xs font-medium text-stone-600 leading-relaxed border border-stone-100">
+            <div className="bg-stone-50 p-4 rounded-none text-xs font-medium text-stone-600 leading-relaxed border border-stone-100">
               <p className="font-bold text-stone-900 text-sm mb-1">{orderData.shippingAddress.firstName} {orderData.shippingAddress.lastName}</p>
               <p>{orderData.shippingAddress.address}</p>
               <p>{orderData.shippingAddress.city}, {orderData.shippingAddress.state} {orderData.shippingAddress.pincode}</p>
@@ -56,7 +56,7 @@ const Success = () => {
               <CreditCard size={16} />
               <span className="text-[10px] font-black uppercase tracking-widest">Payment Summary</span>
             </div>
-            <div className="bg-stone-50 p-4 rounded-xl border border-stone-100">
+            <div className="bg-stone-50 p-4 rounded-none border border-stone-100">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs text-stone-500 font-medium">Status</span>
                 <span className="bg-[#ccff00]/20 text-[#8cb300] text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded">Paid</span>
@@ -90,8 +90,8 @@ const Success = () => {
               const displayImage = variant?.images?.[0]?.url || product?.images?.[0]?.url;
 
               return (
-                <div key={idx} className="flex gap-4 items-center p-3 hover:bg-stone-50 rounded-xl transition-colors">
-                  <div className="w-16 h-20 bg-stone-100 rounded-lg overflow-hidden shrink-0 border border-stone-200">
+                <div key={idx} className="flex gap-4 items-center p-3 hover:bg-stone-50 rounded-none transition-colors">
+                  <div className="w-16 h-20 bg-stone-100 rounded-none overflow-hidden shrink-0 border border-stone-200">
                     <img src={displayImage} alt="item" className="w-full h-full object-cover mix-blend-multiply" />
                   </div>
                   <div className="flex-1">
@@ -115,13 +115,13 @@ const Success = () => {
       <div className="mt-10 flex flex-col sm:flex-row gap-4 w-full max-w-sm">
         <Link 
           to="/" 
-          className="flex-1 bg-stone-900 text-white py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-stone-800 transition-colors"
+          className="flex-1 bg-stone-900 text-white py-4 rounded-none text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-stone-800 transition-colors"
         >
           Continue Shopping
         </Link>
         <Link 
           to="/profile" 
-          className="flex-1 bg-white text-stone-900 border border-stone-200 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-stone-50 transition-colors"
+          className="flex-1 bg-white text-stone-900 border border-stone-200 py-4 rounded-none text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-stone-50 transition-colors"
         >
           View Orders <ArrowRight size={14} />
         </Link>

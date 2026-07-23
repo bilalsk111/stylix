@@ -18,17 +18,19 @@ export async function createProduct(req, res) {
             stock,
             attributes,
             category,
+            subCategory,
+            collectionName,
+            tags
         } = req.body;
 
         if (!req.user) {
-            return res
-                .status(401)
-                .json({
-                    success: false,
-                    message: "Unauthorized. Seller not found."
-                });
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized. Seller not found."
+            });
         }
 
+        // Image Upload Logic
         const images = await Promise.all(
             req.files.map(async (file) => {
                 const url = await uploadFile({
@@ -36,43 +38,55 @@ export async function createProduct(req, res) {
                     fileName: `product-${Date.now()}-${file.originalname}`,
                     folder: "stylix-products",
                 });
-                return {
-                    url
-                };
+                return { url };
             }),
         );
 
+        // Attributes Parsing
         let parsedAttributes = {};
         try {
-            parsedAttributes =
-                typeof attributes === "string" ? JSON.parse(attributes) : attributes;
+            parsedAttributes = typeof attributes === "string" ? JSON.parse(attributes) : attributes;
         } catch (e) {
-            parsedAttributes = {
-                error: "Parse Failed"
-            };
+            parsedAttributes = { error: "Parse Failed" };
+        }
+
+        // Tags Parsing (Stringified Array ya Comma Separated handle karne ke liye)
+        let parsedTags = [];
+        if (tags) {
+            try {
+                parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
+            } catch (e) {
+                parsedTags = typeof tags === "string" ? tags.split(',').map(t => t.trim()) : [];
+            }
         }
 
         const priceData = {
             amount: Number(priceAmount) || 0,
             currency: priceCurrency || "INR",
         };
+
         if (!title || !priceAmount) {
-            return res
-                .status(400)
-                .json({
-                    message: "Missing required fields",
-                    success: false
-                });
+            return res.status(400).json({
+                message: "Missing required fields",
+                success: false
+            });
         }
+
         const normalizeCategory = (cat) => {
             if (!cat) return "MEN";
             return cat.toUpperCase();
         };
+
         const categoryNormalized = normalizeCategory(category);
+
+        // Main Product Payload
         const productData = {
             title,
             description,
             category: categoryNormalized,
+            subCategory: subCategory ? subCategory.trim() : "",
+            collectionName: collectionName ? collectionName.trim() : "",
+            tags: parsedTags,
             seller: req.user._id,
             stock: Number(stock) || 0,
             attributes: parsedAttributes,
@@ -84,8 +98,7 @@ export async function createProduct(req, res) {
                 stock: Number(stock) || 0,
                 attributes: parsedAttributes,
                 price: priceData,
-                category: categoryNormalized,
-            }, ],
+            }],
         };
 
         const product = await productModel.create(productData);
@@ -190,7 +203,69 @@ export async function getProductDetail(req, res) {
         });
     }
 }
+export const updateMainProduct = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const {
+            title,
+            description,
+            category,
+            subCategory,
+            collectionName,
+            tags
+        } = req.body;
 
+        // 1. Find the main product (ensure the seller owns it)
+        const product = await productModel.findOne({
+            _id: productId,
+            seller: req.user._id,
+        });
+
+        if (!product) {
+            return res.status(404).json({
+                message: "Product not found or unauthorized",
+                success: false
+            });
+        }
+
+        // 2. Parse Tags if provided
+        let parsedTags = product.tags;
+        if (tags) {
+            try {
+                parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
+            } catch (e) {
+                parsedTags = typeof tags === "string" ? tags.split(',').map(t => t.trim()) : [];
+            }
+        }
+
+        // 3. Normalize Category
+        const normalizeCategory = (cat) => cat ? cat.toUpperCase() : product.category;
+
+        // 4. Update ONLY Parent-level fields
+        product.title = title || product.title;
+        product.description = description !== undefined ? description : product.description;
+        product.category = normalizeCategory(category);
+        product.subCategory = subCategory !== undefined ? subCategory.trim() : product.subCategory;
+        product.collectionName = collectionName !== undefined ? collectionName.trim() : product.collectionName;
+        product.tags = parsedTags;
+
+        // 5. Save the product
+        await product.save();
+
+        return res.status(200).json({
+            message: "Main Product details updated successfully",
+            success: true,
+            product,
+        });
+
+    } catch (err) {
+        console.error("updateMainProduct error:", err);
+        return res.status(500).json({
+            message: "Server error while updating main product",
+            success: false
+        });
+    }
+};
 export const addProductVariant = async (req, res) => {
     try {
         const productId = req.params.productId;
@@ -396,7 +471,7 @@ export const deleteProduct = async (req, res) => {
         // Flatten all images into a single array
         const allImages = [
             ...(product.images || []),
-            ...(product.variants ? .flatMap((v) => v.images || []) || []),
+            ...(product.variants ?.flatMap((v) => v.images || []) || []),
         ];
 
         // Delete all images from Cloudinary
@@ -560,110 +635,121 @@ export const deleteVariant = async (req, res) => {
 export const getFilteredProductsPro = async (req, res) => {
     try {
         const {
-            category,
+            category,      
+            collection,  
+            tags,         
+            stockStatus,   
             size,
             color,
             minPrice,
             maxPrice,
-            sort,
+            sort,        
             search,
             page = 1,
             limit = 12,
         } = req.query;
 
         // 1. Build the Match Stage
-        let matchStage = {}; // 1: Status check hata diya kyunki DB mein status nahi hai.
+        let matchStage = {}; 
 
+        // -- SMART SEARCH (Title, SubCategory, Tags) --
         if (search) {
-            matchStage.title = {
-                $regex: search,
-                $options: "i"
-            };
+            matchStage.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { subCategory: { $regex: search, $options: "i" } },
+                { tags: { $regex: search, $options: "i" } }
+            ];
         }
 
+        // -- CATEGORY / SUBCATEGORY LOGIC --
         if (category) {
-            const categories = category
-                .split(",")
-                .map((c) => new RegExp(`^${c.trim()}$`, "i"));
-            matchStage.category = {
-                $in: categories
-            };
+            const cats = category.split(",").map((c) => new RegExp(`^${c.trim()}$`, "i"));
+            
+            // Agar pehle se $or hai (search ki wajah se), toh $and mein wrap karna padega conflict rokne ke liye
+            if (matchStage.$or) {
+                matchStage.$and = [
+                    { $or: matchStage.$or },
+                    { $or: [{ category: { $in: cats } }, { subCategory: { $in: cats } }] }
+                ];
+                delete matchStage.$or; // Purana $or hatao taaki $and overrule kare
+            } else {
+                matchStage.$or = [
+                    { category: { $in: cats } }, 
+                    { subCategory: { $in: cats } }
+                ];
+            }
         }
 
-        // 2: Correct Path & Case-Insensitive Regex for SIZE
+        // -- COLLECTION FILTER --
+        if (collection) {
+            const cols = collection.split(",").map((c) => new RegExp(`^${c.trim()}$`, "i"));
+            matchStage.collectionName = { $in: cols };
+        }
+
+        // -- TAGS FILTER --
+        if (tags) {
+            const tagArr = tags.split(",").map((t) => new RegExp(`^${t.trim()}$`, "i"));
+            matchStage.tags = { $in: tagArr };
+        }
+
+        // -- STOCK STATUS FILTER --
+        if (stockStatus === "out_of_stock") {
+            matchStage.stock = 0;
+        } else if (stockStatus === "in_stock") {
+            matchStage.stock = { $gt: 0 };
+        }
+
+        // -- SIZE FILTER (Checks inside Variants) --
         if (size) {
-            const sizes = size
-                .split(",")
-                .map((s) => new RegExp(`^${s.trim()}$`, "i"));
-            matchStage["variants.attributes.SIZE"] = {
-                $in: sizes
-            };
+            const sizes = size.split(",").map((s) => new RegExp(`^${s.trim()}$`, "i"));
+            matchStage["variants.attributes.SIZE"] = { $in: sizes };
         }
 
-        // 3: Correct Path & Case-Insensitive Regex for COLOR
+        // -- COLOR FILTER (Checks inside Variants) --
         if (color) {
-            const colors = color
-                .split(",")
-                .map((c) => new RegExp(`^${c.trim()}$`, "i"));
-            matchStage["variants.attributes.COLOR"] = {
-                $in: colors
-            };
+            const colors = color.split(",").map((c) => new RegExp(`^${c.trim()}$`, "i"));
+            matchStage["variants.attributes.COLOR"] = { $in: colors };
         }
 
+        // -- PRICE FILTER --
         if (minPrice || maxPrice) {
-            // Price root par bhi hai aur variants mein bhi. Root wala filter kar rahe hain.
             matchStage["price.amount"] = {};
             if (minPrice) matchStage["price.amount"].$gte = Number(minPrice);
             if (maxPrice) matchStage["price.amount"].$lte = Number(maxPrice);
         }
 
-        // 2. Build the Sort Stage
-        let sortStage = {
-            createdAt: -1
-        };
-        if (sort === "price_asc") sortStage = {
-            "price.amount": 1
-        };
-        if (sort === "price_desc") sortStage = {
-            "price.amount": -1
-        };
 
+        // 2. Build the Sort Stage (The Engine Core)
+        let sortStage = { createdAt: -1 }; // Default is always Newest
+
+        if (sort === "price_asc") sortStage = { "price.amount": 1 };
+        if (sort === "price_desc") sortStage = { "price.amount": -1 };
+        if (sort === "bestseller") sortStage = { salesCount: -1, createdAt: -1 }; // Highest sales first
+        if (sort === "trending") sortStage = { views: -1, createdAt: -1 };       // Highest views first
+        if (sort === "oldest") sortStage = { createdAt: 1 };
+
+        
         // 3. Pagination Logic
         const skip = (Number(page) - 1) * Number(limit);
         const pageSize = Number(limit);
 
-        //  THE PRO WAY: MONGODB AGGREGATION PIPELINE 
-        const pipeline = [{
-                $match: matchStage
-            }, // Pehle filter karo
+        // 4. MONGODB AGGREGATION PIPELINE
+        const pipeline = [
+            { $match: matchStage }, 
+            { $sort: sortStage }, 
             {
-                $sort: sortStage
-            }, // Phir sort karo
-            {
-                // $facet 2 alag queries ek sath chalata hai parallel mein
                 $facet: {
-                    metadata: [{
-                            $count: "totalDocuments"
-                        }, // Total count nikalta hai pagination ke liye
-                    ],
-                    data: [{
-                            $skip: skip
-                        }, // Page ke hisaab se skip karo
-                        {
-                            $limit: pageSize
-                        }, // Sirf limit jitne items uthao
-                    ],
+                    metadata: [{ $count: "totalDocuments" }], 
+                    data: [{ $skip: skip }, { $limit: pageSize }], 
                 },
             },
         ];
 
         const result = await productModel.aggregate(pipeline);
 
-        // Data format theek karna (kyunki $facet array return karta hai)
+        // Extract Data
         const products = result[0].data;
-        const totalProducts = result[0].metadata[0] ?
-            result[0].metadata[0].totalDocuments :
-            0;
+        const totalProducts = result[0].metadata[0] ? result[0].metadata[0].totalDocuments : 0;
         const totalPages = Math.ceil(totalProducts / pageSize);
 
         return res.status(200).json({
@@ -676,13 +762,12 @@ export const getFilteredProductsPro = async (req, res) => {
             },
             products,
         });
+
     } catch (error) {
         console.error("Pro Filter Engine Error:", error);
-        return res
-            .status(500)
-            .json({
-                success: false,
-                message: "Database query failed"
-            });
+        return res.status(500).json({
+            success: false,
+            message: "Database query failed"
+        });
     }
 };

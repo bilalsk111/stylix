@@ -1,4 +1,4 @@
-// pages/Shop.jsx
+﻿// pages/Shop.jsx
 import React from 'react';
 import { useShopFilters } from '../hooks/useShopFilters';
 import FilterSidebar from '../components/FilterSidebar';
@@ -48,7 +48,7 @@ const Shop = () => {
                                     <button 
                                         disabled={pagination.currentPage === 1}
                                         onClick={() => updateFilter('page', pagination.currentPage - 1)}
-                                        className="px-4 py-2 border border-stone-200 rounded-lg text-xs font-bold disabled:opacity-50"
+                                        className="px-4 py-2 border border-stone-200 rounded-none text-xs font-bold disabled:opacity-50"
                                     >
                                         PREV
                                     </button>
@@ -60,7 +60,7 @@ const Shop = () => {
                                     <button 
                                         disabled={pagination.currentPage === pagination.totalPages}
                                         onClick={() => updateFilter('page', pagination.currentPage + 1)}
-                                        className="px-4 py-2 border border-stone-200 rounded-lg text-xs font-bold disabled:opacity-50"
+                                        className="px-4 py-2 border border-stone-200 rounded-none text-xs font-bold disabled:opacity-50"
                                     >
                                         NEXT
                                     </button>

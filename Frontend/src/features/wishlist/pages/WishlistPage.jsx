@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom"; // 🔥 Added useNavigate
 import { Trash2, ChevronLeft } from "lucide-react"; // 🔥 Added ArrowLeft
@@ -58,16 +58,16 @@ export const WishlistPage = () => {
         </div>
 
         {fullWishlist.length === 0 ? (
-          <div className="text-center py-32 bg-white rounded-3xl border border-stone-100">
+          <div className="text-center py-32 bg-white rounded-none border border-stone-100">
             <h2 className="text-lg font-black uppercase tracking-widest text-stone-400 mb-6">Archive is Empty</h2>
-            <Link to="/shop" className="bg-stone-900 text-white px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-stone-800 transition-colors">
+            <Link to="/shop" className="bg-stone-900 text-white px-8 py-4 rounded-none text-[10px] font-black uppercase tracking-[0.2em] hover:bg-stone-800 transition-colors">
               Explore Assets
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
             {fullWishlist.map(item => (
-              <div key={item._id} className="group relative bg-white rounded-2xl overflow-hidden border border-stone-100 shadow-sm flex flex-col">
+              <div key={item._id} className="group relative bg-white rounded-none overflow-hidden border border-stone-100 shadow-sm flex flex-col">
                 
                 {/* Remove Button */}
                 <button 

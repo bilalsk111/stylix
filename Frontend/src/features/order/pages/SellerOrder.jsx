@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+﻿import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrder } from "../hook/UseOrder";
 import { useAuth } from "../../auth/hook/useAuth";
@@ -77,7 +77,7 @@ const SellerOrder = () => {
                             Manage logistics, tracking, and customer orders
                         </p>
                     </div>
-                    <div className="bg-white border border-stone-200 px-5 py-3 rounded-xl shadow-sm flex items-center gap-3 w-fit">
+                    <div className="bg-white border border-stone-200 px-5 py-3 rounded-none shadow-sm flex items-center gap-3 w-fit">
                         <Package size={18} className="text-stone-900" />
                         <div className="flex flex-col">
                             <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">Total Volumes</span>
@@ -87,7 +87,7 @@ const SellerOrder = () => {
                 </div>
 
                 {/* DATA TABLE SECTION */}
-                <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+                <div className="bg-white border border-stone-200 rounded-none shadow-sm overflow-hidden">
                     <div className="p-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
                         <div className="flex items-center gap-3">
                             <LayoutGrid size={16} className="text-stone-400" />
@@ -122,7 +122,7 @@ const SellerOrder = () => {
                                         <td className="p-5">
                                             <div className="flex -space-x-3 hover:space-x-1 transition-all duration-300">
                                                 {order.items?.slice(0, 3).map((item, idx) => (
-                                                    <div key={idx} className="w-9 h-11 rounded-md overflow-hidden border-2 border-white shadow-sm bg-stone-100 relative z-10 shrink-0">
+                                                    <div key={idx} className="w-9 h-11 rounded-none overflow-hidden border-2 border-white shadow-sm bg-stone-100 relative z-10 shrink-0">
                                                         <img
                                                             src={item.product?.images?.[0]?.url || "https://via.placeholder.com/150"}
                                                             alt="product"
@@ -131,7 +131,7 @@ const SellerOrder = () => {
                                                     </div>
                                                 ))}
                                                 {order.items?.length > 3 && (
-                                                    <div className="w-9 h-11 rounded-md border-2 border-white bg-stone-100 flex items-center justify-center text-[9px] font-black text-stone-500 relative z-10 shrink-0">
+                                                    <div className="w-9 h-11 rounded-none border-2 border-white bg-stone-100 flex items-center justify-center text-[9px] font-black text-stone-500 relative z-10 shrink-0">
                                                         +{order.items.length - 3}
                                                     </div>
                                                 )}
@@ -146,7 +146,7 @@ const SellerOrder = () => {
                                             ₹{order.totalAmount}
                                         </td>
                                         <td className="p-5">
-                                            <span className={`px-2.5 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest ${order.paymentStatus === 'Paid' ? 'bg-[#ccff00]/20 text-[#8cb300]' : 'bg-stone-200 text-stone-600'}`}>
+                                            <span className={`px-2.5 py-1.5 rounded-none text-[9px] font-black uppercase tracking-widest ${order.paymentStatus === 'Paid' ? 'bg-[#ccff00]/20 text-[#8cb300]' : 'bg-stone-200 text-stone-600'}`}>
                                                 {order.paymentStatus}
                                             </span>
                                         </td>
@@ -156,7 +156,7 @@ const SellerOrder = () => {
                                             <select
                                                 value={order.orderStatus}
                                                 onChange={(e) => handleUpdateStatus(order._id, e.target.value)}
-                                                className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-2 rounded-lg border outline-none cursor-pointer appearance-none transition-colors ${getStatusStyle(order.orderStatus)} hover:opacity-80`}
+                                                className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-2 rounded-none border outline-none cursor-pointer appearance-none transition-colors ${getStatusStyle(order.orderStatus)} hover:opacity-80`}
                                             >
                                                 <option value="Processing">Processing</option>
                                                 <option value="Shipped">Shipped</option>
@@ -166,7 +166,7 @@ const SellerOrder = () => {
 
                                             <button
                                                 onClick={() => setDeleteModal({ isOpen: true, orderId: order._id })}
-                                                className="w-8 h-8 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors shadow-sm"
+                                                className="w-8 h-8 flex items-center justify-center bg-white border border-stone-200 rounded-none text-stone-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors shadow-sm"
                                             >
                                                 <Trash2 size={14} />
                                             </button>
@@ -189,7 +189,7 @@ const SellerOrder = () => {
             </div>
             {deleteModal.isOpen && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/40 backdrop-blur-sm px-4">
-                    <div className="bg-white border border-stone-200 rounded-2xl p-6 lg:p-8 shadow-2xl max-w-sm w-full animate-fade-in-up">
+                    <div className="bg-white border border-stone-200 rounded-none p-6 lg:p-8 shadow-2xl max-w-sm w-full animate-fade-in-up">
                         <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-5 border border-red-200">
                             <Trash2 size={20} className="text-red-500" />
                         </div>
@@ -201,7 +201,7 @@ const SellerOrder = () => {
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setDeleteModal({ isOpen: false, orderId: null })}
-                                className="flex-1 bg-stone-100 text-stone-600 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-stone-200 transition-colors"
+                                className="flex-1 bg-stone-100 text-stone-600 py-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-stone-200 transition-colors"
                             >
                                 Cancel
                             </button>
@@ -210,7 +210,7 @@ const SellerOrder = () => {
                                     handleDeleteOrder(deleteModal.orderId);
                                     setDeleteModal({ isOpen: false, orderId: null });
                                 }}
-                                className="flex-1 bg-red-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.3)] transition-all"
+                                className="flex-1 bg-red-500 text-white py-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.3)] transition-all"
                             >
                                 Delete Now
                             </button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useOrder } from "../../order/hook/UseOrder"; // Adjust path
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Clock, Package, XCircle, CheckCircle } from "lucide-react";
@@ -81,14 +81,14 @@ const OrderHistory = () => {
                         Accessing Database...
                     </div>
                 ) : filteredOrders.length === 0 ? (
-                    <div className="py-24 text-center bg-white border border-stone-200 rounded-3xl">
+                    <div className="py-24 text-center bg-white border border-stone-200 rounded-none">
                         <Package size={32} className="mx-auto text-stone-300 mb-4" />
                         <p className="text-stone-400 text-[11px] uppercase tracking-[0.3em] font-black">No matching records found</p>
                     </div>
                 ) : (
                     <div className="space-y-6">
                         {filteredOrders.map((order) => (
-                            <div key={order._id} className="bg-white border border-stone-200 p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:shadow-md transition-shadow">
+                            <div key={order._id} className="bg-white border border-stone-200 p-6 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:shadow-md transition-shadow">
                                 <div>
                                     <span className="block text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">
                                         Order #{order._id.slice(-8).toUpperCase()}
@@ -104,7 +104,7 @@ const OrderHistory = () => {
                                         <span className="text-sm font-black text-stone-900">₹{order.totalAmount || 0}</span>
                                     </div>
                                     <div className="h-8 w-px bg-stone-200"></div>
-                                    <span className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest ${getStatusStyle(order.orderStatus)}`}>
+                                    <span className={`px-4 py-2 rounded-none text-[10px] font-black uppercase tracking-widest ${getStatusStyle(order.orderStatus)}`}>
                                         {order.orderStatus || "Unknown"}
                                     </span>
                                 </div>

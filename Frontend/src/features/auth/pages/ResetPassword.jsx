@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -36,7 +36,7 @@ const ResetPassword = () => {
     <div className="min-h-screen bg-[#f7f6f4] flex flex-col items-center justify-center p-6 text-stone-900 selection:bg-stone-900 selection:text-white">
       <Toaster position="top-right" />
       
-      <div className="bg-white p-10 md:p-12 rounded-3xl border border-stone-200 shadow-sm w-full max-w-md">
+      <div className="bg-white p-10 md:p-12 rounded-none border border-stone-200 shadow-sm w-full max-w-md">
         <div className="text-center mb-10">
             <h2 className="text-3xl font-black italic uppercase tracking-tighter mb-2">Stylix.</h2>
             <p className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Protocol: Set New Credentials</p>
@@ -49,7 +49,7 @@ const ResetPassword = () => {
                 type="text" 
                 maxLength={6}
                 placeholder="XXXXXX" 
-                className="w-full p-4 bg-[#fbfaf9] border border-stone-200 focus:border-stone-900 rounded-xl text-lg font-mono font-black text-center outline-none transition-all placeholder:text-stone-300 uppercase tracking-[0.3em]"
+                className="w-full p-4 bg-[#fbfaf9] border border-stone-200 focus:border-stone-900 rounded-none text-lg font-mono font-black text-center outline-none transition-all placeholder:text-stone-300 uppercase tracking-[0.3em]"
                 onChange={(e) => setToken(e.target.value)}
                 required
               />
@@ -60,7 +60,7 @@ const ResetPassword = () => {
               <input 
                 type="password" 
                 placeholder="••••••••" 
-                className="w-full p-4 bg-[#fbfaf9] border border-stone-200 focus:border-stone-900 rounded-xl text-[12px] font-bold outline-none transition-all placeholder:text-stone-300"
+                className="w-full p-4 bg-[#fbfaf9] border border-stone-200 focus:border-stone-900 rounded-none text-[12px] font-bold outline-none transition-all placeholder:text-stone-300"
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
               />
@@ -68,7 +68,7 @@ const ResetPassword = () => {
 
           <button 
             disabled={loading}
-            className={`w-full bg-stone-900 text-white py-4 mt-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-md transition-all ${loading ? "opacity-50 cursor-wait" : "hover:bg-[#ccff00] hover:text-stone-900"}`}
+            className={`w-full bg-stone-900 text-white py-4 mt-2 rounded-none text-[10px] font-black uppercase tracking-[0.2em] shadow-md transition-all ${loading ? "opacity-50 cursor-wait" : "hover:bg-[#ccff00] hover:text-stone-900"}`}
           >
             {loading ? "Processing..." : "Confirm New Credentials"}
           </button>

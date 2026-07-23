@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+﻿import React, { useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { ArrowUpRight, LayoutGrid, Plus, Heart, ShoppingBag, ArrowRight } from "lucide-react";
@@ -9,8 +9,8 @@ import { useCart } from "../../cart/hook/useCart";
 
 /* ─── Premium Wishlist Toast (Handles Both Add & Remove) ─────── */
 const WishlistToast = ({ product, isRemoving }) => (
-  <div className="flex items-center gap-4 bg-white border border-stone-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] px-4 py-3 min-w-[280px] max-w-[340px] pointer-events-auto">
-    <div className="w-11 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-stone-100 border border-stone-200/60">
+  <div className="flex items-center gap-4 bg-white border border-stone-100 rounded-none shadow-[0_10px_40px_rgba(0,0,0,0.08)] px-4 py-3 min-w-[280px] max-w-[340px] pointer-events-auto">
+    <div className="w-11 h-14 rounded-none overflow-hidden flex-shrink-0 bg-stone-100 border border-stone-200/60">
       {product?.images?.[0]?.url && (
         <img src={product.images[0].url} className="w-full h-full object-cover mix-blend-multiply" alt="" />
       )}
@@ -31,8 +31,8 @@ const WishlistToast = ({ product, isRemoving }) => (
 
 /* ─── Premium Cart Toast (White Theme) ───────────────────────── */
 const CartToast = ({ product, onGoToCart }) => (
-  <div className="flex items-center gap-4 bg-white border border-stone-200 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] px-4 py-3 min-w-[280px] max-w-[340px] pointer-events-auto">
-    <div className="w-11 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-stone-100 border border-stone-200/50">
+  <div className="flex items-center gap-4 bg-white border border-stone-200 rounded-none shadow-[0_10px_40px_rgba(0,0,0,0.08)] px-4 py-3 min-w-[280px] max-w-[340px] pointer-events-auto">
+    <div className="w-11 h-14 rounded-none overflow-hidden flex-shrink-0 bg-stone-100 border border-stone-200/50">
       {product?.images?.[0]?.url && (
         <img src={product.images[0].url} className="w-full h-full object-cover mix-blend-multiply" alt="" />
       )}
@@ -44,7 +44,7 @@ const CartToast = ({ product, onGoToCart }) => (
     <button
       onClick={onGoToCart}
       className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest
-                 bg-stone-900 text-white px-3 py-2 rounded-xl flex-shrink-0 hover:bg-[#ccff00] hover:text-stone-900 transition-colors shadow-md"
+                 bg-stone-900 text-white px-3 py-2 rounded-none flex-shrink-0 hover:bg-[#ccff00] hover:text-stone-900 transition-colors shadow-md"
     >
       Bag <ArrowRight size={12} strokeWidth={2.5} />
     </button>
@@ -171,7 +171,7 @@ const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) 
                 }}
               >
                 {/* IMAGE CONTAINER */}
-                <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 rounded-[1.25rem] mb-4 group-hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-shadow duration-500 border border-stone-200/60">
+                <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 rounded-none mb-4 group-hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-shadow duration-500 border border-stone-200/60">
                   <img
                     src={product.images?.[0]?.url || "https://via.placeholder.com/600x800"}
                     alt={product.title}
@@ -213,7 +213,7 @@ const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) 
                       <button 
                         onClick={(e) => onQuickAdd(e, product)}
                         className={`w-full text-[10px] sm:text-[10px] font-black uppercase py-4 tracking-[0.2em]
-                                    rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2.5 active:scale-[0.98]
+                                    rounded-none shadow-lg transition-all duration-300 flex items-center justify-center gap-2.5 active:scale-[0.98]
                                     ${addedToCart
                                       ? "bg-[#ccff00] text-stone-900 border border-[#b3e600] hover:bg-[#b3e600]" // Go To Bag
                                       : "bg-white/95 backdrop-blur-xl text-stone-900 hover:bg-stone-900 hover:text-white border border-stone-200/50" // Quick Add

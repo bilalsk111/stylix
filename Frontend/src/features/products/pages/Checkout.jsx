@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+﻿import React, { useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux"; 
 import { ChevronRight, ChevronLeft, CreditCard, Lock, ShieldCheck } from "lucide-react";
@@ -225,7 +225,7 @@ const Checkout = () => {
     return (
       <div className="min-h-screen bg-[#f7f6f4] flex flex-col items-center justify-center">
         <p className="text-stone-400 text-[11px] uppercase tracking-[0.5em] font-bold mb-6">No assets to checkout</p>
-        <button onClick={() => navigate("/")} className="bg-stone-900 text-white px-8 py-3 text-[10px] font-black uppercase tracking-widest rounded-md">Return to Archive</button>
+        <button onClick={() => navigate("/")} className="bg-stone-900 text-white px-8 py-3 text-[10px] font-black uppercase tracking-widest rounded-none">Return to Archive</button>
       </div>
     );
   }
@@ -257,10 +257,10 @@ const Checkout = () => {
                   <h2 className="text-sm font-black uppercase tracking-widest text-stone-900">Contact Details</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} placeholder="First Name" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-lg shadow-sm" />
-                  <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} placeholder="Last Name" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-lg shadow-sm" />
-                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-lg shadow-sm md:col-span-2" />
-                  <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="Phone Number (10 Digits)" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-lg shadow-sm md:col-span-2" />
+                  <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} placeholder="First Name" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-none shadow-sm" />
+                  <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} placeholder="Last Name" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-none shadow-sm" />
+                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email Address" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-none shadow-sm md:col-span-2" />
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="Phone Number (10 Digits)" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-none shadow-sm md:col-span-2" />
                 </div>
               </div>
 
@@ -270,17 +270,17 @@ const Checkout = () => {
                   <h2 className="text-sm font-black uppercase tracking-widest text-stone-900">Shipping Address</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Street Address / Flat No." className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-lg shadow-sm md:col-span-2" />
-                  <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-lg shadow-sm" />
-                  <input type="text" name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-lg shadow-sm" />
-                  <input type="text" name="pincode" value={formData.pincode} onChange={handleInputChange} placeholder="PIN Code" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-lg shadow-sm md:col-span-2" />
+                  <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Street Address / Flat No." className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-none shadow-sm md:col-span-2" />
+                  <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-none shadow-sm" />
+                  <input type="text" name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-none shadow-sm" />
+                  <input type="text" name="pincode" value={formData.pincode} onChange={handleInputChange} placeholder="PIN Code" className="w-full bg-white border border-stone-200 px-4 py-3.5 text-xs font-medium text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-900 transition-colors rounded-none shadow-sm md:col-span-2" />
                 </div>
               </div>
             </form>
           </div>
 
           <div className="w-full lg:w-[45%]">
-            <div className="bg-white border border-stone-200 rounded-2xl p-6 lg:p-8 shadow-sm sticky top-24">
+            <div className="bg-white border border-stone-200 rounded-none p-6 lg:p-8 shadow-sm sticky top-24">
               <h2 className="text-sm font-black uppercase tracking-widest text-stone-900 mb-6 border-b border-stone-100 pb-4">
                 Order Summary {isBuyNow && <span className="text-[#a3cc00] ml-2 tracking-normal">(Direct Buy)</span>}
               </h2>
@@ -296,8 +296,8 @@ const Checkout = () => {
                   const price = variant?.price?.amount || product?.price?.amount || 0;
 
                   return (
-                    <div key={idx} className="flex gap-4 items-center p-3 border border-stone-100 rounded-xl bg-stone-50/50">
-                      <div className="w-16 h-20 bg-stone-100 rounded-md overflow-hidden shrink-0">
+                    <div key={idx} className="flex gap-4 items-center p-3 border border-stone-100 rounded-none bg-stone-50/50">
+                      <div className="w-16 h-20 bg-stone-100 rounded-none overflow-hidden shrink-0">
                         <img src={displayImage} alt="product" className="w-full h-full object-cover mix-blend-multiply" />
                       </div>
                       <div className="flex-1">
@@ -335,7 +335,7 @@ const Checkout = () => {
                 type="submit" 
                 form="checkout-form"
                 disabled={isProcessing || !isStockAvailable}
-                className={`w-full py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 shadow-md
+                className={`w-full py-4 rounded-none text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 shadow-md
                   ${isProcessing || !isStockAvailable 
                     ? "bg-stone-300 text-stone-500 cursor-not-allowed" 
                     : "bg-[#ccff00] text-stone-900 hover:bg-[#bbf000] hover:shadow-lg active:scale-[0.98]"}`}

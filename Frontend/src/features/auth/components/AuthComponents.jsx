@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 
 export const PremiumInput = ({ label, type = 'text', ...props }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +34,7 @@ export const PremiumInput = ({ label, type = 'text', ...props }) => {
 
 export const PremiumCheckbox = ({ label, ...props }) => (
   <label className="flex items-center cursor-pointer group mt-4 mb-8">
-    <div className="relative flex items-center justify-center w-4 h-4 mr-3 border border-gray-600 rounded-sm group-hover:border-[#E5B300] transition-colors duration-300 bg-[#0a0a0a]">
+    <div className="relative flex items-center justify-center w-4 h-4 mr-3 border border-gray-600 rounded-none group-hover:border-[#E5B300] transition-colors duration-300 bg-[#0a0a0a]">
       <input type="checkbox" className="absolute opacity-0 cursor-pointer peer w-full h-full" {...props} />
       {/* The checkmark block */}
       <div className="w-2 h-2 bg-[#E5B300] opacity-0 peer-checked:opacity-100 transition-all duration-200 ease-in-out scale-50 peer-checked:scale-100" />

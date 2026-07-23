@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+﻿import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ShoppingBag,
@@ -271,9 +271,9 @@ const ProductDetail = () => {
   const showSuccessToast = () => {
     toast.custom(
       (t) => (
-        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white/95 backdrop-blur-xl border border-stone-200 shadow-2xl flex flex-col overflow-hidden rounded-2xl`}>
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white/95 backdrop-blur-xl border border-stone-200 shadow-2xl flex flex-col overflow-hidden rounded-none`}>
           <div className="flex p-4 gap-4 items-center">
-            <div className="h-16 w-12 shrink-0 bg-stone-100 overflow-hidden rounded-lg">
+            <div className="h-16 w-12 shrink-0 bg-stone-100 overflow-hidden rounded-none">
               <img src={displayImages?.[0]?.url} className="w-full h-full object-cover mix-blend-multiply" alt="Product" />
             </div>
 
@@ -355,7 +355,7 @@ const ProductDetail = () => {
                 <div
                   key={i}
                   onClick={() => setActiveImg(i)}
-                  className={`w-16 h-20 md:w-full md:aspect-[3/4] md:h-auto shrink-0 cursor-pointer overflow-hidden transition-all duration-300 rounded-xl bg-stone-200/50 border ${
+                  className={`w-16 h-20 md:w-full md:aspect-[3/4] md:h-auto shrink-0 cursor-pointer overflow-hidden transition-all duration-300 rounded-none bg-stone-200/50 border ${
                     activeImg === i
                       ? "border-stone-900 ring-1 ring-stone-900 opacity-100"
                       : "border-transparent opacity-60 hover:opacity-100"
@@ -378,7 +378,7 @@ const ProductDetail = () => {
             </button>
           </div>
 
-          <div className="w-full aspect-[3/4] md:aspect-[4/5] bg-[#ececec] md:bg-stone-200/40 rounded-[2rem] relative overflow-hidden flex-1 group">
+          <div className="w-full aspect-[3/4] md:aspect-[4/5] bg-[#ececec] md:bg-stone-200/40 rounded-none relative overflow-hidden flex-1 group">
             <img
               src={displayImages?.[activeImg]?.url}
               className="w-full h-full object-cover object-top mix-blend-multiply transition-transform duration-[0.5s] ease-out"
@@ -405,7 +405,7 @@ const ProductDetail = () => {
 
             {isOutOfStock && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] z-10">
-                <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-md shadow-lg">
+                <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-none shadow-lg">
                   Out of Stock
                 </span>
               </div>
@@ -440,14 +440,14 @@ const ProductDetail = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-4 mb-8 bg-white w-fit px-6 py-4 rounded-[1.25rem] border border-stone-100 shadow-sm">
+          <div className="flex items-center gap-4 mb-8 bg-white w-fit px-6 py-4 rounded-none border border-stone-100 shadow-sm">
             <span className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
               {displayPrice?.currency || "INR"} {displayPrice?.amount || "0"}
             </span>
             <span className="text-stone-400 line-through text-xs font-bold pt-1">
               {displayPrice?.currency || "INR"} {Math.round((displayPrice?.amount || 0) * 1.5)}
             </span>
-            <span className="bg-[#ccff00]/20 text-[#8cb300] text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-md ml-1">
+            <span className="bg-[#ccff00]/20 text-[#8cb300] text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-none ml-1">
               -33% OFF
             </span>
           </div>
@@ -464,13 +464,13 @@ const ProductDetail = () => {
                     Select {attrKey}
                   </h3>
                   {attrKey.toLowerCase() === 'size' && (
-                    <button className="text-[9px] text-stone-400 uppercase tracking-widest hover:text-stone-900 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-stone-200 shadow-sm transition-colors">
+                    <button className="text-[9px] text-stone-400 uppercase tracking-widest hover:text-stone-900 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-none border border-stone-200 shadow-sm transition-colors">
                       <Ruler size={12} /> Size Guide
                     </button>
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-2 p-1.5 bg-white border border-stone-200 rounded-2xl w-fit shadow-sm">
+                <div className="flex flex-wrap gap-2 p-1.5 bg-white border border-stone-200 rounded-none w-fit shadow-sm">
                   {attrValues.map((val) => {
                     const isSelected = selectedAttributes[attrKey] && 
                                        selectedAttributes[attrKey].toString().toLowerCase() === val.toLowerCase();
@@ -478,7 +478,7 @@ const ProductDetail = () => {
                       <button
                         key={val}
                         onClick={() => handleAttributeClick(attrKey, val)}
-                        className={`px-6 py-2.5 min-w-[3.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 rounded-xl
+                        className={`px-6 py-2.5 min-w-[3.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 rounded-none
                           ${isSelected
                             ? "bg-stone-900 text-white shadow-md"
                             : "bg-transparent text-stone-500 hover:bg-stone-100 hover:text-stone-900"}`}
@@ -494,11 +494,11 @@ const ProductDetail = () => {
 
           <div className="mb-10">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-900 mb-4">Quantity</h3>
-            <div className="flex items-center gap-6 w-fit bg-white border border-stone-200 px-2 py-2 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-6 w-fit bg-white border border-stone-200 px-2 py-2 rounded-none shadow-sm">
               <button
                 disabled={buyQty <= 1 || isOutOfStock}
                 onClick={() => setBuyQty(prev => prev - 1)}
-                className="w-10 h-8 flex items-center justify-center rounded-xl text-stone-400 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 transition-colors"
+                className="w-10 h-8 flex items-center justify-center rounded-none text-stone-400 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 transition-colors"
               >
                 <Minus size={14} strokeWidth={3} />
               </button>
@@ -510,7 +510,7 @@ const ProductDetail = () => {
               <button
                 disabled={buyQty >= availableStock || isOutOfStock}
                 onClick={() => setBuyQty(prev => prev + 1)}
-                className="w-10 h-8 flex items-center justify-center rounded-xl text-stone-400 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 transition-colors"
+                className="w-10 h-8 flex items-center justify-center rounded-none text-stone-400 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50 transition-colors"
               >
                 <Plus size={14} strokeWidth={3} />
               </button>
@@ -551,7 +551,7 @@ const ProductDetail = () => {
                   }
                 }
               }}
-              className={`flex-1 bg-white border-[1.5px] border-stone-900 text-stone-900 py-4 sm:py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 shadow-sm
+              className={`flex-1 bg-white border-[1.5px] border-stone-900 text-stone-900 py-4 sm:py-5 rounded-none text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300 shadow-sm
                 ${isAdding || isOutOfStock ? "opacity-70 cursor-not-allowed" : "hover:bg-stone-50 active:scale-[0.98]"}`}
             >
               {isCurrentlyInCart ? "View In Bag" : isAdding ? "Adding..." : "Add to Bag"}
@@ -576,7 +576,7 @@ const ProductDetail = () => {
                   }
                 });
               }}
-              className={`flex-1 text-stone-900 py-4 sm:py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2.5 transition-all duration-300 active:scale-[0.98] 
+              className={`flex-1 text-stone-900 py-4 sm:py-5 rounded-none text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2.5 transition-all duration-300 active:scale-[0.98] 
                 ${isOutOfStock
                   ? "bg-stone-200 cursor-not-allowed text-stone-400"
                   : "bg-[#ccff00] hover:bg-[#bbf000] shadow-sm"}`}
@@ -586,7 +586,7 @@ const ProductDetail = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white p-5 rounded-none border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 mb-3 text-stone-900">
                 <div className="bg-stone-100 p-2 rounded-full"><Ruler size={14} /></div>
                 <span className="text-[10px] font-black uppercase tracking-widest">Fit Details</span>
@@ -598,7 +598,7 @@ const ProductDetail = () => {
               </ul>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white p-5 rounded-none border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 mb-3 text-stone-900">
                 <div className="bg-stone-100 p-2 rounded-full"><Droplets size={14} /></div>
                 <span className="text-[10px] font-black uppercase tracking-widest">Materials</span>

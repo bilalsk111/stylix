@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useProduct } from "../hook/useProduct";
 import { useAuth } from "../../auth/hook/useAuth";
 import { useSelector } from "react-redux";
@@ -13,7 +13,7 @@ import { logoutApi } from "../../auth/services/auth.api";
 /* ─── Delete Confirm Modal ─────────────────────────────────────── */
 const DeleteProductModal = ({ product, onConfirm, onCancel }) => (
   <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-stone-900/40 backdrop-blur-sm">
-    <div className="bg-white border border-stone-200 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+    <div className="bg-white border border-stone-200 w-full max-w-sm rounded-none overflow-hidden shadow-2xl">
 
       {/* Header */}
       <div className="p-5 border-b border-stone-100 flex items-center justify-between bg-stone-50">
@@ -37,8 +37,8 @@ const DeleteProductModal = ({ product, onConfirm, onCancel }) => (
         </p>
 
         {/* Product preview */}
-        <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-xl p-3 mt-4">
-          <div className="w-10 h-12 bg-stone-200 rounded-md overflow-hidden flex-shrink-0">
+        <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-none p-3 mt-4">
+          <div className="w-10 h-12 bg-stone-200 rounded-none overflow-hidden flex-shrink-0">
             {product?.images?.[0]?.url && (
               <img src={product.images[0].url} className="w-full h-full object-cover grayscale" alt="" />
             )}
@@ -61,12 +61,12 @@ const DeleteProductModal = ({ product, onConfirm, onCancel }) => (
       {/* Actions */}
       <div className="px-6 pb-6 flex gap-3">
         <button onClick={onCancel}
-          className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl
+          className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-none
                      border border-stone-200 text-stone-500 hover:border-stone-400 hover:text-stone-900 transition-all">
           Cancel
         </button>
         <button onClick={onConfirm}
-          className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl
+          className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-none
                      bg-red-500 text-white hover:bg-red-600 transition-all">
           Yes, Delete
         </button>
@@ -159,7 +159,7 @@ const SellerDashboard = () => {
           <div className="h-8 w-px bg-stone-200" />
           <button
             onClick={() => setShowLogoutModal(true)}
-            className="flex items-center gap-2 text-red-500 hover:text-red-700 bg-red-50 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors shadow-sm"
+            className="flex items-center gap-2 text-red-500 hover:text-red-700 bg-red-50 px-5 py-3 rounded-none text-[10px] font-black uppercase tracking-widest transition-colors shadow-sm"
           >
             <LogOut size={14} /> Log Out
           </button>
@@ -169,9 +169,9 @@ const SellerDashboard = () => {
       <div className="p-6 lg:p-12 max-w-[1600px] mx-auto pt-32">
 
         {/* Header */}
-        <header className="mb-20 flex flex-col lg:flex-row lg:items-center justify-between gap-10 bg-white p-8 rounded-xl border border-stone-200 shadow-sm">
+        <header className="mb-20 flex flex-col lg:flex-row lg:items-center justify-between gap-10 bg-white p-8 rounded-none border border-stone-200 shadow-sm">
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-[#c8ff00] rounded-lg flex items-center justify-center shadow-sm shrink-0">
+            <div className="w-20 h-20 bg-[#c8ff00] rounded-none flex items-center justify-center shadow-sm shrink-0">
               <Store className="text-stone-900" size={32} />
             </div>
             <div className="space-y-1">
@@ -192,11 +192,11 @@ const SellerDashboard = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 shrink-0">
             <button onClick={() => navigate("/seller/orders")}
-              className="bg-white border-2 border-stone-900 text-stone-900 px-8 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-stone-900 hover:text-white transition-all rounded-md shadow-sm flex items-center gap-3">
+              className="bg-white border-2 border-stone-900 text-stone-900 px-8 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-stone-900 hover:text-white transition-all rounded-none shadow-sm flex items-center gap-3">
               <Package size={18} strokeWidth={3} /> Manage Orders
             </button>
             <button onClick={() => navigate("/seller/create-product")}
-              className="bg-stone-900 text-white px-8 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all rounded-md shadow-lg flex items-center gap-3">
+              className="bg-stone-900 text-white px-8 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all rounded-none shadow-lg flex items-center gap-3">
               <Plus size={18} strokeWidth={4} /> Register New Piece
             </button>
           </div>
@@ -211,14 +211,14 @@ const SellerDashboard = () => {
           </div>
 
           {displayProducts.length === 0 ? (
-            <div className="h-[40vh] flex flex-col items-center justify-center border-2 border-dashed border-stone-200 bg-white rounded-xl">
+            <div className="h-[40vh] flex flex-col items-center justify-center border-2 border-dashed border-stone-200 bg-white rounded-none">
               <p className="text-stone-400 text-[10px] uppercase tracking-[0.5em] font-black italic">Vault currently empty</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
               {displayProducts.map((product) => (
                 <div key={product._id}
-                  className="group relative bg-white border border-stone-200 hover:border-stone-400 transition-all duration-500 cursor-pointer overflow-hidden rounded-xl shadow-sm hover:shadow-xl"
+                  className="group relative bg-white border border-stone-200 hover:border-stone-400 transition-all duration-500 cursor-pointer overflow-hidden rounded-none shadow-sm hover:shadow-xl"
                   onClick={() => navigate(`/seller/productdetail/${product._id}`)}>
 
                   <div className="aspect-[4/5] overflow-hidden relative bg-stone-100">
@@ -273,7 +273,7 @@ const SellerDashboard = () => {
                     {product.attributes && Object.keys(product.attributes).length > 0 && (
                       <div className="flex flex-wrap gap-1 sm:gap-2 pt-0.5">
                         {Object.entries(product.attributes).slice(0, 2).map(([key, value]) => (
-                          <span key={key} className="text-[6px] sm:text-[7px] font-black uppercase border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-stone-500 tracking-wider sm:tracking-widest rounded-sm truncate max-w-full">
+                          <span key={key} className="text-[6px] sm:text-[7px] font-black uppercase border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-stone-500 tracking-wider sm:tracking-widest rounded-none truncate max-w-full">
                             {key}: {value}
                           </span>
                         ))}
@@ -308,7 +308,7 @@ const SellerDashboard = () => {
       {showLogoutModal && (
         <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300">
           <div
-            className="bg-white border border-stone-200 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-5 transform scale-100 transition-all"
+            className="bg-white border border-stone-200 rounded-none max-w-sm w-full p-6 shadow-2xl space-y-5 transform scale-100 transition-all"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -329,7 +329,7 @@ const SellerDashboard = () => {
               <button
                 disabled={isLoggingOut}
                 onClick={() => setShowLogoutModal(false)}
-                className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest border border-stone-200 bg-white rounded-lg text-stone-500 hover:bg-stone-50 hover:text-stone-900 transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest border border-stone-200 bg-white rounded-none text-stone-500 hover:bg-stone-50 hover:text-stone-900 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -337,7 +337,7 @@ const SellerDashboard = () => {
               <button
                 disabled={isLoggingOut}
                 onClick={handleLogout}
-                className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest bg-stone-900 text-white rounded-lg hover:bg-red-500 transition-colors flex items-center gap-2 shadow-md disabled:opacity-50"
+                className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest bg-stone-900 text-white rounded-none hover:bg-red-500 transition-colors flex items-center gap-2 shadow-md disabled:opacity-50"
               >
                 {isLoggingOut ? (
                   <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />

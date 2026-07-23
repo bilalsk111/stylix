@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -135,7 +135,7 @@ const Cart = () => {
 
                 {cartItems.length === 0 ? (
                     /* EMPTY STATE */
-                    <div className="flex flex-col items-center justify-center py-24 bg-white border border-stone-200 rounded-2xl shadow-sm relative overflow-hidden">
+                    <div className="flex flex-col items-center justify-center py-24 bg-white border border-stone-200 rounded-none shadow-sm relative overflow-hidden">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(200,255,0,0.05)_0,transparent_50%)] pointer-events-none"></div>
                         <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mb-6 border border-stone-100 shadow-inner relative z-10">
                             <ShoppingBag size={32} className="text-stone-300" strokeWidth={1.5} />
@@ -148,7 +148,7 @@ const Cart = () => {
                         </p>
                         <Link
                             to="/"
-                            className="bg-stone-900 text-white px-8 py-4 rounded-md text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all duration-300 shadow-md relative z-10"
+                            className="bg-stone-900 text-white px-8 py-4 rounded-none text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all duration-300 shadow-md relative z-10"
                         >
                             Explore Collection
                         </Link>
@@ -160,7 +160,7 @@ const Cart = () => {
                         <div className="w-full lg:w-[65%] flex flex-col gap-4">
 
                             {/* FREE SHIPPING TRACKER */}
-                            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm mb-2">
+                            <div className="bg-white p-5 rounded-none border border-stone-200 shadow-sm mb-2">
                                 <div className="flex justify-between items-end mb-3">
                                     <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-900">
                                         {amountForFreeShipping > 0
@@ -211,9 +211,9 @@ const Cart = () => {
                                 return (
                                     <div
                                         key={item._id || index}
-                                        className="flex gap-4 sm:gap-5 bg-white p-3.5 sm:p-5 border border-stone-200 rounded-2xl shadow-sm hover:border-stone-400 transition-colors duration-300 relative group"
+                                        className="flex gap-4 sm:gap-5 bg-white p-3.5 sm:p-5 border border-stone-200 rounded-none shadow-sm hover:border-stone-400 transition-colors duration-300 relative group"
                                     >
-                                        <div className="w-20 sm:w-28 aspect-[3/4] bg-stone-50 rounded-xl overflow-hidden shrink-0 border border-stone-100 relative">
+                                        <div className="w-20 sm:w-28 aspect-[3/4] bg-stone-50 rounded-none overflow-hidden shrink-0 border border-stone-100 relative">
                                             <img
                                                 src={displayImage}
                                                 alt={displayTitle}
@@ -221,7 +221,7 @@ const Cart = () => {
                                             />
                                             {isOutOfStock && (
                                                 <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
-                                                    <span className="bg-red-500 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-sm shadow-md">
+                                                    <span className="bg-red-500 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-none shadow-md">
                                                         Sold Out
                                                     </span>
                                                 </div>
@@ -267,7 +267,7 @@ const Cart = () => {
                                                             <p className="text-base font-black text-stone-900 leading-none">
                                                                 {currency} {variantPrice}
                                                             </p>
-                                                            <span className="text-[#84cc16] text-[9px] font-black uppercase tracking-widest bg-[#84cc16]/10 px-1.5 py-0.5 rounded-sm mt-1">
+                                                            <span className="text-[#84cc16] text-[9px] font-black uppercase tracking-widest bg-[#84cc16]/10 px-1.5 py-0.5 rounded-none mt-1">
                                                                 Save {currency} {savedAmount}
                                                             </span>
                                                         </>
@@ -281,7 +281,7 @@ const Cart = () => {
 
                                             <div className="flex items-end justify-between mt-auto pt-4">
                                                 <div className="flex flex-col gap-1.5">
-                                                    <div className={`flex items-center p-0.5 rounded-lg border ${isOutOfStock ? "bg-stone-50 border-stone-100 opacity-50" : "bg-stone-50 border-stone-200 shadow-sm"}`}>
+                                                    <div className={`flex items-center p-0.5 rounded-none border ${isOutOfStock ? "bg-stone-50 border-stone-100 opacity-50" : "bg-stone-50 border-stone-200 shadow-sm"}`}>
                                                         <button
                                                             disabled={isOutOfStock}
                                                             onClick={() =>
@@ -291,7 +291,7 @@ const Cart = () => {
                                                                     quantity: item.quantity - 1,
                                                                 })
                                                             }
-                                                            className="w-7 h-7 flex items-center justify-center bg-white rounded-md text-stone-500 hover:text-stone-900 hover:shadow-sm transition-all disabled:cursor-not-allowed"
+                                                            className="w-7 h-7 flex items-center justify-center bg-white rounded-none text-stone-500 hover:text-stone-900 hover:shadow-sm transition-all disabled:cursor-not-allowed"
                                                         >
                                                             <Minus size={12} strokeWidth={2.5} />
                                                         </button>
@@ -309,7 +309,7 @@ const Cart = () => {
                                                                     quantity: item.quantity + 1,
                                                                 })
                                                             }
-                                                            className={`w-7 h-7 flex items-center justify-center rounded-md transition-all ${isOutOfStock || hasReachedMaxStock
+                                                            className={`w-7 h-7 flex items-center justify-center rounded-none transition-all ${isOutOfStock || hasReachedMaxStock
                                                                 ? "text-stone-300 cursor-not-allowed"
                                                                 : "bg-white text-stone-500 hover:text-stone-900 hover:shadow-sm"
                                                                 }`}
@@ -344,7 +344,7 @@ const Cart = () => {
 
                         {/* RIGHT COLUMN: ORDER SUMMARY */}
                         <div className="w-full lg:w-[35%]">
-                            <div className="bg-white border border-stone-200 p-6 sm:p-8 rounded-2xl shadow-sm sticky top-32">
+                            <div className="bg-white border border-stone-200 p-6 sm:p-8 rounded-none shadow-sm sticky top-32">
                                 <h2 className="text-lg font-black uppercase tracking-tighter mb-6 border-b border-stone-100 pb-4">
                                     Order Summary
                                 </h2>
@@ -361,10 +361,10 @@ const Cart = () => {
                                                 value={promoCode}
                                                 onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                                                 placeholder="ENTER CODE"
-                                                className="w-full bg-stone-50 border border-stone-200 rounded-lg py-2.5 pl-9 pr-3 text-[10px] font-bold tracking-widest uppercase outline-none focus:border-stone-900 transition-colors"
+                                                className="w-full bg-stone-50 border border-stone-200 rounded-none py-2.5 pl-9 pr-3 text-[10px] font-bold tracking-widest uppercase outline-none focus:border-stone-900 transition-colors"
                                             />
                                         </div>
-                                        <button className="bg-stone-100 text-stone-900 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-stone-200 transition-colors">
+                                        <button className="bg-stone-100 text-stone-900 px-4 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-stone-200 transition-colors">
                                             Apply
                                         </button>
                                     </div>
@@ -408,7 +408,7 @@ const Cart = () => {
 
                                 <button
                                     onClick={handleCheckout}
-                                    className="w-full bg-stone-900 text-white py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-3 group"
+                                    className="w-full bg-stone-900 text-white py-4 rounded-none text-[11px] font-black uppercase tracking-[0.3em] hover:bg-[#c8ff00] hover:text-stone-900 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-3 group"
                                 >
                                     Proceed to Checkout
                                     <ArrowRight

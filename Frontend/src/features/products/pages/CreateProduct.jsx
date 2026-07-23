@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import { X, ArrowLeft, Loader2, Plus, Sparkles, ShieldCheck, Palette, Ruler } from 'lucide-react';
 import { useProduct } from '../hook/useProduct';
 import { useNavigate } from 'react-router-dom';
@@ -102,7 +102,7 @@ const CreateProduct = () => {
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar bg-[radial-gradient(circle_at_top_left,_#f5f5f4_0%,_transparent_40%)]">
           <div className="grid grid-cols-2 gap-4">
             {previewUrls.map((url, i) => (
-              <div key={i} className={`relative group bg-stone-100 border border-stone-200 transition-all duration-500 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-stone-400 ${i === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}>
+              <div key={i} className={`relative group bg-stone-100 border border-stone-200 transition-all duration-500 rounded-none overflow-hidden shadow-sm hover:shadow-md hover:border-stone-400 ${i === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}>
                 <img src={url} alt="" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out" />
                 <button type="button" onClick={() => {
                   setImages(images.filter((_, idx) => idx !== i));
@@ -113,7 +113,7 @@ const CreateProduct = () => {
               </div>
             ))}
             {previewUrls.length < 7 && (
-              <div onClick={() => fileInputRef.current.click()} className="aspect-square border-2 border-dashed border-stone-200 hover:border-stone-400 transition-all flex flex-col items-center justify-center gap-3 bg-stone-50 hover:bg-stone-100 group cursor-pointer rounded-xl overflow-hidden relative">
+              <div onClick={() => fileInputRef.current.click()} className="aspect-square border-2 border-dashed border-stone-200 hover:border-stone-400 transition-all flex flex-col items-center justify-center gap-3 bg-stone-50 hover:bg-stone-100 group cursor-pointer rounded-none overflow-hidden relative">
                 <Plus className="text-stone-400 group-hover:text-stone-900 transition-all group-hover:rotate-90 group-hover:scale-110" size={28} />
                 <span className="text-[9px] font-black text-stone-400 group-hover:text-stone-900 uppercase tracking-[0.3em]">Add Asset</span>
               </div>
@@ -254,7 +254,7 @@ const CreateProduct = () => {
           <input type="file" multiple hidden ref={fileInputRef} onChange={(e) => processFiles(e.target.files)} />
 
           <div className="pt-8">
-            <button type="submit" disabled={isSubmitting} className="w-full bg-stone-900 text-white py-8 font-black uppercase tracking-[0.8em] text-[12px] hover:bg-[#c8ff00] hover:text-stone-900 transition-all active:scale-[0.98] flex items-center justify-center gap-4 relative shadow-xl group overflow-hidden rounded-md">
+            <button type="submit" disabled={isSubmitting} className="w-full bg-stone-900 text-white py-8 font-black uppercase tracking-[0.8em] text-[12px] hover:bg-[#c8ff00] hover:text-stone-900 transition-all active:scale-[0.98] flex items-center justify-center gap-4 relative shadow-xl group overflow-hidden rounded-none">
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               {isSubmitting ? <Loader2 className="animate-spin text-current" /> : (
                 <>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -34,7 +34,7 @@ const ForgotPassword = () => {
     <div className="min-h-screen bg-[#f7f6f4] flex flex-col items-center justify-center p-6 text-stone-900 selection:bg-stone-900 selection:text-white">
       <Toaster position="top-right" />
       
-      <div className="bg-white p-10 md:p-12 rounded-3xl border border-stone-200 shadow-sm w-full max-w-md relative">
+      <div className="bg-white p-10 md:p-12 rounded-none border border-stone-200 shadow-sm w-full max-w-md relative">
         <button onClick={() => navigate(-1)} className="absolute top-8 left-8 text-stone-400 hover:text-stone-900 transition-colors">
             <ArrowLeft size={18} />
         </button>
@@ -50,7 +50,7 @@ const ForgotPassword = () => {
               <input 
                 type="email" 
                 placeholder="merchant@stylix.com" 
-                className="w-full p-4 bg-[#fbfaf9] border border-stone-200 focus:border-stone-900 rounded-xl text-[12px] font-bold outline-none transition-all placeholder:text-stone-300"
+                className="w-full p-4 bg-[#fbfaf9] border border-stone-200 focus:border-stone-900 rounded-none text-[12px] font-bold outline-none transition-all placeholder:text-stone-300"
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
@@ -58,7 +58,7 @@ const ForgotPassword = () => {
 
           <button 
             disabled={loading}
-            className={`w-full bg-stone-900 text-white py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-md transition-all ${loading ? "opacity-50 cursor-wait" : "hover:bg-[#ccff00] hover:text-stone-900"}`}
+            className={`w-full bg-stone-900 text-white py-4 rounded-none text-[10px] font-black uppercase tracking-[0.2em] shadow-md transition-all ${loading ? "opacity-50 cursor-wait" : "hover:bg-[#ccff00] hover:text-stone-900"}`}
           >
             {loading ? "Transmitting..." : "Dispatch Security Code"}
           </button>

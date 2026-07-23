@@ -62,7 +62,7 @@ export default function Login() {
   const inputStyle = (fieldName, error) => {
     const isFocused = focusedField === fieldName;
     return [
-      "w-full text-stone-900 text-sm px-3 pb-3 rounded-t-md py-3 outline-none bg-transparent",
+      "w-full text-stone-900 text-sm px-3 pb-3 rounded-none-md py-3 outline-none bg-transparent",
       "border-0 border-b-2 transition-all duration-300",
       "placeholder:text-stone-300 placeholder:uppercase  placeholder:tracking-widest placeholder:text-[10px]",
       error
@@ -185,7 +185,7 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-7" noValidate>
 
             {errors.auth && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-[9px] p-3.5 rounded-xl tracking-widest uppercase text-center font-bold">
+              <div className="bg-red-50 border border-red-200 text-red-600 text-[9px] p-3.5 rounded-none tracking-widest uppercase text-center font-bold">
                 ✕ {errors.auth}
               </div>
             )}
@@ -262,7 +262,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="group w-full bg-stone-900 text-white font-black py-[18px] rounded-2xl text-[11px] uppercase tracking-[0.35em]
+                className="group w-full bg-stone-900 text-white font-black py-[18px] rounded-none text-[11px] uppercase tracking-[0.35em]
                   hover:bg-stone-700 hover:shadow-[0_8px_30px_rgba(0,0,0,0.20)] hover:-translate-y-[1px]
                   active:translate-y-0 active:shadow-sm active:bg-stone-900
                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none disabled:hover:bg-stone-900
