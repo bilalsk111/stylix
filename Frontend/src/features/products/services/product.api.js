@@ -34,6 +34,10 @@ export async function createProduct(formData) {
     const res = await productApi.post('/create',formData)
     return res.data
 }
+export const updateProduct = async (productId, formData) => {
+  const res = await productApi.put(`/update/${productId}`, formData);
+  return res.data;
+};
 export async function getSellerProduct() {
     const res = await productApi.get('/seller-products')
     return res.data
@@ -102,3 +106,9 @@ export const deleteVariantApi = async (productId, variantId) => {
   const response = await productApi.delete(`/${productId}/variant/${variantId}`);
   return response.data;
 };
+
+export async function getShopFilteredProducts(queryParams = "") {
+  // queryParams string hogi (e.g. "?category=MEN,WOMEN&minPrice=1000&sort=bestseller")
+  const res = await productApi.get(`/shop${queryParams}`);
+  return res.data;
+}

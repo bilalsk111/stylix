@@ -21,7 +21,7 @@ import ResetPassword from "../features/auth/pages/ResetPassword";
 
 export const routes = createBrowserRouter([
   {
-    // Public Layout Routes
+    // 🔥 USER ROUTES: Yahan Navbar aur Footer aayega kyunki ye <Layout /> ke andar hain
     element: <Layout />,
     children: [
       { path: "/", element: <AllProducts /> },
@@ -29,40 +29,32 @@ export const routes = createBrowserRouter([
       { path: "/product/:id", element: <ProductDetail /> },
       {
         path: '/profile',
-        element: <ProtectedRoute>
-          <Profile />
-        </ProtectedRoute>
+        element: <ProtectedRoute><Profile /></ProtectedRoute>
       },
+      {
+        path: "/bag",
+        element: <ProtectedRoute><Cart /></ProtectedRoute>
+      },
+      {
+        path: "/checkout",
+        element: <ProtectedRoute><Chackout /></ProtectedRoute>
+      },
+      {
+        path: "/wishlist",
+        element: <ProtectedRoute><WishlistPage /></ProtectedRoute>
+      },
+      {
+        path: "/order-history",
+        element: <ProtectedRoute><OrderHistory /></ProtectedRoute>
+      },
+      {
+        path: '/success',
+        element: <Success />
+      }
     ],
   },
-  {
-    path: "/bag",
-    element: <ProtectedRoute>
-      <Cart />
-    </ProtectedRoute>
-  },
-  {
-    path: "/checkout",
-    element: <ProtectedRoute>
-      <Chackout />
-    </ProtectedRoute>
-  },
-  {
-    path: "/wishlist",
-    element: <ProtectedRoute>
-      <WishlistPage />
-    </ProtectedRoute>
-  },
-  {
-    path: "/order-history",
-    element: <ProtectedRoute>
-      <OrderHistory />
-    </ProtectedRoute>
-  },
-  {
-    path: '/success',
-    element: <Success />
-  },
+  
+  // 🔥 SELLER ROUTES: Yahan Navbar/Footer NAHI aayega
   {
     element: <ProtectedSellerRoute />,
     children: [
@@ -72,20 +64,10 @@ export const routes = createBrowserRouter([
       { path: "/seller/orders", element: <SellerOrder /> },
     ],
   },
-  {
-    path: "/login",
-    element: <Login />
-  },
-  {
-    path: "/register",
-    element: <Register />
-  },
-  {
-    path: "/forgot-password",
-    element: <ForgotPassword />
-  },
-  {
-    path: "/reset-password",
-    element: <ResetPassword />
-  }
+
+  // 🔥 AUTH ROUTES: Yahan bhi Navbar/Footer NAHI aayega
+  { path: "/login", element: <Login /> },
+  { path: "/register", element: <Register /> },
+  { path: "/forgot-password", element: <ForgotPassword /> },
+  { path: "/reset-password", element: <ResetPassword /> }
 ]);

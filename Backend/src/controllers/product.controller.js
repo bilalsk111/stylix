@@ -203,7 +203,7 @@ export async function getProductDetail(req, res) {
         });
     }
 }
-export const updateMainProduct = async (req, res) => {
+export const updateProduct = async (req, res) => {
     try {
         const { productId } = req.params;
         const {
@@ -455,109 +455,107 @@ export const editProductVariant = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
     try {
-        const {
-            productId
-        } = req.params;
+        const { productId } = req.params;
 
-        const product = await productModel.findById(productId);
+        // 🔥 SECURITY FIX: Sirf wahi product milega jo is logged-in seller ka hai
+        const product = await productModel.findOne({ 
+            _id: productId, 
+            seller: req.user._id 
+        });
 
         if (!product) {
             return res.status(404).json({
                 success: false,
-                message: "Product not found.",
+                message: "Product not found or you are not authorized to delete it.",
             });
         }
 
         // Flatten all images into a single array
         const allImages = [
             ...(product.images || []),
-            ...(product.variants ?.flatMap((v) => v.images || []) || []),
+            ...(product.variants?.flatMap((v) => v.images || []) || []),
         ];
 
-        // Delete all images from Cloudinary
-        const deletedImagesCount = await deleteCloudinaryImages(allImages);
+        // Delete all images from Cloudinary (Make sure this function handles empty arrays gracefully)
+        let deletedImagesCount = 0;
+        if (allImages.length > 0) {
+             deletedImagesCount = await deleteCloudinaryImages(allImages);
+        }
 
         // Delete from DB
-        await productModel.findByIdAndDelete(productId);
+        await product.deleteOne();
 
         // Parallel DB Cleanup
         await Promise.all([
-            Wishlist.updateMany({
-                items: productId
-            }, {
-                $pull: {
-                    items: productId
-                }
-            }),
-            Cart.updateMany({
-                "items.productId": productId
-            }, {
-                $pull: {
-                    items: {
-                        productId
-                    }
-                }
-            }),
+            Wishlist.updateMany(
+                { items: productId }, 
+                { $pull: { items: productId } }
+            ),
+            Cart.updateMany(
+                { "items.productId": productId }, 
+                { $pull: { items: { productId } } }
+            ),
         ]);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: `Product and ${deletedImagesCount} images deleted successfully.`,
         });
     } catch (error) {
         console.error("Delete Product Error:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Internal server error during deletion.",
         });
     }
 };
 
 export const deleteVariant = async (req, res) => {
     try {
-        const {
-            productId,
-            variantId
-        } = req.params;
+        const { productId, variantId } = req.params;
 
-        const product = await productModel.findById(productId);
+        const product = await productModel.findOne({ 
+            _id: productId, 
+            seller: req.user._id 
+        });
 
-        if (!product)
+        if (!product) {
             return res.status(404).json({
-                message: "Product not found."
+                success: false,
+                message: "Product not found or unauthorized."
             });
+        }
 
         const variant = product.variants.id(variantId);
 
-        if (!variant)
+        if (!variant) {
             return res.status(404).json({
+                success: false,
                 message: "Variant not found."
             });
+        }
 
-        await deleteCloudinaryImages(variant.images);
+        if (variant.images && variant.images.length > 0) {
+            await deleteCloudinaryImages(variant.images);
+        }
 
-        variant.deleteOne(); // remove variant
+        variant.deleteOne(); 
         await product.save();
 
-        await Cart.updateMany({
-            "items.variantId": variantId
-        }, {
-            $pull: {
-                items: {
-                    variantId
-                }
-            }
-        });
+        await Cart.updateMany(
+            { "items.variantId": variantId }, 
+            { $pull: { items: { variantId } } }
+        );
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Variant deleted successfully.",
         });
     } catch (error) {
         console.error("deleteVariant error:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Internal server error.",
         });
     }
 };

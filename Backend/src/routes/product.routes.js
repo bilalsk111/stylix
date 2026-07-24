@@ -10,7 +10,8 @@ import {
   editProductVariant,
   getFilteredProductsPro,
   deleteVariant,
-  deleteProduct, 
+  deleteProduct,
+  updateProduct,
 } from "../controllers/product.controller.js";
 
 import {
@@ -48,11 +49,16 @@ router.post(
   ProductValidate,
   createProduct,
 );
-
+router.put(
+  "/update/:productId", 
+  authenticateSeller, 
+  requireSeller, 
+  updateProduct
+);
 router.get(
   "/seller-products",
   authenticateSeller,
-  requireSeller, 
+  requireSeller,
   getSellerProducts,
 );
 
@@ -78,9 +84,14 @@ router.put(
   upload.array("images", 7),
   editProductVariant,
 );
-router.get("/shop",getFilteredProductsPro);
+router.get("/shop", getFilteredProductsPro);
 
-router.delete('/:productId/variant/:variantId', authenticateSeller, requireSeller,deleteVariant);
-router.delete('/:productId', authenticateSeller, requireSeller,deleteProduct);
+router.delete(
+  "/:productId/variant/:variantId",
+  authenticateSeller,
+  requireSeller,
+  deleteVariant,
+);
+router.delete("/:productId", authenticateSeller, requireSeller, deleteProduct);
 
 export default router;

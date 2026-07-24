@@ -7,9 +7,10 @@ import {
   editVariant,
   deleteVariantApi,
   deleteProductApi,
+  updateProduct,
 } from "../services/product.api";
 import { useDispatch } from "react-redux";
-import { removeProductLocally, removeVariantLocally, setAllProducts, setSellerProducts } from "../state/product.slice";
+import { removeProductLocally, removeVariantLocally, setAllProducts, setSellerProducts, updateProductLocally } from "../state/product.slice";
 import toast from "react-hot-toast";
 import { useState } from "react";
 
@@ -20,6 +21,18 @@ export function useProduct() {
   const handleCreateProduct = async (formData) => {
     const data = await createProduct(formData);
     return data.product;
+  };
+
+  const handleUpdateProduct = async (productId, data) => {
+    try {
+      const res = await updateProduct(productId, data);
+      dispatch(updateProductLocally(res.product));
+      toast.success("Main protocol updated.");
+      return res.product;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update product.");
+      throw error;
+    }
   };
   const handleGetSellerProduct = async () => {
     try {
@@ -63,18 +76,16 @@ export function useProduct() {
 
   const handleDeleteProduct = async (productId) => {
     // Basic confirmation to prevent accidental clicks
-    if (!window.confirm("Are you sure? This will erase the product, all variants, and images permanently.")) return;
-
     setIsDeleting(true);
     try {
       const res = await deleteProductApi(productId);
       if (res.success) {
         dispatch(removeProductLocally(productId));
-        toast.success("Product permanently deleted.");
+        // toast.success("Product permanently deleted.");
       }
     } catch (error) {
       console.error(error);
-      toast.error(error.response?.data?.message || "Failed to delete product.");
+      // toast.error(error.response?.data?.message || "Failed to delete product.");
     } finally {
       setIsDeleting(false);
     }
@@ -100,6 +111,7 @@ export function useProduct() {
 
   return {
     handleCreateProduct,
+    handleUpdateProduct,
     handleGetAllProduct,
     handleGetSellerProduct,
     handleGetProductById,
