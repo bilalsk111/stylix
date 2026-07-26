@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from "react";
-import { ShoppingBag, User, LogOut, LayoutDashboard, Heart } from "lucide-react"; 
+import { ShoppingBag, User, LogOut, LayoutDashboard, Heart, ChevronDown } from "lucide-react"; 
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hook/useAuth";
 import { useSelector, useDispatch } from "react-redux";
@@ -9,7 +9,8 @@ import { useWishlist } from "../features/wishlist/hook/useWishlist";
 const NAV_LINKS = [
   { label: "Men", to: "/shop?category=Men" },
   { label: "Women", to: "/shop?category=Women" },
-  { label: "Kid", to: "/shop?category=Kid" }
+  { label: "Kid", to: "/shop?category=Kid" },
+  { label: "About", to: "/about" } // Logically, move this to Footer later
 ];
 
 const Navbar = () => {
@@ -24,7 +25,7 @@ const Navbar = () => {
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   
-  // 🔥 Logout Modal States
+  // Logout Modal States
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -89,7 +90,7 @@ const Navbar = () => {
     else navigate("/bag");
   };
 
-  // 🔥 Execute Logout
+  // Execute Logout
   const executeLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -134,7 +135,7 @@ const Navbar = () => {
           </div>
 
           {/* Action Area */}
-          <div className="flex items-center gap-5 z-50 ml-auto">
+          <div className="flex items-center gap-6 z-50 ml-auto">
 
             {/* BAG ICON */}
             <button
@@ -158,11 +159,13 @@ const Navbar = () => {
               <div className="relative hidden md:block" ref={avatarRef}>
                 <button
                   onClick={() => setAvatarOpen(!avatarOpen)}
-                  className="flex items-center group"
+                  className="flex items-center gap-2 group"
                 >
                   <div className="h-9 w-9 rounded-full bg-[#ccff00] text-stone-900 flex items-center justify-center text-[12px] font-black ring-2 ring-transparent group-hover:ring-stone-200 transition-all">
                     {getInitials(currentUser.fullname)}
                   </div>
+                  {/* 🔥 Down Arrow Added Here */}
+                  <ChevronDown size={14} className={`text-stone-400 group-hover:text-stone-900 transition-transform duration-300 ${avatarOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Avatar Dropdown */}
@@ -205,7 +208,7 @@ const Navbar = () => {
                       <User size={12} /> Profile
                     </Link>
 
-                    {/* 🔥 DESKTOP LOGOUT BUTTON */}
+                    {/* LOGOUT BUTTON */}
                     <button
                       onClick={() => { setAvatarOpen(false); setShowLogoutModal(true); }}
                       className="w-full flex items-center gap-3 px-4 py-3 text-[9px] font-bold text-red-500 hover:bg-red-50 transition-all uppercase tracking-widest border-t border-stone-100"
@@ -304,7 +307,6 @@ const Navbar = () => {
                   <User size={16} /> My Profile
                 </button>
 
-                {/* 🔥 MOBILE LOGOUT BUTTON */}
                 <button
                   onClick={() => { setMobileOpen(false); setShowLogoutModal(true); }}
                   className="w-full text-left py-4 text-[10px] font-black uppercase tracking-[0.3em] text-red-500 hover:text-red-600 flex items-center gap-3"
@@ -324,7 +326,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* 🔥 LOGOUT CONFIRMATION MODAL - EXACT MATCH */}
+      {/* LOGOUT CONFIRMATION MODAL */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white border border-stone-200 rounded-none max-w-sm w-full p-6 shadow-2xl space-y-5 animate-fade-in-up">

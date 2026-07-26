@@ -18,6 +18,7 @@ import OrderHistory from "../features/order/pages/OrderHistory";
 import { WishlistPage } from "../features/wishlist/pages/WishlistPage";
 import ForgotPassword from "../features/auth/pages/ForgotPassword";
 import ResetPassword from "../features/auth/pages/ResetPassword";
+import About from "../features/auth/pages/About";
 
 export const routes = createBrowserRouter([
   {
@@ -50,6 +51,10 @@ export const routes = createBrowserRouter([
       {
         path: '/success',
         element: <Success />
+      },
+      {
+        path:'/about',
+        element: <About/>
       }
     ],
   },

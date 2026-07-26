@@ -2,7 +2,7 @@ import React from "react";
 import { Heart } from "lucide-react";
 
 export const WishlistToast = ({ product, isRemoving }) => (
-  <div className="flex items-center gap-4 bg-white border border-stone-100 px-4 py-3 min-w-[280px] shadow-lg">
+  <div className="flex items-center gap-4 bg-white border border-stone-100 px-4 py-3 min-w-[280px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] pointer-events-auto">
     <div className="w-10 h-12 bg-stone-100 flex-shrink-0">
       {product?.images?.[0]?.url && (
         <img src={product.images[0].url} className="w-full h-full object-cover mix-blend-multiply" alt="" />
@@ -14,5 +14,10 @@ export const WishlistToast = ({ product, isRemoving }) => (
       </p>
       <p className="text-[11px] font-black uppercase text-stone-900 truncate">{product?.title}</p>
     </div>
+    {isRemoving ? (
+      <Heart size={16} className="text-stone-300 flex-shrink-0" />
+    ) : (
+      <Heart size={16} className="text-red-500 fill-red-500 flex-shrink-0" />
+    )}
   </div>
 );

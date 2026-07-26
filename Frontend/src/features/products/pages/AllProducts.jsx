@@ -41,18 +41,62 @@ const AllProducts = () => {
   }, [cartItems]);
 
   const onWishlist = useCallback((e, product) => {
-    const wasWishlisted = isWishlisted(product._id);
+    if (!product?._id) return;
+
+    // 1. Prevent event bubbling so clicking the heart doesn't trigger the product card link
+    e.preventDefault();
+    e.stopPropagation();
+
+    const isCurrentlyWishlisted = isWishlisted(product._id);
+
+    // 2. Optimistic UI Update: Fire toast instantly with unique ID
+    toast.custom(
+      (t) => <WishlistToast product={product} isRemoving={isCurrentlyWishlisted} />,
+      { position: "bottom-center", duration: 2000, id: `wishlist-${product._id}` }
+    );
+
+    // 3. Trigger state/API update
     handleToggleWishlist(e, product._id);
-    toast.custom((t) => <WishlistToast product={product} isRemoving={wasWishlisted} />, { position: "bottom-center", duration: 2000 });
   }, [handleToggleWishlist, isWishlisted]);
 
-  const onQuickAdd = useCallback(async (product) => {
-    if (checkInCart(product._id)) { navigate("/bag"); return; }
+  const onQuickAdd = useCallback(async (product, selectedSize = null, selectedColor = null) => {
+    if (!product?._id) return;
+
+    // 1. Return immediately if already in cart
+    if (checkInCart(product._id)) {
+      navigate("/bag");
+      return;
+    }
+
+    // 2. Optimistic UI Update: Fire toast instantly with a unique ID to prevent spam
+    const toastId = `cart-${product._id}`;
+    toast.custom(
+      (t) => (
+        <CartToast
+          product={product}
+          onGoToCart={() => {
+            toast.dismiss(t.id);
+            navigate("/bag");
+          }}
+        />
+      ),
+      { position: "bottom-center", duration: 3000, id: toastId }
+    );
+
+    // 3. API Call executes in the background
     try {
-      await handleAddItem({ productId: product._id, variantId: product.variants?.[0]?._id, quantity: 1 });
-      toast.custom((t) => <CartToast product={product} onGoToCart={() => { toast.dismiss(t.id); navigate("/bag"); }} />, { position: "bottom-center", duration: 3000 });
+      await handleAddItem({
+        productId: product._id,
+        variantId: product.variants?.[0]?._id,
+        quantity: 1,
+        size: selectedSize,
+        color: selectedColor
+      });
     } catch (err) {
-      toast.error("Couldn't add to bag.");
+      // 4. Rollback UI if API fails
+      toast.dismiss(toastId);
+      toast.error("Failed to add to bag. Please try again.", { position: "bottom-center" });
+      console.error("Cart Add Error:", err);
     }
   }, [checkInCart, handleAddItem, navigate]);
 

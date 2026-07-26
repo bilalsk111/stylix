@@ -1,18 +1,41 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { QuickViewModal } from "../components/QuickViewModal";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, ShoppingBag, Plus } from "lucide-react";
 
-export const ProductCard = ({ product, wishlisted, onWishlist, onQuickAdd, addedToCart, viewMode,onQuickView }) => {
+export const ProductCard = ({ product, wishlisted, onWishlist, onQuickAdd, addedToCart, viewMode, onQuickView }) => {
   const navigate = useNavigate();
+  const [optimisticAdded, setOptimisticAdded] = useState(false);
   const isOutOfStock = (product.stock || 0) === 0;
+  
+  const isAdded = addedToCart || optimisticAdded;
+
+  useEffect(() => {
+    if (addedToCart) {
+      setOptimisticAdded(true);
+    }
+  }, [addedToCart]);
+
+  const handleAction = async (e) => {
+    e.stopPropagation();
+    if (isAdded) {
+      navigate("/bag");
+    } else {
+      setOptimisticAdded(true);
+      try {
+        await onQuickAdd(product);
+      } catch (err) {
+        setOptimisticAdded(false);
+      }
+    }
+  };
 
   return (
     <div
       className={`group cursor-pointer ${viewMode === 'list' ? 'flex flex-col md:flex-row gap-6 md:gap-8 border-b border-stone-200 pb-6' : 'flex flex-col'}`}
       onClick={() => navigate(`/product/${product._id}`)}
     >
-      {/* 🖼️ IMAGE WRAPPER - Width reduced for tighter list view */}
+      {/* 🖼️ IMAGE WRAPPER */}
       <div className={`relative overflow-hidden bg-stone-100 border border-stone-200/60 ${viewMode === 'list' ? 'w-full md:w-40 lg:w-48 aspect-[3/4] shrink-0' : 'aspect-[3/4] mb-4'}`}>
         <img
           src={product.images?.[0]?.url || "https://via.placeholder.com/600x800"}
@@ -20,14 +43,34 @@ export const ProductCard = ({ product, wishlisted, onWishlist, onQuickAdd, added
           className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${isOutOfStock ? "grayscale opacity-70" : "mix-blend-multiply"}`}
         />
 
-        {/* Status Badge */}
-        <div className="absolute top-3 left-3 z-20">
-          <span className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 ${isOutOfStock ? "bg-red-500 text-white" : "bg-white text-stone-900 border border-stone-200 shadow-sm"}`}>
-            {isOutOfStock ? "Sold Out" : "In Stock"}
-          </span>
+        {/* 🔥 DYNAMIC TAGS (New, Best Seller, Trending, Sold Out) */}
+        <div className="absolute top-3 left-3 z-20 flex flex-col items-start gap-1.5">
+          {isOutOfStock ? (
+            <span className="bg-red-500 text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1.5 shadow-sm">
+              Sold Out
+            </span>
+          ) : (
+            <>
+              {product.isBestSeller && (
+                <span className="bg-stone-900 text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1.5 shadow-sm">
+                  Best Seller
+                </span>
+              )}
+              {product.isNew && (
+                <span className="bg-[#ccff00] text-stone-900 text-[8px] font-black uppercase tracking-widest px-2.5 py-1.5 shadow-sm border border-[#b3e600]">
+                  New
+                </span>
+              )}
+              {product.isTrending && (
+                <span className="bg-white text-stone-900 text-[8px] font-black uppercase tracking-widest px-2.5 py-1.5 shadow-sm border border-stone-200">
+                  Trending
+                </span>
+              )}
+            </>
+          )}
         </div>
 
-        {/* 🛠️ Action Icons - Hidden by default, visible on hover */}
+        {/* 🛠️ Action Icons */}
         <div className="absolute top-3 right-3 z-20 flex flex-col gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
           <button
             onClick={(e) => { e.stopPropagation(); onWishlist(e, product); }}
@@ -39,7 +82,7 @@ export const ProductCard = ({ product, wishlisted, onWishlist, onQuickAdd, added
           <button
             onClick={(e) => { 
               e.stopPropagation(); 
-              onQuickView(product); // 🔥 YE NAYI PROP CALL HO RAHI HAI YAHAN
+              onQuickView(product); 
             }}
             className="p-2.5 rounded-full bg-white/90 backdrop-blur-md hover:bg-white shadow-sm transition-all text-stone-500 hover:text-stone-900"
           >
@@ -51,12 +94,12 @@ export const ProductCard = ({ product, wishlisted, onWishlist, onQuickAdd, added
         {!isOutOfStock && viewMode === 'grid' && (
           <div className="absolute inset-x-0 bottom-0 p-2 translate-y-[120%] group-hover:translate-y-0 transition-transform duration-300 z-20" onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={() => onQuickAdd(product)}
+              onClick={handleAction}
               className={`w-full text-[9px] font-black uppercase py-3 tracking-widest transition-all flex items-center justify-center gap-2 ${
-                addedToCart ? "bg-[#ccff00] text-stone-900" : "bg-stone-900 text-white hover:bg-[#ccff00] hover:text-stone-900"
+                isAdded ? "bg-[#ccff00] text-stone-900" : "bg-stone-900 text-white hover:bg-[#ccff00] hover:text-stone-900"
               }`}
             >
-              {addedToCart ? <><ShoppingBag size={12} /> View Bag</> : <><Plus size={12} /> Add to Bag</>}
+              {isAdded ? <><ShoppingBag size={12} /> View Bag</> : <><Plus size={12} /> Quick Add</>}
             </button>
           </div>
         )}
@@ -64,8 +107,8 @@ export const ProductCard = ({ product, wishlisted, onWishlist, onQuickAdd, added
 
       <div className={`flex flex-col ${viewMode === 'list' ? 'flex-1 py-1 pr-4 justify-between' : 'px-1'}`}>
         
-        {/* Top Section: Title & Description */}
-      <div>
+        {/* Top Section */}
+        <div>
           <h3 className={`font-black uppercase tracking-widest text-stone-900 transition-colors group-hover:text-stone-500 ${viewMode === 'list' ? 'text-lg md:text-xl mb-2' : 'text-[11px] md:text-[13px] line-clamp-2 mb-1'}`}>
             {product.title}
           </h3>
@@ -77,7 +120,7 @@ export const ProductCard = ({ product, wishlisted, onWishlist, onQuickAdd, added
           )}
         </div>
 
-        {/* Bottom Section: Price & Button */}
+        {/* Bottom Section */}
         <div className={`flex ${viewMode === 'list' ? 'flex-row items-center gap-6 mt-4' : 'flex-col mt-1'}`}>
           <span className={`font-bold text-stone-900 ${viewMode === 'list' ? 'text-xl' : 'text-[12px]'}`}>
             {product.price?.currency || 'INR'} {product.price?.amount}
@@ -85,12 +128,12 @@ export const ProductCard = ({ product, wishlisted, onWishlist, onQuickAdd, added
 
           {viewMode === 'list' && !isOutOfStock && (
             <button
-              onClick={(e) => { e.stopPropagation(); onQuickAdd(product); }}
+              onClick={handleAction}
               className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-                addedToCart ? "bg-[#ccff00] text-stone-900" : "bg-stone-900 text-white hover:bg-[#ccff00] hover:text-stone-900"
+                isAdded ? "bg-[#ccff00] text-stone-900" : "bg-stone-900 text-white hover:bg-[#ccff00] hover:text-stone-900"
               }`}
             >
-              {addedToCart ? <><ShoppingBag size={14} /> View Bag</> : <><Plus size={14} /> Add to Bag</>}
+              {isAdded ? <><ShoppingBag size={14} /> View Bag</> : <><Plus size={14} /> Quick Add</>}
             </button>
           )}
         </div>
