@@ -19,17 +19,18 @@ import { WishlistPage } from "../features/wishlist/pages/WishlistPage";
 import ForgotPassword from "../features/auth/pages/ForgotPassword";
 import ResetPassword from "../features/auth/pages/ResetPassword";
 import About from "../features/auth/pages/About";
+import NotFound from "../components/NotFound"; 
 
 export const routes = createBrowserRouter([
   {
-    // 🔥 USER ROUTES: Yahan Navbar aur Footer aayega kyunki ye <Layout /> ke andar hain
+    // 🔥 USER ROUTES: Navbar & Footer standard layout ke saath
     element: <Layout />,
     children: [
       { path: "/", element: <AllProducts /> },
       { path: "/shop", element: <AllProducts /> },
       { path: "/product/:id", element: <ProductDetail /> },
       {
-        path: '/profile',
+        path: "/profile",
         element: <ProtectedRoute><Profile /></ProtectedRoute>
       },
       {
@@ -49,17 +50,21 @@ export const routes = createBrowserRouter([
         element: <ProtectedRoute><OrderHistory /></ProtectedRoute>
       },
       {
-        path: '/success',
+        path: "/success",
         element: <Success />
       },
       {
-        path:'/about',
-        element: <About/>
+        path: "/about",
+        element: <About />
+      },
+      {
+        path: "*",
+        element: <NotFound />
       }
     ],
   },
   
-  // 🔥 SELLER ROUTES: Yahan Navbar/Footer NAHI aayega
+  // 🔥 SELLER ROUTES
   {
     element: <ProtectedSellerRoute />,
     children: [
@@ -70,9 +75,9 @@ export const routes = createBrowserRouter([
     ],
   },
 
-  // 🔥 AUTH ROUTES: Yahan bhi Navbar/Footer NAHI aayega
+  // 🔥 AUTH ROUTES
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
   { path: "/forgot-password", element: <ForgotPassword /> },
-  { path: "/reset-password", element: <ResetPassword /> }
+  { path: "/reset-password", element: <ResetPassword /> },
 ]);

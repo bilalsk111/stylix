@@ -59,7 +59,7 @@ const AllProducts = () => {
     handleToggleWishlist(e, product._id);
   }, [handleToggleWishlist, isWishlisted]);
 
-  const onQuickAdd = useCallback(async (product, selectedSize = null, selectedColor = null) => {
+const onQuickAdd = useCallback(async (product, selectedSize = null, selectedColor = null) => {
     if (!product?._id) return;
 
     // 1. Return immediately if already in cart
@@ -68,7 +68,31 @@ const AllProducts = () => {
       return;
     }
 
-    // 2. Optimistic UI Update: Fire toast instantly with a unique ID to prevent spam
+    // 🔥 FIX: Dynamically find the correct Variant ID based on user selection or stock availability
+    let targetVariantId = product.variants?.[0]?._id; 
+
+    if (product.variants?.length > 0) {
+      if (selectedSize || selectedColor) {
+        // Find exact variant from Quick View Modal selection
+        const matchedVariant = product.variants.find(v => {
+          const matchSize = selectedSize ? v.attributes?.SIZE === selectedSize : true;
+          const matchColor = selectedColor ? v.attributes?.COLOR === selectedColor : true;
+          return matchSize && matchColor;
+        });
+        if (matchedVariant) targetVariantId = matchedVariant._id;
+      } else {
+        // If clicking Quick Add directly from the Grid, find the first variant that actually has stock
+        const inStockVariant = product.variants.find(v => Number(v.stock) > 0);
+        if (inStockVariant) targetVariantId = inStockVariant._id;
+      }
+    }
+
+    if (!targetVariantId) {
+      toast.error("Selected variant is unavailable.");
+      return;
+    }
+
+    // 2. Optimistic UI Update
     const toastId = `cart-${product._id}`;
     toast.custom(
       (t) => (
@@ -87,15 +111,14 @@ const AllProducts = () => {
     try {
       await handleAddItem({
         productId: product._id,
-        variantId: product.variants?.[0]?._id,
-        quantity: 1,
-        size: selectedSize,
-        color: selectedColor
+        variantId: targetVariantId, // Sending the correct variant ID now
+        quantity: 1
       });
     } catch (err) {
-      // 4. Rollback UI if API fails
+      // 4. Rollback UI if API fails (e.g. backend returns 400 for stock limit)
       toast.dismiss(toastId);
-      toast.error("Failed to add to bag. Please try again.", { position: "bottom-center" });
+      const errorMsg = err.response?.data?.message || "Failed to add to bag.";
+      toast.error(errorMsg, { position: "bottom-center" });
       console.error("Cart Add Error:", err);
     }
   }, [checkInCart, handleAddItem, navigate]);

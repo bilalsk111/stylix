@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, memo, useRef } from "react";
+﻿import React, { useState, useEffect, memo, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   Plus, X, ArrowLeft, Edit3, ShieldCheck, ShoppingBag,
@@ -30,10 +30,9 @@ const globalStyles = `
 /* ─────────────────────────────────────────────────────────────────
    DELETE CONFIRM MODAL
 ───────────────────────────────────────────────────────────────── */
-const DeleteConfirmModal = ({ variant, onConfirm, onCancel }) => (
+const DeleteConfirmModal = memo(({ variant, onConfirm, onCancel }) => (
   <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-stone-900/50 backdrop-blur-sm">
     <div className="bg-white border border-stone-200 w-full max-w-sm rounded-none overflow-hidden shadow-2xl">
-
       <div className="p-5 border-b border-stone-100 flex items-center justify-between bg-stone-50">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-red-50 border border-red-200 flex items-center justify-center flex-shrink-0">
@@ -47,12 +46,10 @@ const DeleteConfirmModal = ({ variant, onConfirm, onCancel }) => (
           <X size={15} />
         </button>
       </div>
-
       <div className="p-6">
         <p className="text-[12px] text-stone-600 leading-relaxed">
           Are you sure you want to remove this variant? 
         </p>
-
         <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-none p-3 mt-4">
           <div className="w-10 h-12 bg-stone-200 rounded-none overflow-hidden flex-shrink-0">
             {variant?.images?.[0] && (
@@ -68,32 +65,21 @@ const DeleteConfirmModal = ({ variant, onConfirm, onCancel }) => (
             </p>
           </div>
         </div>
-
         <p className="text-[9px] text-red-400 font-black uppercase tracking-widest mt-4">
           ⚠ This action cannot be undone.
         </p>
       </div>
-
       <div className="px-6 pb-6 flex gap-3">
-        <button
-          onClick={onCancel}
-          className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-none
-                     border border-stone-200 text-stone-500
-                     hover:border-stone-400 hover:text-stone-900 transition-all"
-        >
+        <button onClick={onCancel} className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-none border border-stone-200 text-stone-500 hover:border-stone-400 hover:text-stone-900 transition-all">
           Cancel
         </button>
-        <button
-          onClick={onConfirm}
-          className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-none
-                     bg-red-500 text-white hover:bg-red-600 transition-all"
-        >
+        <button onClick={onConfirm} className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-none bg-red-500 text-white hover:bg-red-600 transition-all">
           Yes, Remove
         </button>
       </div>
     </div>
   </div>
-);
+));
 
 /* ─────────────────────────────────────────────────────────────────
    NAVBAR
@@ -123,40 +109,46 @@ const Navbar = memo(({ productId }) => {
 /* ─────────────────────────────────────────────────────────────────
    VARIANT CARD
 ───────────────────────────────────────────────────────────────── */
-const VariantCard = memo(({ variant, index, onEdit, onDelete }) => (
-  <div className="group bg-white border border-stone-200 p-4 rounded-none hover:border-stone-300 hover:shadow-md transition-all">
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex gap-3">
-        <div className="w-12 h-14 bg-stone-100 rounded-none overflow-hidden border border-stone-200">
-          {variant.images?.[0] && <img src={variant.images[0].url} className="w-full h-full object-cover grayscale" alt="" />}
+const VariantCard = memo(({ variant, index, onEdit, onDelete }) => {
+  const isVariantOutOfStock = Number(variant.stock) <= 0;
+  
+  return (
+    <div className={`group bg-white border ${isVariantOutOfStock ? 'border-red-200/50' : 'border-stone-200'} p-4 rounded-none hover:border-stone-300 hover:shadow-md transition-all`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex gap-3">
+          <div className="w-12 h-14 bg-stone-100 rounded-none overflow-hidden border border-stone-200">
+            {variant.images?.[0] && <img src={variant.images[0].url} className={`w-full h-full object-cover ${isVariantOutOfStock ? 'grayscale opacity-70' : ''}`} alt="" />}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[8px] font-black text-stone-400 uppercase tracking-tighter">NODE_0{index + 1}</span>
+              {isVariantOutOfStock && <span className="text-[7px] font-black uppercase bg-red-50 text-red-500 px-1.5 py-0.5">Empty</span>}
+            </div>
+            <h4 className={`text-xs font-bold uppercase truncate max-w-[150px] ${isVariantOutOfStock ? 'text-stone-400' : 'text-stone-900'}`}>{variant.title || "Standard SKU"}</h4>
+          </div>
         </div>
+        <div className="flex items-center gap-1">
+          <button onClick={() => onEdit(index)} className="p-2 text-stone-400 hover:text-stone-900 transition-colors">
+            <Edit3 size={12} />
+          </button>
+          <button onClick={() => onDelete(index, variant)} className="p-2 text-stone-400 hover:text-red-500 transition-colors">
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </div>
+      <div className="flex justify-between items-end border-t border-stone-100 pt-3">
         <div>
-          <span className="text-[8px] font-black text-stone-400 uppercase tracking-tighter">NODE_0{index + 1}</span>
-          {/* Variant title truncation is usually kept so it doesn't break the small card layout */}
-          <h4 className="text-xs font-bold uppercase text-stone-900 truncate max-w-[150px]">{variant.title || "Standard SKU"}</h4>
+          <span className="text-[7px] font-black text-stone-400 uppercase block">Stock</span>
+          <span className={`text-[10px] font-mono font-bold ${isVariantOutOfStock ? 'text-red-500' : 'text-stone-900'}`}>{variant.stock} Units</span>
+        </div>
+        <div className="text-right">
+          <span className="text-[7px] font-black text-stone-400 uppercase block">Price</span>
+          <span className="text-[10px] font-mono text-stone-900 font-bold">{variant.price?.currency} {variant.price?.amount}</span>
         </div>
       </div>
-      <div className="flex items-center gap-1">
-        <button onClick={() => onEdit(index)} className="p-2 text-stone-400 hover:text-stone-900 transition-colors">
-          <Edit3 size={12} />
-        </button>
-        <button onClick={() => onDelete(index, variant)} className="p-2 text-stone-400 hover:text-red-500 transition-colors">
-          <Trash2 size={12} />
-        </button>
-      </div>
     </div>
-    <div className="flex justify-between items-end border-t border-stone-100 pt-3">
-      <div>
-        <span className="text-[7px] font-black text-stone-400 uppercase block">Stock</span>
-        <span className="text-[10px] font-mono text-stone-900 font-bold">{variant.stock} Units</span>
-      </div>
-      <div className="text-right">
-        <span className="text-[7px] font-black text-stone-400 uppercase block">Price</span>
-        <span className="text-[10px] font-mono text-stone-900 font-bold">{variant.price?.currency} {variant.price?.amount}</span>
-      </div>
-    </div>
-  </div>
-));
+  );
+});
 
 
 const SellerProductDetails = () => {
@@ -174,13 +166,34 @@ const SellerProductDetails = () => {
 
   const thumbnailRef = useRef(null);
 
+  // ✅ Proper API Fetching inside useEffect avoiding infinite loops
   useEffect(() => {
     let mounted = true;
-    handleGetProductById(id).then(data => {
-      if (mounted) { setProduct(data); setLoading(false); }
-    });
+    if (id) {
+      handleGetProductById(id)
+        .then(data => {
+          if (mounted && data) { 
+            setProduct(data); 
+            setLoading(false); 
+          }
+        })
+        .catch(() => {
+          if (mounted) setLoading(false);
+        });
+    }
     return () => { mounted = false; };
   }, [id, handleGetProductById]);
+
+  // 🔥 MEMOIZED STOCK LOGIC - Super Fast Calculation
+  const { totalStock, isOutOfStock } = useMemo(() => {
+    const stock = product?.variants?.length > 0 
+      ? product.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) 
+      : (Number(product?.stock) || 0);
+    return {
+      totalStock: stock,
+      isOutOfStock: stock <= 0
+    };
+  }, [product]);
 
   const onRemoveVariant = (index, variant) => setDeleteTarget({ index, variant });
 
@@ -274,9 +287,6 @@ const SellerProductDetails = () => {
     setActiveImg((prev) => (prev - 1 + product.images.length) % product.images.length);
   };
 
-  const totalStock = product?.variants?.reduce((acc, v) => acc + (v.stock || 0), 0) || product?.stock || 0;
-
-
   if (loading) return (
     <div className="h-screen bg-[#f7f6f4] flex items-center justify-center text-stone-900 font-black text-[10px] tracking-[1em] animate-pulse">
       LOADING_NEXUS
@@ -336,7 +346,7 @@ const SellerProductDetails = () => {
             </div>
 
             {/* Main Image */}
-            <div className="w-full aspect-[3/4] md:aspect-[4/5] bg-stone-100 rounded-none relative overflow-hidden flex-1 group shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-200/50">
+            <div className={`w-full aspect-[3/4] md:aspect-[4/5] bg-stone-100 rounded-none relative overflow-hidden flex-1 group shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-200/50 ${isOutOfStock ? 'grayscale opacity-80' : ''}`}>
               <img
                 src={product?.images?.[activeImg]?.url}
                 className="w-full h-full object-cover object-top transition-transform duration-[0.5s] ease-out"
@@ -376,17 +386,15 @@ const SellerProductDetails = () => {
                 <span className="text-stone-600 text-[8px] font-black uppercase tracking-[0.3em] bg-stone-200/50 px-3 py-1.5 border border-stone-200 rounded-none flex items-center gap-2 w-fit shadow-sm">
                   <ShieldCheck size={10} /> ASSET_ENCRYPTED
                 </span>
-                <span className={`text-[8px] font-black uppercase tracking-[0.3em] px-3 py-1.5 border rounded-none flex items-center gap-2 w-fit shadow-sm ${totalStock > 0 ? "bg-[#ccff00]/20 border-[#a3cc00]/30 text-[#8cb300]" : "bg-red-50 border-red-200 text-red-500"}`}>
-                  <Box size={10} /> {totalStock > 0 ? "IN_STOCK" : "DEPLETED"}
+                <span className={`text-[8px] font-black uppercase tracking-[0.3em] px-3 py-1.5 border rounded-none flex items-center gap-2 w-fit shadow-sm ${!isOutOfStock ? "bg-[#ccff00]/20 border-[#a3cc00]/30 text-[#8cb300]" : "bg-red-50 border-red-200 text-red-500"}`}>
+                  <Box size={10} /> {!isOutOfStock ? "IN_STOCK" : "DEPLETED"}
                 </span>
               </div>
               
-              {/* FULL TITLE: break-words ensures long continuous words wrap, removed line-clamp */}
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-black uppercase editorial-title mb-6 text-stone-900 break-words">
+              <h1 className={`text-3xl md:text-4xl lg:text-5xl font-black uppercase editorial-title mb-6 break-words ${isOutOfStock ? 'text-stone-400' : 'text-stone-900'}`}>
                 {product?.title || "Unnamed Asset"}
               </h1>
 
-              {/* NEW DESCRIPTION BLOCK */}
               <div className="mb-8">
                 <p className="text-stone-500 font-medium text-xs sm:text-sm leading-relaxed max-w-2xl whitespace-pre-wrap">
                   {product?.description || "This asset currently lacks a detailed description protocol. Update the registry to inject narrative data."}
@@ -398,12 +406,12 @@ const SellerProductDetails = () => {
                 {[
                   { label: "Category", val: product?.category || "Apparel", icon: <Tag size={12} /> },
                   { label: "Brand", val: product?.brand || "Stylix", icon: <ShieldCheck size={12} /> },
-                  { label: "Total Stock", val: `${totalStock} Units`, icon: <Box size={12} /> },
+                  { label: "Total Stock", val: `${totalStock} Units`, icon: <Box size={12} />, isAlert: isOutOfStock },
                   { label: "Base Price", val: `${product?.price?.currency || "INR"} ${product?.price?.amount || "0"}`, icon: <Barcode size={12} /> }
                 ].map(spec => (
-                  <div key={spec.label} className="border border-stone-200 bg-white p-3 rounded-none shadow-sm hover:shadow-md transition-shadow">
+                  <div key={spec.label} className={`border p-3 rounded-none shadow-sm hover:shadow-md transition-shadow ${spec.isAlert ? 'border-red-200 bg-red-50/30' : 'border-stone-200 bg-white'}`}>
                     <span className="text-[8px] font-black text-stone-400 uppercase tracking-widest block mb-1">{spec.label}</span>
-                    <span className="text-[11px] font-bold uppercase text-stone-900 truncate block">{spec.val}</span>
+                    <span className={`text-[11px] font-bold uppercase truncate block ${spec.isAlert ? 'text-red-500' : 'text-stone-900'}`}>{spec.val}</span>
                   </div>
                 ))}
               </div>

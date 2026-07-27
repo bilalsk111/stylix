@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
+import { config } from "../config/config.js";
 import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
+import { createOrderservice } from "../services/payment.service.js"; // 🔥 Ensure Capital 'S' here if you fixed it earlier.
+import orderModel from "../models/order.model.js";
 import { getCartDetail } from "../dao/cart.dao.js";
 
 export const addtocart = async (req, res) => {
@@ -86,11 +90,16 @@ export const getCart = async (req, res) => {
   try {
     const user = req.user;
     let cart = await getCartDetail(user._id);
-    if (!cart) cart = await cartModel.create({ user: user._id });
 
-    return res
-      .status(200)
-      .json({ message: "Cart fetched successfully", success: true, cart });
+    if (!cart) {
+      cart = await cartModel.create({ user: user._id });
+    }
+
+    return res.status(200).json({
+      message: "Cart fetched successfully",
+      success: true,
+      cart,
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error", success: false });
@@ -102,50 +111,62 @@ export const updateCartItemQuantity = async (req, res) => {
     const { productId, variantId } = req.params;
     const { quantity } = req.body;
 
-    if (!quantity || quantity < 1)
+    // 1. Safety check
+    if (!quantity || quantity < 1) {
       return res
         .status(400)
         .json({ message: "Quantity must be at least 1", success: false });
+    }
 
+    // 2. Product dhundho
     const product = await productModel.findById(productId);
-    if (!product)
+    if (!product) {
       return res
         .status(404)
         .json({ message: "Product not found", success: false });
+    }
 
+    // 3. Product ke andar se specific variant dhundho
     const variant = product.variants.find(
       (v) => v._id.toString() === variantId,
     );
-    if (!variant)
+    if (!variant) {
       return res
         .status(404)
         .json({ message: "Variant not found", success: false });
+    }
 
-    if (quantity > variant.stock)
-      return res
-        .status(400)
-        .json({
-          message: `Not enough stock, only ${variant.stock} left`,
-          success: false,
-        });
+    // 4. Stock limit check karo
+    const stock = variant.stock;
+    if (quantity > stock) {
+      return res.status(400).json({
+        message: `Not enough stock, only ${stock} left`,
+        success: false,
+      });
+    }
 
+    // 5. Cart dhundho
     const cart = await cartModel.findOne({ user: req.user._id });
-    if (!cart)
+    if (!cart) {
       return res
         .status(404)
         .json({ message: "Cart not found", success: false });
+    }
 
+    // 6. Cart ke andar wo specific item dhundho
     const itemIndex = cart.items.findIndex(
       (item) =>
         item.product.toString() === productId &&
         item.variant?.toString() === variantId,
     );
 
-    if (itemIndex === -1)
+    if (itemIndex === -1) {
       return res
         .status(404)
         .json({ message: "Item not in cart", success: false });
+    }
 
+    // 7. Quantity update karo aur save kar do
     cart.items[itemIndex].quantity = quantity;
     await cart.save();
 
@@ -153,7 +174,7 @@ export const updateCartItemQuantity = async (req, res) => {
       .status(200)
       .json({ message: "Quantity updated successfully", success: true, cart });
   } catch (error) {
-    console.error("UPDATE QTY ERROR:", error);
+    console.error("🔥 UPDATE QTY ERROR:", error);
     return res
       .status(500)
       .json({ message: error.message || "Server error", success: false });
@@ -163,13 +184,15 @@ export const updateCartItemQuantity = async (req, res) => {
 export const removeCartItem = async (req, res) => {
   try {
     const { productId, variantId } = req.params;
-    let cart = await cartModel.findOne({ user: req.user._id });
 
-    if (!cart)
+    let cart = await cartModel.findOne({ user: req.user._id });
+    if (!cart) {
       return res
         .status(404)
         .json({ message: "Cart not found", success: false });
+    }
 
+    // Filter out item
     cart.items = cart.items.filter(
       (item) =>
         !(
@@ -177,6 +200,7 @@ export const removeCartItem = async (req, res) => {
           item.variant?.toString() === variantId
         ),
     );
+
     await cart.save();
 
     return res
@@ -185,5 +209,79 @@ export const removeCartItem = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error", success: false });
+  }
+};
+
+export const verifyPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      dbOrderId, // Receive the MongoDB Order ID from frontend
+      isBuyNow,
+    } = req.body;
+
+    const userId = req.user._id;
+
+    // Fetch the pending order
+    const order = await orderModel.findById(dbOrderId);
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found in database" });
+    }
+    if (order.paymentStatus === "Paid") {
+      return res.status(200).json({ message: "Already processed" });
+    }
+
+    // 1. Verify Signature
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", config.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest("hex");
+
+    // 🔥 IF PAYMENT FAILED OR HACKED
+    if (expectedSignature !== razorpay_signature) {
+      order.paymentStatus = "Failed";
+      await order.save();
+      return res
+        .status(400)
+        .json({ success: false, message: "Payment Verification Failed!" });
+    }
+
+    // 🔥 IF PAYMENT SUCCESS
+    order.paymentStatus = "Paid";
+    order.paymentInfo.razorpay_payment_id = razorpay_payment_id;
+    order.paymentInfo.razorpay_signature = razorpay_signature;
+
+    await order.save(); // Save updated status
+
+    // 2. DECREASE STOCK FROM PRODUCTS
+    for (const item of order.items) {
+      await productModel.updateOne(
+        { _id: item.product, "variants._id": item.variant },
+        { $inc: { "variants.$.stock": -item.quantity } },
+      );
+    }
+
+    // 3. CLEAR CART (Only if it came from Cart flow)
+    if (!isBuyNow) {
+      await cartModel.findOneAndUpdate(
+        { user: userId },
+        { $set: { items: [] } },
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment verified and Order placed successfully!",
+    });
+  } catch (error) {
+    console.error("Verify Payment Error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };

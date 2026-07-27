@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 
 export const useOrder = () => {
     const dispatch = useDispatch();
-const { adminOrders, buyerOrders, isLoading, error } = useSelector((state) => state.order);
+    const { adminOrders, buyerOrders, isLoading, error } = useSelector((state) => state.order);
 
     const handleFetchAllOrders = async () => {
         try {
@@ -24,7 +24,7 @@ const { adminOrders, buyerOrders, isLoading, error } = useSelector((state) => st
     };
 
     const handleUpdateStatus = async (orderId, newStatus) => {
-        // Optimistic UI Update: Update Redux immediately so the UI feels instant
+        // Optimistic update is fine here since it's an admin rapid-action
         dispatch(updateOrderStatusLocally({ orderId, status: newStatus }));
         
         try {
@@ -33,62 +33,62 @@ const { adminOrders, buyerOrders, isLoading, error } = useSelector((state) => st
                 toast.success(`Order marked as ${newStatus}`);
             }
         } catch (err) {
-            // Revert on failure by re-fetching the true state from DB
-            toast.error("Failed to update status. Reverting.");
+            toast.error("Failed to update status. Reverting UI to match Database.");
             handleFetchAllOrders(); 
         }
     };
-const handleDeleteOrder = async (orderId) => {
-    // UI se turant hata do (Fast UX)
-    dispatch(removeOrderLocally(orderId));
 
-    try {
-        const data = await deleteOrderApi(orderId);
-        if (data.success) {
-            toast.success("Order deleted permanently.");
+    const handleDeleteOrder = async (orderId) => {
+        try {
+            dispatch(setLoading(true));
+            // First wait for DB to confirm deletion
+            const data = await deleteOrderApi(orderId);
+            
+            if (data && data.success) {
+                // Only remove from Redux UI AFTER DB confirms it's gone
+                dispatch(removeOrderLocally(orderId));
+                toast.success("Order deleted permanently.");
+            }
+        } catch (err) {
+            const errorMsg = err.response?.data?.message || "Failed to delete order.";
+            toast.error(errorMsg);
+        } finally {
+            dispatch(setLoading(false));
         }
-    } catch (err) {
-        // Agar DB mein delete nahi hua kisi error ki wajah se, toh revert karo aur data wapas fetch karo
-        const errorMsg = err.response?.data?.message || "Failed to delete order.";
-        toast.error(errorMsg);
-        handleFetchAllOrders(); // Sync back with DB
-    }
-};
-const handleFetchMyOrders = async () => {
-    try {
-        dispatch(setLoading(true));
-        const data = await getMyOrdersApi(); 
-        // console.log("TRACKER 1 - RAW API DATA:", data); 
+    };
 
-        const finalOrders = Array.isArray(data) ? data : (data?.orders || []);
-        
-        // console.log("TRACKER 2 - FINAL ORDERS ARRAY:", finalOrders); 
-
-        dispatch(setBuyerOrders(finalOrders)); 
-        
-    } catch (err) {
-        const errorMsg = err.response?.data?.message || "Failed to fetch orders";
-        dispatch(setError(errorMsg));
-        // console.error("Order Fetch Error:", errorMsg);
-    } finally {
-        dispatch(setLoading(false));
-    }
-};
-
-const handleCancelMyOrder = async (orderId) => {
-    // Optimistic Update: UI me turant "Cancelled" dikha do
-    dispatch(cancelBuyerOrderLocally(orderId));
-    
-    try {
-        const data = await cancelMyOrderApi(orderId);
-        if (data.success) {
-            toast.success("Order Cancelled");
+    const handleFetchMyOrders = async () => {
+        try {
+            dispatch(setLoading(true));
+            const data = await getMyOrdersApi(); 
+            const finalOrders = Array.isArray(data) ? data : (data?.orders || []);
+            dispatch(setBuyerOrders(finalOrders)); 
+        } catch (err) {
+            const errorMsg = err.response?.data?.message || "Failed to fetch your orders";
+            dispatch(setError(errorMsg));
+        } finally {
+            dispatch(setLoading(false));
         }
-    } catch (err) {
-        toast.error("Failed to cancel order");
-        handleFetchMyOrders(); // Agar fail hua toh DB se wapas purana data manga lo
-    }
-};
+    };
+
+    const handleCancelMyOrder = async (orderId) => {
+        try {
+            dispatch(setLoading(true));
+            // Wait for DB to confirm cancellation before updating UI
+            const data = await cancelMyOrderApi(orderId);
+            
+            if (data && data.success) {
+                dispatch(cancelBuyerOrderLocally(orderId));
+                toast.success("Order Cancelled successfully.");
+            }
+        } catch (err) {
+            const errorMsg = err.response?.data?.message || "Failed to cancel order.";
+            toast.error(errorMsg);
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+
     return {
         adminOrders,
         isLoading,
@@ -96,8 +96,8 @@ const handleCancelMyOrder = async (orderId) => {
         buyerOrders,
         handleFetchAllOrders,
         handleUpdateStatus,
-       handleDeleteOrder,
-       handleFetchMyOrders,
-       handleCancelMyOrder
+        handleDeleteOrder,
+        handleFetchMyOrders,
+        handleCancelMyOrder
     };
 };

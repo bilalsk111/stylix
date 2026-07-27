@@ -29,3 +29,14 @@ export const cancelMyOrderApi = async (orderId) => {
     const res = await orderApiInstance.put(`/my-orders/${orderId}/cancel`);
     return res.data;
 };
+
+// 🔥 MOVED FROM CART API: Ab yeh /api/orders/create-order par request bhejenge
+export const createOrder = async (payload) => {
+    const res = await orderApiInstance.post('/create-order', payload);
+    return res.data;
+};
+
+export const verifyPayment = async (payload) => {
+    const res = await orderApiInstance.post('/verify-payment', payload);
+    return res.data;
+};

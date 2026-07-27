@@ -3,11 +3,10 @@ import {
   addItem as addItemAPI, 
   getCart, 
   updateCartItemQuantity, 
-  removeCartItem, // Yeh import zaroori hai!
-  createOrder
+  removeCartItem,
 } from "../services/cart.api";
 import { useDispatch } from "react-redux";
-import { setItems, setUpdateQuantity, removeItemLocal,setCart } from "../state/cart.slice";
+import { setUpdateQuantity, removeItemLocal, setCart } from "../state/cart.slice";
 import { useEffect, useCallback } from "react";
 
 export const useCart = () => {
@@ -45,7 +44,6 @@ export const useCart = () => {
     }
   }
 
-
   async function handleUpdateItemQty({ productId, variantId, quantity }) {
     dispatch(setUpdateQuantity({ productId, variantId, quantity }));
 
@@ -72,16 +70,10 @@ export const useCart = () => {
     }
   }
 
-async function handleCreateOrder() {
-  const data = await createOrder();
-  return data?.order; 
-}
-
   return { 
     handleGetCart, 
     handleAddItem, 
     handleUpdateItemQty, 
-    handleRemoveItem ,
-    handleCreateOrder
+    handleRemoveItem 
   };
 };

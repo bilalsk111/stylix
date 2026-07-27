@@ -90,50 +90,55 @@ const CreateProduct = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-[#f7f6f4] text-stone-900 flex flex-col lg:flex-row overflow-hidden font-sans selection:bg-[#c8ff00] selection:text-stone-900">
+    <div className="min-h-screen w-full bg-[#f7f6f4] text-stone-900 flex flex-col lg:flex-row font-sans selection:bg-[#c8ff00] selection:text-stone-900">
 
       {/* LEFT PANEL: ASSET GALLERY */}
-      <section className="w-full lg:w-[42%] h-[35vh] lg:h-full bg-white border-b lg:border-b-0 lg:border-r border-stone-200 flex flex-col relative shrink-0">
-        <div className="p-4 lg:p-6 flex justify-between items-center bg-white/90 backdrop-blur-2xl z-20 sticky top-0 border-b border-stone-100">
-          <div className="flex items-center gap-3">
-            <div className="h-4 w-[3px] bg-[#c8ff00] rounded-full shadow-[0_0_10px_rgba(200,255,0,0.5)]"></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-stone-900">Archive Visuals</span>
+      {/* 🔥 FIX: Outer section freely stretches to the full height of the parent. No sticky or h-screen here. */}
+      <section className="w-full lg:w-[42%] bg-white border-b lg:border-b-0 lg:border-r border-stone-200 shrink-0 z-10">
+        
+        {/* 🔥 FIX: Inner div handles the sticky behavior and viewport height so background doesn't cut off */}
+        <div className="lg:sticky lg:top-0 lg:h-screen flex flex-col w-full">
+          <div className="p-4 lg:p-6 flex justify-between items-center bg-white/90 backdrop-blur-2xl z-20 sticky top-0 border-b border-stone-100">
+            <div className="flex items-center gap-3">
+              <div className="h-4 w-[3px] bg-[#c8ff00] rounded-full shadow-[0_0_10px_rgba(200,255,0,0.5)]"></div>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-stone-900">Archive Visuals</span>
+            </div>
+            <span className={`text-[9px] font-bold tracking-[0.2em] uppercase bg-stone-50 px-3 py-1.5 rounded-none border ${errors.images ? 'border-red-400 text-red-500 bg-red-50' : 'border-stone-200 text-stone-500'}`}>
+              {previewUrls.length} / 07 Slots
+            </span>
           </div>
-          <span className={`text-[9px] font-bold tracking-[0.2em] uppercase bg-stone-50 px-3 py-1.5 rounded-none border ${errors.images ? 'border-red-400 text-red-500 bg-red-50' : 'border-stone-200 text-stone-500'}`}>
-            {previewUrls.length} / 07 Slots
-          </span>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar bg-[radial-gradient(circle_at_top_left,_#f5f5f4_0%,_transparent_40%)]">
-          <div className="grid grid-cols-2 gap-4">
-            {previewUrls.map((url, i) => (
-              <div key={i} className={`relative group bg-stone-100 border border-stone-200 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-md hover:border-stone-400 ${i === 0 ? 'col-span-2 aspect-video' : 'aspect-[4/5]'}`}>
-                <img src={url} alt="" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-700 ease-out" />
-                <div className="absolute inset-0 bg-stone-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <button type="button" onClick={() => {
-                  setImages(images.filter((_, idx) => idx !== i));
-                  setPreviewUrls(previewUrls.filter((_, idx) => idx !== i));
-                }} className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-md rounded-none border border-stone-200 text-stone-900 hover:bg-red-500 hover:text-white hover:border-red-500 hover:scale-105 transition-all z-10 shadow-sm active:scale-95">
-                  <X size={14} strokeWidth={2.5} />
-                </button>
-              </div>
-            ))}
-            {previewUrls.length < 7 && (
-              <div onClick={() => fileInputRef.current.click()} className="aspect-[4/5] border-2 border-dashed border-stone-200 hover:border-stone-400 transition-all flex flex-col items-center justify-center gap-4 bg-stone-50/50 hover:bg-white group cursor-pointer overflow-hidden relative">
-                <div className="w-12 h-12 bg-white border border-stone-100 flex items-center justify-center rounded-full shadow-sm group-hover:scale-110 group-hover:rotate-90 transition-all duration-300">
-                  <Plus className="text-stone-400 group-hover:text-stone-900 transition-colors" size={20} strokeWidth={3} />
+          <div className="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar bg-[radial-gradient(circle_at_top_left,_#f5f5f4_0%,_transparent_40%)]">
+            <div className="grid grid-cols-2 gap-4">
+              {previewUrls.map((url, i) => (
+                <div key={i} className={`relative group bg-stone-100 border border-stone-200 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-md hover:border-stone-400 ${i === 0 ? 'col-span-2 aspect-video' : 'aspect-[4/5]'}`}>
+                  <img src={url} alt="" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-700 ease-out" />
+                  <div className="absolute inset-0 bg-stone-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <button type="button" onClick={() => {
+                    setImages(images.filter((_, idx) => idx !== i));
+                    setPreviewUrls(previewUrls.filter((_, idx) => idx !== i));
+                  }} className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-md rounded-none border border-stone-200 text-stone-900 hover:bg-red-500 hover:text-white hover:border-red-500 hover:scale-105 transition-all z-10 shadow-sm active:scale-95">
+                    <X size={14} strokeWidth={2.5} />
+                  </button>
                 </div>
-                <span className="text-[9px] font-black text-stone-400 group-hover:text-stone-900 uppercase tracking-[0.3em] transition-colors">Add Asset</span>
-              </div>
-            )}
+              ))}
+              {previewUrls.length < 7 && (
+                <div onClick={() => fileInputRef.current.click()} className="aspect-[4/5] border-2 border-dashed border-stone-200 hover:border-stone-400 transition-all flex flex-col items-center justify-center gap-4 bg-stone-50/50 hover:bg-white group cursor-pointer overflow-hidden relative">
+                  <div className="w-12 h-12 bg-white border border-stone-100 flex items-center justify-center rounded-full shadow-sm group-hover:scale-110 group-hover:rotate-90 transition-all duration-300">
+                    <Plus className="text-stone-400 group-hover:text-stone-900 transition-colors" size={20} strokeWidth={3} />
+                  </div>
+                  <span className="text-[9px] font-black text-stone-400 group-hover:text-stone-900 uppercase tracking-[0.3em] transition-colors">Add Asset</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
       {/* RIGHT PANEL: CONFIGURATION */}
-      <section className="w-full lg:w-[58%] h-[65vh] lg:h-full bg-[#f7f6f4] flex flex-col relative">
+      <section className="w-full lg:w-[58%] bg-[#f7f6f4] flex flex-col relative">
         
-        {/* Top Header Bar - Reduced Padding */}
+        {/* Top Header Bar */}
         <div className="px-6 lg:px-12 py-4 lg:py-6 flex justify-between items-end sticky top-0 bg-[#f7f6f4]/95 backdrop-blur-xl z-30 border-b border-stone-200/80">
           <button type="button" onClick={() => navigate(-1)} className="h-10 w-10 flex items-center justify-center bg-white hover:bg-stone-900 hover:text-white transition-colors border border-stone-200 shadow-sm active:scale-95">
             <ArrowLeft size={16} strokeWidth={2.5} />
@@ -149,13 +154,11 @@ const CreateProduct = () => {
           </div>
         </div>
 
-        {/* Form Container - Top Padding reduced from pt-10 to pt-6 */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 lg:px-12 pt-6 pb-16 custom-scrollbar">
+        {/* Form Container */}
+        <form onSubmit={handleSubmit} className="flex-1 px-6 lg:px-12 pt-6 pb-24 lg:pb-32">
 
-          {/* SINGLE UNIFIED WHITE CONTAINER */}
           <div className="bg-white p-6 lg:p-10 border border-stone-200 shadow-sm">
             
-            {/* Section 1: Identity */}
             <div className="flex items-center gap-3 mb-6">
               <div className="h-2 w-2 bg-stone-900"></div>
               <h2 className="text-[10px] font-black uppercase tracking-widest text-stone-900">Core Identity</h2>
@@ -188,10 +191,8 @@ const CreateProduct = () => {
               </div>
             </div>
 
-            {/* Gap reduced from my-12 to my-10 */}
             <div className="my-10 border-t border-stone-100"></div>
 
-            {/* Section 2: Classification */}
             <div className="flex items-center gap-3 mb-8">
               <div className="h-2 w-2 bg-stone-900"></div>
               <h2 className="text-[10px] font-black uppercase tracking-widest text-stone-900">Classification</h2>
@@ -247,7 +248,6 @@ const CreateProduct = () => {
 
             <div className="my-10 border-t border-stone-100"></div>
 
-            {/* Section 3: Baseline Attributes */}
             <div className="flex items-center gap-3 mb-8">
               <div className="h-2 w-2 bg-stone-900"></div>
               <h2 className="text-[10px] font-black uppercase tracking-widest text-stone-900">Initial Configuration</h2>
@@ -296,7 +296,6 @@ const CreateProduct = () => {
 
           <input type="file" multiple hidden ref={fileInputRef} onChange={(e) => processFiles(e.target.files)} />
 
-          {/* Submit Action */}
           <div className="pt-8 pb-4">
             <button type="submit" disabled={isSubmitting} className="w-full bg-stone-900 text-white py-5 font-black uppercase tracking-[0.5em] text-[11px] hover:bg-[#c8ff00] hover:text-stone-900 transition-all active:scale-[0.98] flex items-center justify-center gap-4 shadow-[0_15px_30px_-10px_rgba(0,0,0,0.4)] border border-stone-800 disabled:opacity-50 disabled:pointer-events-none">
               {isSubmitting ? <Loader2 className="animate-spin text-current" size={20} /> : (

@@ -1,13 +1,16 @@
-import { getCartDetail } from "../dao/cart.dao.js";
+import crypto from "crypto";
+import { config } from "../config/config.js";
 import orderModel from "../models/order.model.js";
-import Order from "../models/order.model.js";
+import productModel from "../models/product.model.js";
+import cartModel from "../models/cart.model.js";
+import { getCartDetail } from "../dao/cart.dao.js";
 import { createOrderservice } from "../services/payment.service.js";
 
 export const getAllOrdersAdmin = async (req, res) => {
   try {
     // Find all orders, populate user details and product details
     // .sort({ createdAt: -1 }) ensures newest orders show up first
-    const orders = await Order.find()
+    const orders = await orderModel.find()
       .populate("user", "fullname email contact") // User collection se ye fields aayengi
       .populate("items.product", "title images price") // Product collection se ye aayega
       .sort({ createdAt: -1 });
@@ -38,7 +41,7 @@ export const updateOrderStatusAdmin = async (req, res) => {
         .json({ success: false, message: "Invalid order status provided." });
     }
 
-    const order = await Order.findById(id);
+    const order = await orderModel.findById(id);
     if (!order) {
       return res
         .status(404)
@@ -66,12 +69,16 @@ export const deleteOrderAdmin = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deletedOrder = await Order.findByIdAndDelete(id);
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Order ID is required." });
+    }
+
+    const deletedOrder = await orderModel.findByIdAndDelete(id);
 
     if (!deletedOrder) {
       return res
         .status(404)
-        .json({ success: false, message: "Order not found." });
+        .json({ success: false, message: "Order not found or already deleted." });
     }
 
     return res.status(200).json({
@@ -90,10 +97,11 @@ export const getMyOrders = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Sirf is user ke orders dhundho
-    const orders = await Order.find({ user: userId })
-      .populate("items.product", "title images price") // Product ki image aur naam ke liye
-      .sort({ createdAt: -1 }); // Newest pehle
+    // Added .lean() for faster execution since these are read-only documents
+    const orders = await orderModel.find({ user: userId })
+      .populate("items.product", "title images price") 
+      .sort({ createdAt: -1 })
+      .lean(); 
 
     return res.status(200).json({
       success: true,
@@ -109,85 +117,72 @@ export const getMyOrders = async (req, res) => {
 };
 
 export const cancelMyOrder = async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const userId = req.user._id;
+  try {
+    const { orderId } = req.params;
+    const userId = req.user._id;
 
-        // 1. Order dhundho
-        const order = await Order.findById(orderId);
+    // Single Atomic Query: Finds order for this specific user that is STILL processing, and updates it.
+    const updatedOrder = await orderModel.findOneAndUpdate(
+      { _id: orderId, user: userId, orderStatus: "Processing" },
+      { $set: { orderStatus: "Cancelled" } },
+      { new: true }
+    );
 
-        if (!order) {
-            return res.status(404).json({ success: false, message: "Order not found" });
-        }
-
-        // 2. Security Check: Kya ye order is hi user ka hai?
-        if (order.user.toString() !== userId.toString()) {
-            return res.status(403).json({ success: false, message: "Unauthorized action" });
-        }
-
-        // 3. Logic Check: Kya order cancel hone ki halat mein hai?
-        if (order.orderStatus !== "Processing") {
-            return res.status(400).json({ 
-                success: false, 
-                message: `You cannot cancel an order that is already ${order.orderStatus}` 
-            });
-        }
-
-        // 4. Update and Save
-        order.orderStatus = "Cancelled";
-        await order.save();
-
-        return res.status(200).json({
-            success: true,
-            message: "Order has been cancelled successfully",
-            order
-        });
-
-    } catch (error) {
-        console.error("Cancel Order Error:", error);
-        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    // If update fails, determine the exact reason to send a clear error message
+    if (!updatedOrder) {
+      const existingOrder = await orderModel.findById(orderId);
+      if (!existingOrder) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+      }
+      if (existingOrder.user.toString() !== userId.toString()) {
+        return res.status(403).json({ success: false, message: "Unauthorized action" });
+      }
+      return res.status(400).json({
+        success: false,
+        message: `You cannot cancel an order that is already ${existingOrder.orderStatus}`,
+      });
     }
+
+    return res.status(200).json({
+      success: true,
+      message: "Order has been cancelled successfully",
+      order: updatedOrder,
+    });
+  } catch (error) {
+    console.error("Cancel Order Error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
+  }
 };
 
 export const createOrder = async (req, res) => {
-  console.log("INCOMING BODY:", req.body);
   try {
     const { isBuyNow, singleItem, items, shippingAddress } = req.body;
     const userId = req.user._id;
 
-    // 1. Basic validation (Data sahi aaya hai ya nahi)
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: "Cart is empty" });
     }
 
+    // 1. VERIFY STOCK ONLY (DO NOT DEDUCT HERE)
     for (const item of items) {
-      // Hum MongoDB ko bol rahe hain: "Wo product dhundho jiska ID ye hai,
-      // aur uske andar wo variant dhundho jiska ID ye hai, aur check karo stock >= quantity hai ya nahi"
-      const result = await productModel.updateOne(
-        {
-          _id: item.productId,
-          "variants._id": item.variantId,
-          "variants.stock": { $gte: item.quantity },
-        },
-        {
-          // '$' ka matlab hai: Jo variant upar match hua hai, sirf usi ka stock minus karo
-          $inc: { "variants.$.stock": -item.quantity },
-        },
-      );
+      const product = await productModel.findOne({
+        _id: item.productId,
+        "variants._id": item.variantId,
+        "variants.stock": { $gte: item.quantity },
+      });
 
-      if (result.modifiedCount === 0) {
-        // AGAR FAIL HUA: Toh yahan pehle deduct kiye hue items ko wapas add karna padega (Rollback)
-        // (Abhi ke liye basic throw kar rahe hain, par production mein rollback zaroori hai)
+      if (!product) {
         return res.status(400).json({
           success: false,
-          message:
-            "Transaction Aborted: One or more items are out of stock or were bought by someone else.",
+          message: "Transaction Aborted: One or more items are out of stock.",
         });
       }
     }
+
     let totalAmount = 0;
 
-    // Backend Calculation for strict security
     if (isBuyNow && singleItem) {
       const product = await productModel.findById(singleItem.productId);
       if (!product)
@@ -201,11 +196,6 @@ export const createOrder = async (req, res) => {
           .status(404)
           .json({ success: false, message: "Variant not found" });
 
-      if (variant.stock < singleItem.quantity) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Out of stock" });
-      }
       totalAmount = variant.price.amount * singleItem.quantity;
     } else {
       const cartDetails = await getCartDetail(userId);
@@ -217,25 +207,22 @@ export const createOrder = async (req, res) => {
       totalAmount = cartDetails.totalPrice;
     }
 
-    // Shipping logic
     const shippingFee = totalAmount >= 2000 ? 0 : 150;
     const finalAmountToPay = totalAmount + shippingFee;
 
-    // 1. Generate Razorpay Order
+    // 2. Generate Razorpay Order
     const rzpOrder = await createOrderservice({
       amount: finalAmountToPay,
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     });
 
-    // 2. 🔥 CREATE "PENDING" ORDER IN DB FIRST 🔥
+    // 3. Create Pending Order in DB
     const newOrder = new orderModel({
       user: userId,
       totalAmount: finalAmountToPay,
-      paymentStatus: "Pending", // Set as pending initially
+      paymentStatus: "Pending",
       orderStatus: "Processing",
-
-      // Map items explicitly
       items: items.map((item) => ({
         product: item.productId,
         variant: item.variantId,
@@ -243,9 +230,8 @@ export const createOrder = async (req, res) => {
         price: {
           amount: item.price.amount,
           currency: item.price.currency,
-        }, // Expects { amount, currency }
+        },
       })),
-
       shippingAddress: {
         firstName: shippingAddress.firstName,
         lastName: shippingAddress.lastName,
@@ -256,7 +242,6 @@ export const createOrder = async (req, res) => {
         state: shippingAddress.state,
         pincode: shippingAddress.pincode,
       },
-
       paymentInfo: {
         razorpay_order_id: rzpOrder.id,
       },
@@ -264,12 +249,11 @@ export const createOrder = async (req, res) => {
 
     await newOrder.save();
 
-    // Send Razorpay ID + DB Order ID to frontend
     return res.status(200).json({
       success: true,
       message: "Order initiated",
       order: rzpOrder,
-      dbOrderId: newOrder._id, // Need this to update it later
+      dbOrderId: newOrder._id,
     });
   } catch (error) {
     console.error("Create Order Error:", error);
@@ -279,68 +263,138 @@ export const createOrder = async (req, res) => {
   }
 };
 
-export const razorpayWebhook = async (req, res) => {
-    try {
-        const secret = process.env.RAZORPAY_WEBHOOK_SECRET; 
-        
-        // 1. Signature Verify karo (Hacker check)
-        const shasum = crypto.createHmac('sha256', secret);
-        shasum.update(JSON.stringify(req.body));
-        const digest = shasum.digest('hex');
+export const verifyPaymentController = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      dbOrderId,
+      isBuyNow,
+    } = req.body;
+    const userId = req.user._id;
 
-        if (digest !== req.headers['x-razorpay-signature']) {
-            return res.status(403).json({ message: "Invalid Signature." });
-        }
+    const order = await orderModel.findById(dbOrderId);
+    if (!order)
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found in database" });
+    if (order.paymentStatus === "Paid")
+      return res.status(200).json({ message: "Already processed" });
 
-        // 2. Agar payment Successful hai
-        if (req.body.event === 'payment.captured') {
-            const razorpayOrderId = req.body.payload.payment.entity.order_id;
+    // 1. Verify Signature
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", config.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest("hex");
 
-            // DB mein order dhundho (Make sure Order/orderModel is correct based on your imports)
-            const order = await orderModel.findOne({ "paymentInfo.razorpay_order_id": razorpayOrderId });
-            if (!order || order.paymentStatus === "Paid") return res.status(200).send("Already processed");
-
-            let stockDeductedSuccessfully = true;
-
-            // 3. 🔥 YAHAN HOGA ATOMIC UPDATE (STOCK MINUS) 🔥
-            for (const item of order.items) {
-                const result = await productModel.updateOne(
-                    { 
-                        _id: item.product, 
-                        "variants._id": item.variant,
-                        "variants.stock": { $gte: item.quantity } 
-                    },
-                    { 
-                        $inc: { "variants.$.stock": -item.quantity } 
-                    }
-                );
-
-                // Agar kisi bhi item ka stock minus fail hua
-                if (result.modifiedCount === 0) {
-                    stockDeductedSuccessfully = false;
-                    break;
-                }
-            }
-
-            // 4. Overbooking Handler
-            if (!stockDeductedSuccessfully) {
-                order.paymentStatus = "Paid - Out of Stock";
-                order.orderStatus = "Cancelled";
-                await order.save();
-                
-                // Razorpay Refund Logic will go here in the future
-                return res.status(200).send("Out of stock, auto-refund initiated");
-            }
-
-            // 5. Stock minus ho gaya, order confirm kar do!
-            order.paymentStatus = "Paid";
-            await order.save();
-
-            return res.status(200).send("Order Confirmed & Stock Updated");
-        }
-
-    } catch (error) {
-        console.error("Webhook Error:", error);
-        return res.status(500).send("Server Error");
+    if (expectedSignature !== razorpay_signature) {
+      order.paymentStatus = "Failed";
+      await order.save();
+      return res
+        .status(400)
+        .json({ success: false, message: "Payment Verification Failed!" });
     }
+
+    // 2. Mark as Paid
+    order.paymentStatus = "Paid";
+    order.paymentInfo.razorpay_payment_id = razorpay_payment_id;
+    order.paymentInfo.razorpay_signature = razorpay_signature;
+    await order.save();
+
+    // 3. DEDUCT STOCK ATOMICALLY (ONLY ONCE)
+    for (const item of order.items) {
+      await productModel.updateOne(
+        { _id: item.product, "variants._id": item.variant },
+        { $inc: { "variants.$.stock": -item.quantity } },
+      );
+    }
+
+    // 4. Clear Cart if it wasn't a direct buy
+    if (!isBuyNow) {
+      await cartModel.findOneAndUpdate(
+        { user: userId },
+        { $set: { items: [] } },
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment verified and Order placed successfully!",
+    });
+  } catch (error) {
+    console.error("Verify Payment Error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const razorpayWebhook = async (req, res) => {
+  try {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    // 1. Signature Verify karo (Hacker check)
+    const shasum = crypto.createHmac("sha256", secret);
+    shasum.update(JSON.stringify(req.body));
+    const digest = shasum.digest("hex");
+
+    if (digest !== req.headers["x-razorpay-signature"]) {
+      return res.status(403).json({ message: "Invalid Signature." });
+    }
+
+    // 2. Agar payment Successful hai
+    if (req.body.event === "payment.captured") {
+      const razorpayOrderId = req.body.payload.payment.entity.order_id;
+
+      // DB mein order dhundho (Make sure Order/orderModel is correct based on your imports)
+      const order = await orderModel.findOne({
+        "paymentInfo.razorpay_order_id": razorpayOrderId,
+      });
+      if (!order || order.paymentStatus === "Paid")
+        return res.status(200).send("Already processed");
+
+      let stockDeductedSuccessfully = true;
+
+      // 3. 🔥 YAHAN HOGA ATOMIC UPDATE (STOCK MINUS) 🔥
+      for (const item of order.items) {
+        const result = await productModel.updateOne(
+          {
+            _id: item.product,
+            "variants._id": item.variant,
+            "variants.stock": { $gte: item.quantity },
+          },
+          {
+            $inc: { "variants.$.stock": -item.quantity },
+          },
+        );
+
+        // Agar kisi bhi item ka stock minus fail hua
+        if (result.modifiedCount === 0) {
+          stockDeductedSuccessfully = false;
+          break;
+        }
+      }
+
+      // 4. Overbooking Handler
+      if (!stockDeductedSuccessfully) {
+        order.paymentStatus = "Paid - Out of Stock";
+        order.orderStatus = "Cancelled";
+        await order.save();
+
+        // Razorpay Refund Logic will go here in the future
+        return res.status(200).send("Out of stock, auto-refund initiated");
+      }
+
+      // 5. Stock minus ho gaya, order confirm kar do!
+      order.paymentStatus = "Paid";
+      await order.save();
+
+      return res.status(200).send("Order Confirmed & Stock Updated");
+    }
+  } catch (error) {
+    console.error("Webhook Error:", error);
+    return res.status(500).send("Server Error");
+  }
 };

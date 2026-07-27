@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { Eye, EyeOff, ArrowRight, Shield, Lock, Zap } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, ArrowRight, Shield, Lock, Zap, ArrowLeft } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hook/useAuth";
-
-
 
 export default function Login() {
   const { handleLogin, currentUser } = useAuth();
@@ -38,12 +36,9 @@ export default function Login() {
     try {
       const response = await handleLogin({ email: formData.email, password: formData.password });
 
-      // 💡 DEBUG: Console me dekho backend exactly kya bhej raha hai
       console.log("Login Response Data:", response);
 
-      // 🛡️ SAFE EXTRACTION: Har possible jagah se role dhundhne ki koshish karega
       const rawRole = response?.role || response?.user?.role || response?.data?.user?.role || currentUser?.role;
-      // 🛡️ CASE INSENSITIVE: "SELLER", "Seller", "seller" sabko handle karega
       const role = rawRole ? rawRole.toLowerCase() : "buyer";
 
       if (role === "seller") {
@@ -58,7 +53,7 @@ export default function Login() {
       setIsLoading(false);
     }
   };
-  // ── Bottom-border-only input ───────────────────────────────────────────────
+
   const inputStyle = (fieldName, error) => {
     const isFocused = focusedField === fieldName;
     return [
@@ -73,7 +68,6 @@ export default function Login() {
     ].join(" ");
   };
 
-  // ── Label — turns dark/accent on focus ────────────────────────────────────
   const labelStyle = (fieldName, error) => {
     const isFocused = focusedField === fieldName;
     return [
@@ -107,7 +101,6 @@ export default function Login() {
 
         <div className="absolute inset-0 flex flex-col justify-between p-14 z-10">
           <div className="flex items-center gap-3">
-            {/* <span className="w-1.5 h-1.5 rounded-full bg-[#c8ff00]" /> */}
             <h2 className="text-white text-md font-black tracking-[0.45em] uppercase">stylix.</h2>
           </div>
           <div>
@@ -129,24 +122,36 @@ export default function Login() {
               <span className="text-[9px] text-white/25 tracking-[0.4em] font-bold uppercase">Terminal v.2.0</span>
             </div>
             <p className="text-[9px] text-white/20 tracking-widest font-bold uppercase">
-              © 2025 Stylix. All rights reserved.
+              © 2026 Stylix. All rights reserved.
             </p>
           </div>
         </div>
       </div>
 
       {/* ── RIGHT — form panel ────────────────────────────────────────────── */}
-      <div className="w-full lg:w-1/2 lg:ml-[50%] min-h-screen flex items-center justify-center p-8 py-16 bg-white">
+      <div className="w-full lg:w-1/2 lg:ml-[50%] min-h-screen flex items-center justify-center p-8 py-20 bg-white relative">
+        
+        {/*  TOP NAVIGATION BAR FOR RIGHT PANEL */}
+        <div className="absolute top-6 left-6 right-6 lg:left-10 lg:right-10 flex items-center justify-between">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-900 transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={14} strokeWidth={2.5} /> Back
+          </button>
+
+          <Link 
+            to="/" 
+            className="text-lg font-black tracking-tighter uppercase text-stone-900 lg:hidden"
+          >
+            Stylix<span className="text-[#ccff00]">.</span>
+          </Link>
+        </div>
+
         <div className="w-full max-w-[400px]">
 
-          {/* Mobile brand */}
-          <div className="lg:hidden flex items-center gap-2 mb-10">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#c8ff00]" />
-            <span className="text-stone-900 text-sm font-black tracking-[0.4em] uppercase">stylix.</span>
-          </div>
-
           {/* Header */}
-          <div className="mb-10">
+          <div className="mb-10 mt-4 lg:mt-0">
             <div className="flex items-center gap-3 mb-3">
               <span className="h-px w-6 bg-stone-900" />
               <span className="text-[9px] text-stone-400 font-black tracking-[0.3em] uppercase">Secure Member Access</span>
@@ -311,9 +316,9 @@ export default function Login() {
           {/* Register link */}
           <p className="mt-8 text-center text-stone-300 text-[9px] font-bold uppercase tracking-[0.3em]">
             New to Stylix?{" "}
-            <a href="/register" className="text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-500 transition-all">
+            <Link to="/register" className="text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-500 transition-all">
               Create Account
-            </a>
+            </Link>
           </p>
         </div>
       </div>

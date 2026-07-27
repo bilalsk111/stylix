@@ -1,9 +1,8 @@
-﻿import React, { useEffect } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrder } from "../hook/UseOrder";
 import { useAuth } from "../../auth/hook/useAuth";
-import { Package, ArrowLeft, LogOut, LayoutGrid, CheckCircle2, Truck, XCircle, Search, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Package, ArrowLeft, LogOut, LayoutGrid, Trash2, Search } from "lucide-react";
 
 const SellerOrder = () => {
     const navigate = useNavigate();
@@ -39,41 +38,41 @@ const SellerOrder = () => {
         <div className="min-h-screen w-full bg-[#f7f6f4] text-stone-900 font-sans selection:bg-stone-900 selection:text-white">
 
             {/* FIXED NAVIGATION */}
-            <nav className="fixed top-0 left-0 right-0 z-[100] bg-[#f7f6f4]/90 backdrop-blur-xl border-b border-stone-200 px-6 lg:px-10 h-20 flex items-center justify-between">
+            <nav className="fixed top-0 left-0 right-0 z-[100] bg-[#f7f6f4]/90 backdrop-blur-xl border-b border-stone-200 px-4 lg:px-10 h-20 flex items-center justify-between">
                 <button
                     onClick={() => navigate("/seller/dashboard")}
                     className="flex items-center gap-3 text-stone-500 hover:text-stone-900 transition-all group"
                 >
-                    <div className="w-9 h-9 rounded-full border border-stone-300 bg-white flex items-center justify-center group-hover:border-stone-900 group-hover:bg-stone-100 transition-colors">
+                    <div className="w-9 h-9 rounded-full border border-stone-300 bg-white flex items-center justify-center group-hover:border-stone-900 group-hover:bg-stone-100 transition-colors shrink-0">
                         <ArrowLeft size={16} />
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden sm:block">Back to Dashboard</span>
                 </button>
 
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4 sm:gap-6">
                     <div className="flex flex-col items-end">
                         <span className="text-[9px] font-black uppercase tracking-widest text-[#a3d100]">Order Management</span>
-                        <span className="text-[10px] text-stone-400 font-bold lowercase italic truncate max-w-[150px]">{currentUser?.email}</span>
+                        <span className="text-[10px] text-stone-400 font-bold lowercase italic truncate max-w-[120px] sm:max-w-[150px]">{currentUser?.email}</span>
                     </div>
                     <div className="h-8 w-[1px] bg-stone-200"></div>
                     <button
                         onClick={() => navigate("/")}
-                        className="p-2.5 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all rounded-full border border-stone-200 shadow-sm"
+                        className="p-2.5 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all rounded-full border border-stone-200 shadow-sm shrink-0"
                     >
                         <LogOut size={16} />
                     </button>
                 </div>
             </nav>
 
-            <div className="px-6 lg:px-12 pt-[120px] lg:pt-[160px] pb-24 max-w-[1600px] mx-auto">
+            <div className="px-4 lg:px-12 pt-[120px] lg:pt-[160px] pb-24 max-w-[1600px] mx-auto">
 
                 {/* HEADER SECTION */}
-                <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-10">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-8">
                     <div>
-                        <h1 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter italic mb-2 text-stone-900">
+                        <h1 className="text-3xl lg:text-5xl font-black uppercase tracking-tighter italic mb-2 text-stone-900">
                             Fulfillment Center
                         </h1>
-                        <p className="text-stone-400 text-[10px] font-bold uppercase tracking-widest">
+                        <p className="text-stone-400 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
                             Manage logistics, tracking, and customer orders
                         </p>
                     </div>
@@ -87,106 +86,113 @@ const SellerOrder = () => {
                 </div>
 
                 {/* DATA TABLE SECTION */}
-                <div className="bg-white border border-stone-200 rounded-none shadow-sm overflow-hidden">
-                    <div className="p-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
+                <div className="bg-white border border-stone-200 rounded-none shadow-sm flex flex-col">
+                    <div className="p-4 sm:p-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50 shrink-0">
                         <div className="flex items-center gap-3">
                             <LayoutGrid size={16} className="text-stone-400" />
                             <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-stone-900">Active Ledger</h2>
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-stone-50 border-b border-stone-200 text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">
-                                    <th className="p-5 whitespace-nowrap">Order ID</th>
-                                    <th className="p-5 whitespace-nowrap">Timestamp</th>
-                                    <th className="p-5 whitespace-nowrap">Items</th>
-                                    <th className="p-5 whitespace-nowrap">Customer Info</th>
-                                    <th className="p-5 whitespace-nowrap">Value</th>
-                                    <th className="p-5 whitespace-nowrap">Payment</th>
-                                    <th className="p-5 whitespace-nowrap text-right">Actions</th>
+                    {/* 🔥 SCROLLABLE WRAPPER (Vertical & Horizontal) */}
+                    <div className="w-full overflow-x-auto overflow-y-auto max-h-[65vh] custom-scrollbar">
+                        <table className="w-full text-left border-collapse min-w-[1000px]">
+                            {/* STICKY HEADER */}
+                            <thead className="sticky top-0 z-20 bg-stone-50 shadow-[0_1px_0_#e5e7eb]">
+                                <tr className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">
+                                    <th className="p-5 whitespace-nowrap bg-stone-50">Order ID</th>
+                                    <th className="p-5 whitespace-nowrap bg-stone-50">Timestamp</th>
+                                    <th className="p-5 whitespace-nowrap bg-stone-50">Items</th>
+                                    <th className="p-5 whitespace-nowrap bg-stone-50">Customer Info</th>
+                                    <th className="p-5 whitespace-nowrap bg-stone-50">Value</th>
+                                    <th className="p-5 whitespace-nowrap bg-stone-50">Payment</th>
+                                    <th className="p-5 whitespace-nowrap bg-stone-50 text-right">Actions</th>
                                 </tr>
                             </thead>
+                            
                             <tbody className="text-sm font-medium">
-                                {adminOrders.map((order) => (
-                                    <tr key={order._id} className="border-b border-stone-100 hover:bg-stone-50/80 transition-colors group">
-                                        <td className="p-5 font-black text-stone-900 text-xs">
-                                            #{order._id.slice(-8).toUpperCase()}
-                                        </td>
-                                        <td className="p-5 text-stone-500 text-[11px] font-bold">
-                                            {new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                        </td>
+                                {adminOrders.length > 0 ? (
+                                    adminOrders.map((order) => (
+                                        <tr key={order._id} className="border-b border-stone-100 hover:bg-stone-50/80 transition-colors group">
+                                            <td className="p-5 font-black text-stone-900 text-xs">
+                                                #{order._id.slice(-8).toUpperCase()}
+                                            </td>
+                                            <td className="p-5 text-stone-500 text-[11px] font-bold">
+                                                {new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            </td>
 
-                                        {/* 🔥 FIX: Products Image Stack */}
-                                        <td className="p-5">
-                                            <div className="flex -space-x-3 hover:space-x-1 transition-all duration-300">
-                                                {order.items?.slice(0, 3).map((item, idx) => (
-                                                    <div key={idx} className="w-9 h-11 rounded-none overflow-hidden border-2 border-white shadow-sm bg-stone-100 relative z-10 shrink-0">
-                                                        <img
-                                                            src={item.product?.images?.[0]?.url || "https://via.placeholder.com/150"}
-                                                            alt="product"
-                                                            className="w-full h-full object-cover mix-blend-multiply"
-                                                        />
-                                                    </div>
-                                                ))}
-                                                {order.items?.length > 3 && (
-                                                    <div className="w-9 h-11 rounded-none border-2 border-white bg-stone-100 flex items-center justify-center text-[9px] font-black text-stone-500 relative z-10 shrink-0">
-                                                        +{order.items.length - 3}
-                                                    </div>
-                                                )}
+                                            <td className="p-5">
+                                                <div className="flex -space-x-3 hover:space-x-1 transition-all duration-300">
+                                                    {order.items?.slice(0, 3).map((item, idx) => (
+                                                        <div key={idx} className="w-9 h-11 rounded-none overflow-hidden border-2 border-white shadow-sm bg-stone-100 relative z-10 shrink-0">
+                                                            <img
+                                                                src={item.product?.images?.[0]?.url || "https://via.placeholder.com/150"}
+                                                                alt="product"
+                                                                className="w-full h-full object-cover mix-blend-multiply"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                    {order.items?.length > 3 && (
+                                                        <div className="w-9 h-11 rounded-none border-2 border-white bg-stone-100 flex items-center justify-center text-[9px] font-black text-stone-500 relative z-10 shrink-0">
+                                                            +{order.items.length - 3}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+
+                                            <td className="p-5">
+                                                <p className="text-stone-900 font-bold text-xs uppercase tracking-tight">{order.user?.fullname}</p>
+                                                <p className="text-[10px] text-stone-400 mt-1 font-medium">{order.user?.email}</p>
+                                            </td>
+                                            <td className="p-5 font-black text-stone-900 text-sm">
+                                                ₹{order.totalAmount}
+                                            </td>
+                                            <td className="p-5">
+                                                <span className={`px-2.5 py-1.5 rounded-none text-[9px] font-black uppercase tracking-widest ${order.paymentStatus === 'Paid' ? 'bg-[#ccff00]/20 text-[#8cb300]' : 'bg-stone-200 text-stone-600'}`}>
+                                                    {order.paymentStatus}
+                                                </span>
+                                            </td>
+
+                                            <td className="p-5 flex items-center justify-end gap-3 h-[85px]">
+                                                <select
+                                                    value={order.orderStatus}
+                                                    onChange={(e) => handleUpdateStatus(order._id, e.target.value)}
+                                                    className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-2 rounded-none border outline-none cursor-pointer appearance-none transition-colors ${getStatusStyle(order.orderStatus)} hover:opacity-80`}
+                                                >
+                                                    <option value="Processing">Processing</option>
+                                                    <option value="Shipped">Shipped</option>
+                                                    <option value="Delivered">Delivered</option>
+                                                    <option value="Cancelled">Cancelled</option>
+                                                </select>
+
+                                                <button
+                                                    onClick={() => setDeleteModal({ isOpen: true, orderId: order._id })}
+                                                    className="w-8 h-8 flex items-center justify-center bg-white border border-stone-200 rounded-none text-stone-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors shadow-sm shrink-0"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    /* 🔥 FIX: Empty state correctly placed inside table */
+                                    <tr>
+                                        <td colSpan="7" className="p-16 bg-white">
+                                            <div className="flex flex-col items-center justify-center w-full">
+                                                <Search size={32} className="text-stone-200 mb-4" />
+                                                <p className="text-stone-400 text-[10px] uppercase tracking-[0.5em] font-black italic">No dispatch records found</p>
                                             </div>
                                         </td>
-
-                                        <td className="p-5">
-                                            <p className="text-stone-900 font-bold text-xs uppercase tracking-tight">{order.user?.fullname}</p>
-                                            <p className="text-[10px] text-stone-400 mt-1 font-medium">{order.user?.email}</p>
-                                        </td>
-                                        <td className="p-5 font-black text-stone-900 text-sm">
-                                            ₹{order.totalAmount}
-                                        </td>
-                                        <td className="p-5">
-                                            <span className={`px-2.5 py-1.5 rounded-none text-[9px] font-black uppercase tracking-widest ${order.paymentStatus === 'Paid' ? 'bg-[#ccff00]/20 text-[#8cb300]' : 'bg-stone-200 text-stone-600'}`}>
-                                                {order.paymentStatus}
-                                            </span>
-                                        </td>
-
-                                        {/* 🔥 FIX: Dropdown + Delete Button */}
-                                        <td className="p-5 flex items-center justify-end gap-3">
-                                            <select
-                                                value={order.orderStatus}
-                                                onChange={(e) => handleUpdateStatus(order._id, e.target.value)}
-                                                className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-2 rounded-none border outline-none cursor-pointer appearance-none transition-colors ${getStatusStyle(order.orderStatus)} hover:opacity-80`}
-                                            >
-                                                <option value="Processing">Processing</option>
-                                                <option value="Shipped">Shipped</option>
-                                                <option value="Delivered">Delivered</option>
-                                                <option value="Cancelled">Cancelled</option>
-                                            </select>
-
-                                            <button
-                                                onClick={() => setDeleteModal({ isOpen: true, orderId: order._id })}
-                                                className="w-8 h-8 flex items-center justify-center bg-white border border-stone-200 rounded-none text-stone-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors shadow-sm"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                         </table>
-
-                        {/* EMPTY STATE */}
-                        {adminOrders.length === 0 && (
-                            <div className="p-16 flex flex-col items-center justify-center bg-white">
-                                <Search size={32} className="text-stone-200 mb-4" />
-                                <p className="text-stone-400 text-[10px] uppercase tracking-[0.5em] font-black italic">No dispatch records found</p>
-                            </div>
-                        )}
                     </div>
                 </div>
 
             </div>
+
+            {/* DELETE MODAL (Unchanged) */}
             {deleteModal.isOpen && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/40 backdrop-blur-sm px-4">
                     <div className="bg-white border border-stone-200 rounded-none p-6 lg:p-8 shadow-2xl max-w-sm w-full animate-fade-in-up">

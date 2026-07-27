@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Eye, EyeOff, ArrowRight, ArrowLeft, Shield, Lock, Zap, Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hook/useAuth";
 
 export default function Register() {
@@ -163,16 +163,29 @@ export default function Register() {
       </div>
 
       {/* ── RIGHT — form panel ────────────────────────────────────────────── */}
-      <div className="w-full lg:w-1/2 lg:ml-[50%] min-h-screen flex items-center justify-center p-8 py-16 bg-white relative">
+      <div className="w-full lg:w-1/2 lg:ml-[50%] min-h-screen flex items-center justify-center p-8 py-20 bg-white relative">
+        
+        {/* 🧭 TOP NAVIGATION BAR FOR RIGHT PANEL */}
+        <div className="absolute top-6 left-6 right-6 lg:left-10 lg:right-10 flex items-center justify-between">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-900 transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={14} strokeWidth={2.5} /> Back
+          </button>
+
+          <Link 
+            to="/" 
+            className="text-lg font-black tracking-tighter uppercase text-stone-900 lg:hidden"
+          >
+            Stylix<span className="text-[#ccff00]">.</span>
+          </Link>
+        </div>
+
         <div className="w-full max-w-[400px]">
 
-          <div className="lg:hidden flex items-center gap-2 mb-10">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#c8ff00]" />
-            <span className="text-stone-900 text-sm font-black tracking-[0.4em] uppercase">stylix.</span>
-          </div>
-
           {/* Header */}
-          <div className="mb-10">
+          <div className="mb-10 mt-4 lg:mt-0">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <span className="h-px w-6 bg-stone-900" />
@@ -227,7 +240,7 @@ export default function Register() {
                   )}
                 </div>
 
-                {/* Contact (Previously Phone) */}
+                {/* Contact */}
                 <div>
                   <label className={labelStyle("contact", errors.contact)}>
                     Contact Number
@@ -435,9 +448,9 @@ export default function Register() {
           {/* Login link */}
           <p className="mt-8 text-center text-stone-300 text-[9px] font-bold uppercase tracking-[0.3em]">
             Already a member?{" "}
-            <a href="/login" className="text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-500 transition-all">
+            <Link to="/login" className="text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-500 transition-all">
               Sign In
-            </a>
+            </Link>
           </p>
         </div>
       </div>

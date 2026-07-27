@@ -49,20 +49,37 @@ const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) 
     });
   }, [handleToggleWishlist, isWishlisted]);
 
-  const onQuickAdd = useCallback(async (product, selectedSize, selectedColor) => {
+  const onQuickAdd = useCallback(async (product, selectedSize = null, selectedColor = null) => {
     if (checkInCart(product._id)) {
       navigate("/bag");
+      return;
+    }
+    let targetVariantId = product.variants?.[0]?._id; 
+
+    if (product.variants?.length > 0) {
+      if (selectedSize || selectedColor) {
+        const matchedVariant = product.variants.find(v => {
+          const matchSize = selectedSize ? v.attributes?.SIZE === selectedSize : true;
+          const matchColor = selectedColor ? v.attributes?.COLOR === selectedColor : true;
+          return matchSize && matchColor;
+        });
+        if (matchedVariant) targetVariantId = matchedVariant._id;
+      } else {
+        const inStockVariant = product.variants.find(v => Number(v.stock) > 0);
+        if (inStockVariant) targetVariantId = inStockVariant._id;
+      }
+    }
+
+    if (!targetVariantId) {
+      toast.error("Selected variant is unavailable.");
       return;
     }
 
     try {
       await handleAddItem({
         productId: product._id,
-        variantId: product.variants?.[0]?._id || undefined, 
-        quantity: 1,
-        // Yahan future me size/color pass kar sakta hai agar Modal se add ho
-        size: selectedSize, 
-        color: selectedColor 
+        variantId: targetVariantId, // Exact matched variant
+        quantity: 1
       });
 
       toast.custom(
@@ -76,7 +93,8 @@ const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) 
       );
     } catch (err) {
       console.error("Quick add failed:", err);
-      toast.error("Couldn't add to bag.", { position: "bottom-center" });
+      const errorMsg = err.response?.data?.message || "Couldn't add to bag.";
+      toast.error(errorMsg, { position: "bottom-center" });
     }
   }, [checkInCart, handleAddItem, navigate]);
 
