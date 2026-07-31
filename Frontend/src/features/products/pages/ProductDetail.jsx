@@ -25,6 +25,8 @@ import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useAuth } from "../../auth/hook/useAuth";
 import { useWishlist } from "../../wishlist/hook/useWishList";
+import { Accordion } from "../components/Accordion";
+
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -48,10 +50,9 @@ const ProductDetail = () => {
   const [localCart, setLocalCart] = useState([]);
 
   const [buyQty, setBuyQty] = useState(1);
-
+  
   const getProductByIdRef = useRef(handleGetProductById);
   const getAllProductRef = useRef(handleGetAllProduct);
-  
   const thumbnailRef = useRef(null);
 
   useEffect(() => {
@@ -246,7 +247,7 @@ const ProductDetail = () => {
     ? currentVariant.stock
     : (product?.stock || 0);
     
-  const isOutOfStock = availableStock === 0;
+  const isOutOfStock = availableStock <= 0;
 
   const handleScrollThumbnails = (direction) => {
     if (thumbnailRef.current) {
@@ -319,8 +320,9 @@ const ProductDetail = () => {
     );
 
   return (
-    <div className="min-h-screen bg-[#f7f6f4] text-stone-900 selection:bg-[#ccff00] selection:text-stone-900 pt-[100px] lg:pt-[130px]">
-      <nav className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-8 flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 overflow-x-auto no-scrollbar whitespace-nowrap">
+    <div className="min-h-screen bg-[#f7f6f4] text-stone-900 selection:bg-[#ccff00] selection:text-stone-900 pt-[100px] lg:pt-[120px]">
+      
+      <nav className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-5 flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 overflow-x-auto no-scrollbar whitespace-nowrap">
         <span className="hover:text-stone-900 cursor-pointer transition-colors" onClick={() => navigate("/shop")}>
           Shop
         </span>
@@ -334,10 +336,10 @@ const ProductDetail = () => {
         </span>
       </nav>
 
-      {/* Reduced pb-24 to pb-10 here to fix the vertical gap */}
-      <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 px-6 lg:px-12 pb-10 items-start">
+      <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 px-6 lg:px-12 pb-24 items-start">
         
-        <div className="lg:col-span-6 lg:sticky lg:top-32 relative flex flex-col-reverse md:flex-row gap-4 h-fit">
+        {/* Left Col: Image Gallery locked to the top using self-start */}
+        <div className="lg:col-span-7 lg:sticky lg:top-32 self-start relative flex flex-col-reverse md:flex-row gap-4 h-fit">
           
           <div className="flex md:flex-col items-center gap-2 shrink-0 w-full md:w-20">
             <button 
@@ -378,7 +380,7 @@ const ProductDetail = () => {
             </button>
           </div>
 
-          <div className="w-full aspect-[3/4] md:aspect-[4/5] bg-[#ececec] md:bg-stone-200/40 rounded-none relative overflow-hidden flex-1 group">
+          <div className={`w-full aspect-[3/4] md:aspect-[4/5] bg-[#ececec] md:bg-stone-200/40 rounded-none relative overflow-hidden flex-1 group ${isOutOfStock ? 'grayscale opacity-90' : ''}`}>
             <img
               src={displayImages?.[activeImg]?.url}
               className="w-full h-full object-cover object-top mix-blend-multiply transition-transform duration-[0.5s] ease-out"
@@ -387,7 +389,6 @@ const ProductDetail = () => {
 
             {displayImages?.length > 1 && (
               <>
-                {/* Added opacity-0 and group-hover:opacity-100 to toggle on hover */}
                 <button
                   onClick={(e) => { e.stopPropagation(); handlePrevImg(); }}
                   className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white p-2.5 rounded-full shadow-md border border-stone-200 text-stone-900 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 hover:scale-105"
@@ -420,9 +421,29 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-6 flex flex-col justify-start pt-2">
-          <div className="flex justify-between items-start gap-6 mb-8">
-            <h1 className="flex-1 text-3xl md:text-5xl lg:text-[2.75rem] font-black uppercase tracking-tighter leading-[1.1] text-stone-900 break-words">
+        <div className="lg:col-span-5 flex flex-col justify-start pt-0 md:pr-4">
+          
+          <div className="flex items-center flex-wrap gap-2.5 mb-4">
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-900">
+              {product?.brand || "Stylix"}
+            </span>
+            <span className="w-1 h-1 bg-stone-300 rounded-full"></span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">
+              {product?.subCategory || product?.category || "Archive"}
+            </span>
+            
+            {(product?.isNew || product?.tags?.includes('new') || product?.tags?.includes('NEW')) && (
+              <>
+                <span className="w-1 h-1 bg-stone-300 rounded-full ml-1"></span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-stone-900 bg-[#ccff00] px-2 py-0.5 ml-1">
+                  New Arrival
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="flex justify-between items-start gap-6 mb-6">
+            <h1 className="flex-1 text-3xl md:text-4xl lg:text-[2.5rem] font-black uppercase tracking-tighter leading-[1.1] text-stone-900 break-words">
               {displayTitle}
             </h1>
             <button
@@ -440,7 +461,7 @@ const ProductDetail = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-4 mb-8 bg-white w-fit px-6 py-4 rounded-none border border-stone-100 shadow-sm">
+          <div className="flex items-center gap-4 mb-6 bg-white w-fit px-6 py-4 rounded-none border border-stone-100 shadow-sm">
             <span className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
               {displayPrice?.currency || "INR"} {displayPrice?.amount || "0"}
             </span>
@@ -452,11 +473,11 @@ const ProductDetail = () => {
             </span>
           </div>
 
-          <p className="text-stone-500 font-medium text-sm leading-relaxed mb-10 max-w-xl">
+          <p className="text-stone-500 font-medium text-sm leading-relaxed mb-8">
             {product.description || "A curated essential crafted with premium materials. Precision cut for a relaxed, structural fit."}
           </p>
 
-          <div className="space-y-8 mb-10">
+          <div className="space-y-8 mb-8">
             {Object.entries(allPossibleOptions).map(([attrKey, attrValues]) => (
               <div key={attrKey} className="space-y-4">
                 <div className="flex justify-between items-end">
@@ -492,7 +513,7 @@ const ProductDetail = () => {
             ))}
           </div>
 
-          <div className="mb-10">
+          <div className="mb-8">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-900 mb-4">Quantity</h3>
             <div className="flex items-center gap-6 w-fit bg-white border border-stone-200 px-2 py-2 rounded-none shadow-sm">
               <button
@@ -517,7 +538,7 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row gap-4 mb-10">
             <button
               disabled={isAdding || isOutOfStock}
               onClick={async () => {
@@ -585,35 +606,55 @@ const ProductDetail = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white p-5 rounded-none border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-3 text-stone-900">
-                <div className="bg-stone-100 p-2 rounded-full"><Ruler size={14} /></div>
-                <span className="text-[10px] font-black uppercase tracking-widest">Fit Details</span>
-              </div>
-              <ul className="text-[11px] text-stone-500 space-y-2 font-medium">
-                <li>• Boxy / Oversized Fit</li>
-                <li>• Dropped Shoulders</li>
-                <li>• Size down for standard fit</li>
-              </ul>
+          <div className="grid grid-cols-3 gap-2 py-6 border-t border-stone-200">
+            <div className="flex flex-col items-center justify-center text-center gap-2">
+              <Truck size={18} strokeWidth={1.5} className="text-stone-900" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-stone-500">Free Shipping</span>
             </div>
-
-            <div className="bg-white p-5 rounded-none border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-3 text-stone-900">
-                <div className="bg-stone-100 p-2 rounded-full"><Droplets size={14} /></div>
-                <span className="text-[10px] font-black uppercase tracking-widest">Materials</span>
-              </div>
-              <ul className="text-[11px] text-stone-500 space-y-2 font-medium">
-                <li>• 100% Premium Cotton</li>
-                <li>• 280 GSM Heavyweight</li>
-                <li>• Cold wash inside out</li>
-              </ul>
+            <div className="flex flex-col items-center justify-center text-center gap-2 border-l border-stone-200">
+              <RefreshCcw size={18} strokeWidth={1.5} className="text-stone-900" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-stone-500">14-Day Returns</span>
+            </div>
+            <div className="flex flex-col items-center justify-center text-center gap-2 border-l border-stone-200">
+              <ShieldCheck size={18} strokeWidth={1.5} className="text-stone-900" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-stone-500">Secure Checkout</span>
             </div>
           </div>
+          <Accordion
+            items={[
+              {
+                title: 'Materials & Care',
+                body: (
+                  <ul className="space-y-2">
+                    <li>• 100% Premium Heavyweight Cotton</li>
+                    <li>• 280 GSM Density for structural integrity</li>
+                    <li>• Machine wash cold, inside out</li>
+                    <li>• Do not iron directly on print</li>
+                  </ul>
+                )
+              },
+              {
+                title: 'Delivery Information',
+                body: (
+                  <>
+                    <p className="mb-2">All orders are processed and dispatched within 24-48 hours from our fulfillment center.</p>
+                    <ul className="space-y-2">
+                      <li>• Standard Shipping: 3-5 Business Days (Free)</li>
+                      <li>• Express Priority: 1-2 Business Days (Calculated at checkout)</li>
+                    </ul>
+                  </>
+                )
+              },
+              {
+                title: 'Return Policy',
+                body: 'Unworn items with original tags attached can be returned within 14 days of delivery for a full refund or exchange. Final sale items are not eligible for returns.'
+              }
+            ]}
+          />
+
         </div>
       </div>
 
-      {/* Reduced pt-16 to pt-10 and pb-24 to pb-16 here to fix the vertical gap */}
       <section className="pt-10 pb-16 bg-white border-t border-stone-200">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
           <ProductGrid
@@ -626,5 +667,5 @@ const ProductDetail = () => {
     </div>
   );
 };
- 
+
 export default ProductDetail;
