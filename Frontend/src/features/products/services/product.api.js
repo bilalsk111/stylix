@@ -29,72 +29,70 @@ productApi.interceptors.response.use(
   }
 );
 
-
 export async function createProduct(formData) {
-    const res = await productApi.post('/create',formData)
-    return res.data
+  const res = await productApi.post('/create', formData);
+  return res.data;
 }
+
 export const updateProduct = async (productId, formData) => {
   const res = await productApi.put(`/update/${productId}`, formData);
   return res.data;
 };
+
 export async function getSellerProduct() {
-    const res = await productApi.get('/seller-products')
-    return res.data
+  const res = await productApi.get('/seller-products');
+  return res.data;
 }
+
 export async function getAllProducts() {
-    const res = await productApi.get('/')
-    return res.data
+  const res = await productApi.get('/');
+  return res.data;
 }
-export async function  getProductDetail(productId) {
-     const res = await productApi.get(`/detail/${productId}`)
-    return res.data
+
+export async function getProductDetail(productId) {
+  const res = await productApi.get(`/detail/${productId}`);
+  return res.data;
 }
 
 export async function addProductVariant(productId, newProductVariant) {
-    const formData = new FormData();
+  const formData = new FormData();
 
-    // ✅ Image Handling
-    if (newProductVariant.images && newProductVariant.images.length > 0) {
-        newProductVariant.images.forEach((img) => {
-            // Check if it's a new file or existing url
-            if (img.file) {
-                formData.append("images", img.file);
-            }
-        });
-    }
+  if (newProductVariant.images && newProductVariant.images.length > 0) {
+    newProductVariant.images.forEach((img) => {
+      if (img.file) {
+        formData.append("images", img.file);
+      }
+    });
+  }
 
-    // ✅ Map fields to match Backend expectations
-    formData.append("title", newProductVariant.title || "");
-    formData.append("stock", newProductVariant.stock || 0);
-    formData.append("priceAmount", newProductVariant.price?.amount || 0);
-    formData.append("priceCurrency", newProductVariant.price?.currency || "INR");
-    formData.append("attributes", JSON.stringify(newProductVariant.attributes || {}));
+  formData.append("title", newProductVariant.title || "");
+  formData.append("stock", newProductVariant.stock || 0);
+  formData.append("priceAmount", newProductVariant.price?.amount || 0);
+  formData.append("priceCurrency", newProductVariant.price?.currency || "INR");
+  formData.append("attributes", JSON.stringify(newProductVariant.attributes || {}));
 
-    const res = await productApi.post(`/${productId}/variant`, formData);
-    return res.data;
+  const res = await productApi.post(`/${productId}/variant`, formData);
+  return res.data;
 }
 
 export async function editVariant(productId, variantId, data) {
-     const formData = new FormData();
+  const formData = new FormData();
 
-    if (data.images && data.images.length > 0) {
-        data.images.forEach((img) => {
-            if (img.file) {
-                formData.append("images", img.file);
-            }
-        });
-    }
+  if (data.images && data.images.length > 0) {
+    data.images.forEach((img) => {
+      if (img.file) {
+        formData.append("images", img.file);
+      }
+    });
+  }
 
-    // ✅ Map fields to match Backend expectations
-    formData.append("title", data.title || "");
-    formData.append("stock", data.stock || 0);
-    formData.append("priceAmount", data.price?.amount || 0);
-    formData.append("priceCurrency", data.price?.currency || "INR");
-    formData.append("attributes", JSON.stringify(data.attributes || {}));
-    const res = await productApi.put(`/${productId}/variant/${variantId}`, formData)
-    return res.data
-
+  formData.append("title", data.title || "");
+  formData.append("stock", data.stock || 0);
+  formData.append("priceAmount", data.price?.amount || 0);
+  formData.append("priceCurrency", data.price?.currency || "INR");
+  formData.append("attributes", JSON.stringify(data.attributes || {}));
+  const res = await productApi.put(`/${productId}/variant/${variantId}`, formData);
+  return res.data;
 }
 
 export const deleteProductApi = async (productId) => {
@@ -107,8 +105,28 @@ export const deleteVariantApi = async (productId, variantId) => {
   return response.data;
 };
 
+
+let shopAbortController = null;
+
 export async function getShopFilteredProducts(queryParams = "") {
-  // queryParams string hogi (e.g. "?category=MEN,WOMEN&minPrice=1000&sort=bestseller")
-  const res = await productApi.get(`/shop${queryParams}`);
-  return res.data;
+  // Check if a previous request is still pending, if yes, cancel it!
+  if (shopAbortController) {
+    shopAbortController.abort();
+  }
+  
+  // Create a new controller for the current request
+  shopAbortController = new AbortController();
+
+  try {
+    const res = await productApi.get(`/shop${queryParams}`, {
+      signal: shopAbortController.signal, // Attach the signal
+    });
+    return res.data;
+  } catch (error) {
+    if (axios.isCancel(error)) {
+      console.log("Previous rapid request canceled to save server load.");
+      return null; // Don't throw error if we manually cancelled it
+    }
+    throw error;
+  }
 }

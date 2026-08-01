@@ -20,15 +20,21 @@ export function useShopFilters() {
       const queryString = searchParams.toString() ? `?${searchParams.toString()}` : "";
       const data = await getShopFilteredProducts(queryString);
 
+      // If data is null, it means the API request was aborted manually.
+      // Return immediately. DO NOT set isLoading(false) because the next request is already running.
+      if (!data) return;
+
       if (data.success) {
         setProducts(data.products || []);
         setPagination(data.pagination || {});
       }
+      
+      // Request complete, stop loading
+      setIsLoading(false);
     } catch (error) {
       console.error("Filter Fetch Error:", error);
       setProducts([]);
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Stop loading on actual errors
     }
   }, [searchParams]);
 

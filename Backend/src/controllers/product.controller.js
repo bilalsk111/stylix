@@ -122,7 +122,7 @@ export async function getSellerProducts(req, res) {
         const products = await productModel
             .find({
                 seller: req.user._id
-            }) // _id pass karo
+            }) 
             .sort({
                 createdAt: -1
             });
@@ -158,7 +158,7 @@ export async function getAllProducts(req, res) {
         const products = await productModel
             .find(filter)
             .populate("variants")
-            .populate("seller", "fullname email")
+            .populate("seller", "fullname email storeName") 
             .sort({
                 createdAt: -1
             });
@@ -183,7 +183,11 @@ export async function getProductDetail(req, res) {
         const {
             id
         } = req.params;
-        const product = await productModel.findById(id);
+        const product = await productModel
+            .findById(id)
+            // 🔥 CRITICAL FIX: You MUST populate here too for the ProductDetail page!
+            .populate("seller", "fullname email storeName"); 
+            
         if (!product) {
             return res.status(404).json({
                 message: "Product not found",

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Eye, EyeOff, ArrowRight, ArrowLeft, Shield, Lock, Zap, Check } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, ArrowLeft, Shield, Lock, Zap, Check, Store } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../hook/useAuth";
+import { useAuth } from "../hook/useAuth"; // Adjust path if needed
 
 export default function Register() {
   const { handleRegister, currentUser } = useAuth();
@@ -15,6 +15,7 @@ export default function Register() {
     email: "",
     password: "",
     isSeller: false,
+    storeName: "", // 🔥 Added storeName to state
   });
   
   const [errors, setErrors] = useState({});
@@ -44,6 +45,8 @@ export default function Register() {
     if (step === 1) {
       if (!form.fullname.trim()) newErrors.fullname = "Full name is required";
       if (!form.contact.trim()) newErrors.contact = "Contact number is required";
+      // 🔥 Validate Store Name if Seller is selected
+      if (form.isSeller && !form.storeName.trim()) newErrors.storeName = "Store name is required for sellers";
     } else {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
         newErrors.email = "Invalid email address";
@@ -83,11 +86,10 @@ export default function Register() {
   };
 
   const handleGoogleAuth = () => {
-    // Implement your Google Auth Logic here
     console.log("Initiating Google Auth...");
   };
 
-  // ── Exact Input Styles from your Login ─────────────────────────────────────
+  // Exact Input Styles
   const inputStyle = (fieldName, error) => {
     const isFocused = focusedField === fieldName;
     return [
@@ -138,7 +140,7 @@ export default function Register() {
             <h2 className="text-white text-md font-black tracking-[0.45em] uppercase">stylix.</h2>
           </div>
           <div>
-            <p className="text-[10px] text-white/40 font-bold tracking-[0.35em] uppercase mb-5">
+            <p className="text-[10px] text-white/40 font-bold tracking-[0.3em] uppercase mb-5">
               New Member
             </p>
             <h1 className="text-white font-black leading-[0.82] text-[6.5rem] tracking-tighter mb-7">
@@ -165,7 +167,6 @@ export default function Register() {
       {/* ── RIGHT — form panel ────────────────────────────────────────────── */}
       <div className="w-full lg:w-1/2 lg:ml-[50%] min-h-screen flex items-center justify-center p-8 py-20 bg-white relative">
         
-        {/* 🧭 TOP NAVIGATION BAR FOR RIGHT PANEL */}
         <div className="absolute top-6 left-6 right-6 lg:left-10 lg:right-10 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
@@ -184,7 +185,6 @@ export default function Register() {
 
         <div className="w-full max-w-[400px]">
 
-          {/* Header */}
           <div className="mb-10 mt-4 lg:mt-0">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
@@ -205,7 +205,6 @@ export default function Register() {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={step === 1 ? handleNext : handleSubmit} className="space-y-7" noValidate>
 
             {errors.auth && (
@@ -218,7 +217,6 @@ export default function Register() {
             {step === 1 && (
               <div className="space-y-7 animate-in fade-in slide-in-from-right-4 duration-500">
 
-                {/* Full Name */}
                 <div>
                   <label className={labelStyle("fullname", errors.fullname)}>
                     Full Name
@@ -240,7 +238,6 @@ export default function Register() {
                   )}
                 </div>
 
-                {/* Contact */}
                 <div>
                   <label className={labelStyle("contact", errors.contact)}>
                     Contact Number
@@ -262,7 +259,6 @@ export default function Register() {
                   )}
                 </div>
 
-                {/* Role Toggle */}
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-[0.25em] mb-3 block text-stone-900">
                     Account Type
@@ -270,7 +266,7 @@ export default function Register() {
                   <div className="flex p-1 bg-stone-100 rounded-none">
                     <button
                       type="button"
-                      onClick={() => set("isSeller", false)}
+                      onClick={() => { set("isSeller", false); set("storeName", ""); }}
                       className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-none transition-all ${!form.isSeller ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"}`}
                     >
                       Buyer
@@ -284,6 +280,33 @@ export default function Register() {
                     </button>
                   </div>
                 </div>
+
+                {/* 🔥 STORE NAME INPUT: Only shows if user selects "Seller" */}
+                {form.isSeller && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className={labelStyle("storeName", errors.storeName)}>
+                      Store Name
+                    </label>
+                    <div className="relative">
+                      <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                      <input
+                        type="text"
+                        value={form.storeName}
+                        onChange={(e) => set("storeName", e.target.value)}
+                        onFocus={() => setFocusedField("storeName")}
+                        onBlur={() => setFocusedField(null)}
+                        placeholder="YOUR BRAND NAME"
+                        className={`${inputStyle("storeName", errors.storeName)} pl-9`} // Added pl-9 for icon
+                      />
+                    </div>
+                    {errors.storeName && (
+                      <p className="text-red-500 text-[9px] mt-1.5 tracking-wide flex items-center gap-1">
+                        <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
+                        {errors.storeName}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="pt-2 space-y-4">
                   <button
@@ -321,7 +344,6 @@ export default function Register() {
             {step === 2 && (
               <div className="space-y-7 animate-in fade-in slide-in-from-left-4 duration-500">
 
-                {/* Email */}
                 <div>
                   <label className={labelStyle("email", errors.email)}>
                     Identity (Email)
@@ -343,7 +365,6 @@ export default function Register() {
                   )}
                 </div>
 
-                {/* Password */}
                 <div>
                   <label className={labelStyle("password", errors.password)}>
                     Password
@@ -367,7 +388,6 @@ export default function Register() {
                     </button>
                   </div>
 
-                  {/* Styled Password Strength Indicator */}
                   {form.password && (
                     <div className="mt-3 flex gap-1">
                       {[1, 2, 3, 4].map((i) => {
@@ -426,7 +446,6 @@ export default function Register() {
               </div>
             )}
 
-            {/* Trust signals */}
             <div className="flex items-center justify-center gap-5 pt-3">
               <div className="flex items-center gap-1.5 text-stone-400">
                 <Shield size={10} strokeWidth={2} />
@@ -445,7 +464,6 @@ export default function Register() {
             </div>
           </form>
 
-          {/* Login link */}
           <p className="mt-8 text-center text-stone-300 text-[9px] font-bold uppercase tracking-[0.3em]">
             Already a member?{" "}
             <Link to="/login" className="text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-500 transition-all">

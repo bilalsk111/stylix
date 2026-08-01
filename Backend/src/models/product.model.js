@@ -67,8 +67,12 @@ const productSchema = new mongoose.Schema(
 
 // Optional: Indexing queries fast karne ke liye
 productSchema.index({ category: 1, subCategory: 1 });
-productSchema.index({ salesCount: -1 }); // Bestseller sorting fast karega
-productSchema.index({ "price.amount": 1 }); // Price filter fast karega
+productSchema.index({ salesCount: -1 }); 
+productSchema.index({ "price.amount": 1 }); 
+productSchema.index({ seller: 1 });
+productSchema.index({ createdAt: -1 });
+productSchema.index({ title: "text", description: "text", tags: "text" });
+productSchema.index({ category: 1, "price.amount": 1 });
 
 const productModel = mongoose.model("product", productSchema);
 export default productModel;

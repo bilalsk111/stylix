@@ -7,13 +7,12 @@ import toast from "react-hot-toast";
 import { useWishlist } from "../../wishlist/hook/useWishList";
 import { useCart } from "../../cart/hook/useCart";
 
-// 🔥 Import all the reusable components we created earlier
 import { WishlistToast } from "../components/WishlistToast"; 
 import { CartToast } from "../components/CartToast";
 import { ProductCard } from "../components/ProductCard";
 import { QuickViewModal } from "../components/QuickViewModal";
 
-const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) => {
+const ProductGrid = ({ products = [], title = "Curated For You", limit = 4 }) => {
   const navigate = useNavigate();
   
   const { handleToggleWishlist, isWishlisted } = useWishlist();
@@ -23,17 +22,18 @@ const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) 
   // Modal State for Quick View
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
-  const randomProducts = useMemo(() => {
+  const displayProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
-    const shuffled = [...products].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, limit);
+    return products.slice(0, limit);
   }, [products, limit]);
 
+  // 🔥 OPTIMIZATION 2: Cleaned up check logic
   const checkInCart = useCallback((productId) => {
-    if (!cartItems || cartItems.length === 0) return false;
+    if (!cartItems?.length) return false;
+    const targetId = String(productId);
     return cartItems.some(item => {
       const itemToMatch = item.product?._id || item.product || item.productId?._id || item.productId || item._id;
-      return String(itemToMatch) === String(productId);
+      return String(itemToMatch) === targetId;
     });
   }, [cartItems]);
 
@@ -54,6 +54,7 @@ const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) 
       navigate("/bag");
       return;
     }
+    
     let targetVariantId = product.variants?.[0]?._id; 
 
     if (product.variants?.length > 0) {
@@ -78,7 +79,7 @@ const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) 
     try {
       await handleAddItem({
         productId: product._id,
-        variantId: targetVariantId, // Exact matched variant
+        variantId: targetVariantId,
         quantity: 1
       });
 
@@ -93,12 +94,12 @@ const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) 
       );
     } catch (err) {
       console.error("Quick add failed:", err);
-      const errorMsg = err.response?.data?.message || "Couldn't add to bag.";
-      toast.error(errorMsg, { position: "bottom-center" });
+      toast.error(err.response?.data?.message || "Couldn't add to bag.", { position: "bottom-center" });
     }
   }, [checkInCart, handleAddItem, navigate]);
 
-  if (!Array.isArray(products) || products.length === 0) return null;
+  // If no products exist after processing, return nothing so we don't render empty titles
+  if (displayProducts.length === 0) return null;
 
   return (
     <section className="w-full bg-transparent">
@@ -133,29 +134,29 @@ const ProductGrid = ({ products = [], title = "Recommended Drops", limit = 4 }) 
           </button>
         </div>
 
-        {/* GRID SECTION (Using Shared ProductCard) */}
+        {/* GRID SECTION */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 md:gap-x-8 gap-y-12 md:gap-y-16">
-          {randomProducts.map((product) => (
+          {displayProducts.map((product) => (
             <ProductCard
               key={product._id}
               product={product}
               wishlisted={isWishlisted(product._id)}
               onWishlist={onWishlist}
-              onQuickAdd={() => onQuickAdd(product)} // Normal quick add from button
+              onQuickAdd={() => onQuickAdd(product)}
               addedToCart={checkInCart(product._id)}
-              viewMode="grid" // Force grid view for this component
-              onQuickView={setQuickViewProduct} // Open modal on Eye click
+              viewMode="grid"
+              onQuickView={setQuickViewProduct}
             />
           ))}
         </div>
       </div>
 
-      {/* QUICK VIEW MODAL (Will trigger when Eye icon is clicked) */}
+      {/* QUICK VIEW MODAL */}
       <QuickViewModal
         product={quickViewProduct}
         isOpen={!!quickViewProduct}
         onClose={() => setQuickViewProduct(null)}
-        onQuickAdd={onQuickAdd} // Will pass size/color from inside modal
+        onQuickAdd={onQuickAdd}
         wishlisted={quickViewProduct ? isWishlisted(quickViewProduct._id) : false}
         onWishlist={onWishlist}
         addedToCart={quickViewProduct ? checkInCart(quickViewProduct._id) : false}

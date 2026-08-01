@@ -51,6 +51,13 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: {
       type: Date,
     },
+    storeName: { 
+    type: String, 
+    trim: true,
+    default: function() {
+      return this.fullname; 
+    },
+  },
   },
   { timestamps: true },
 );

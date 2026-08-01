@@ -10,7 +10,7 @@ const NAV_LINKS = [
   { label: "Men", to: "/shop?category=Men" },
   { label: "Women", to: "/shop?category=Women" },
   { label: "Kid", to: "/shop?category=Kid" },
-  { label: "About", to: "/about" } // Logically, move this to Footer later
+  { label: "About", to: "/about" }
 ];
 
 const Navbar = () => {
@@ -25,21 +25,17 @@ const Navbar = () => {
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   
-  // Logout Modal States
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const avatarRef = useRef(null);
 
-  // Cart State
   const cartItems = useSelector((state) => state.cart?.items);
   const cartCount = Array.isArray(cartItems) ? cartItems.length : 0;
 
-  // Wishlist State
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const wishlistCount = wishlistItems.length;
 
-  // Fetch Cart & Wishlist on mount/login
   useEffect(() => {
     if (currentUser) {
       handleGetCart();
@@ -80,9 +76,16 @@ const Navbar = () => {
 
   const getInitials = (name) => (name ? name.charAt(0).toUpperCase() : "U");
 
+  // 🔥 SMART ACTIVE LOGIC: URLParams based checking instead of dumb string matching
   const isActive = (to) => {
-    const currentUrl = location.pathname + location.search;
-    return currentUrl === to;
+    if (to.includes("?")) {
+      const [path, searchStr] = to.split("?");
+      const toParams = new URLSearchParams(searchStr);
+      const currentParams = new URLSearchParams(location.search);
+      
+      return location.pathname === path && currentParams.get("category") === toParams.get("category");
+    }
+    return location.pathname === to;
   };
 
   const handleCartClick = () => {
@@ -90,7 +93,6 @@ const Navbar = () => {
     else navigate("/bag");
   };
 
-  // Execute Logout
   const executeLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -164,7 +166,6 @@ const Navbar = () => {
                   <div className="h-9 w-9 rounded-full bg-[#ccff00] text-stone-900 flex items-center justify-center text-[12px] font-black ring-2 ring-transparent group-hover:ring-stone-200 transition-all">
                     {getInitials(currentUser.fullname)}
                   </div>
-                  {/* 🔥 Down Arrow Added Here */}
                   <ChevronDown size={14} className={`text-stone-400 group-hover:text-stone-900 transition-transform duration-300 ${avatarOpen ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -249,7 +250,7 @@ const Navbar = () => {
           <div className="flex flex-col gap-8 mt-4">
             <Link
               to="/shop"
-              className={`text-2xl font-black uppercase tracking-[0.2em] transition-colors ${isActive("/shop") ? "text-stone-900" : "text-stone-400 hover:text-stone-900"}`}
+              className={`text-2xl font-black uppercase tracking-[0.2em] transition-colors ${isActive("/shop") && !location.search ? "text-stone-900" : "text-stone-400 hover:text-stone-900"}`}
             >
               Shop All
             </Link>

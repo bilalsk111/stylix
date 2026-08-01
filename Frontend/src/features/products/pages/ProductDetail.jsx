@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   Minus,
   Plus, 
-  Heart 
+  Heart,
+  Store // 🔥 Store icon for seller branding
 } from "lucide-react";
 import { useProduct } from "../hook/useProduct";
 import ProductGrid from "../components/ProductGrid";
@@ -25,8 +26,9 @@ import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useAuth } from "../../auth/hook/useAuth";
 import { useWishlist } from "../../wishlist/hook/useWishList";
-import { Accordion } from "../components/Accordion";
-
+import { Accordion } from "../components/Accordion"; 
+import { RecommendedProducts } from "../components/RecommendedProducts";
+import { RecentlyViewedProducts } from "../components/RecentlyViewedProducts";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -50,7 +52,7 @@ const ProductDetail = () => {
   const [localCart, setLocalCart] = useState([]);
 
   const [buyQty, setBuyQty] = useState(1);
-  
+
   const getProductByIdRef = useRef(handleGetProductById);
   const getAllProductRef = useRef(handleGetAllProduct);
   const thumbnailRef = useRef(null);
@@ -249,6 +251,15 @@ const ProductDetail = () => {
     
   const isOutOfStock = availableStock <= 0;
 
+  const sellerName = 
+    product?.seller?.storeName || 
+    product?.seller?.fullname || 
+    product?.seller?.name || 
+    product?.user?.fullname || 
+    product?.createdBy?.fullname || 
+    product?.brand || 
+    "Independent Seller";
+
   const handleScrollThumbnails = (direction) => {
     if (thumbnailRef.current) {
       const scrollAmount = 150;
@@ -322,7 +333,7 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-[#f7f6f4] text-stone-900 selection:bg-[#ccff00] selection:text-stone-900 pt-[100px] lg:pt-[120px]">
       
-      <nav className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-5 flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 overflow-x-auto no-scrollbar whitespace-nowrap">
+      <nav className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 mb-5 flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 overflow-x-auto no-scrollbar whitespace-nowrap">
         <span className="hover:text-stone-900 cursor-pointer transition-colors" onClick={() => navigate("/shop")}>
           Shop
         </span>
@@ -336,10 +347,9 @@ const ProductDetail = () => {
         </span>
       </nav>
 
-      <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 px-6 lg:px-12 pb-24 items-start">
+      <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 px-6 lg:px-12 pb-16 items-start">
         
-        {/* Left Col: Image Gallery locked to the top using self-start */}
-        <div className="lg:col-span-7 lg:sticky lg:top-32 self-start relative flex flex-col-reverse md:flex-row gap-4 h-fit">
+        <div className="lg:col-span-7 lg:sticky lg:top-[120px] self-start relative flex flex-col-reverse md:flex-row gap-4 w-full h-fit">
           
           <div className="flex md:flex-col items-center gap-2 shrink-0 w-full md:w-20">
             <button 
@@ -354,7 +364,7 @@ const ProductDetail = () => {
               className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto md:max-h-[500px] no-scrollbar w-full md:w-full py-1 scroll-smooth"
             >
               {displayImages?.map((img, i) => (
-                <div
+                <button
                   key={i}
                   onClick={() => setActiveImg(i)}
                   className={`w-16 h-20 md:w-full md:aspect-[3/4] md:h-auto shrink-0 cursor-pointer overflow-hidden transition-all duration-300 rounded-none bg-stone-200/50 border ${
@@ -368,7 +378,7 @@ const ProductDetail = () => {
                     className="w-full h-full object-cover object-top mix-blend-multiply"
                     alt={`Thumbnail ${i + 1}`}
                   />
-                </div>
+                </button>
               ))}
             </div>
 
@@ -380,10 +390,10 @@ const ProductDetail = () => {
             </button>
           </div>
 
-          <div className={`w-full aspect-[3/4] md:aspect-[4/5] bg-[#ececec] md:bg-stone-200/40 rounded-none relative overflow-hidden flex-1 group ${isOutOfStock ? 'grayscale opacity-90' : ''}`}>
+          <div className={`flex-1 w-full aspect-[3/4] xl:aspect-[4/5] bg-stone-100/60 rounded-none relative overflow-hidden group ${isOutOfStock ? 'grayscale opacity-90' : ''}`}>
             <img
               src={displayImages?.[activeImg]?.url}
-              className="w-full h-full object-cover object-top mix-blend-multiply transition-transform duration-[0.5s] ease-out"
+              className="w-full h-full object-cover object-top mix-blend-multiply transition-transform duration-[0.6s] ease-out group-hover:scale-[1.03]"
               alt={displayTitle}
             />
 
@@ -391,13 +401,13 @@ const ProductDetail = () => {
               <>
                 <button
                   onClick={(e) => { e.stopPropagation(); handlePrevImg(); }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white p-2.5 rounded-full shadow-md border border-stone-200 text-stone-900 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 hover:scale-105"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white p-2.5 rounded-full shadow-md border border-stone-200 text-stone-900 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 hover:scale-105"
                 >
                   <ChevronLeft size={18} strokeWidth={3} />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); handleNextImg(); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white p-2.5 rounded-full shadow-md border border-stone-200 text-stone-900 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 hover:scale-105"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white p-2.5 rounded-full shadow-md border border-stone-200 text-stone-900 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 hover:scale-105"
                 >
                   <ChevronRight size={18} strokeWidth={3} />
                 </button>
@@ -412,10 +422,10 @@ const ProductDetail = () => {
               </div>
             )}
             
-            <div className="absolute flex items-center justify-center gap-2 top-6 left-6 bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-full z-20 shadow-sm border border-stone-200/60 pointer-events-none hidden md:flex">
+            <div className="absolute flex items-center justify-center gap-2 top-4 left-4 bg-white/95 backdrop-blur-md px-4 py-2 rounded-full z-20 shadow-sm border border-stone-200/60 pointer-events-none hidden md:flex">
               <ShieldCheck size={14} className="text-[#a3cc00]" strokeWidth={2.5} />
-              <span className="text-[9px] font-black tracking-[0.2em] uppercase text-stone-900 mt-0.5">
-                Stylix Authentic
+              <span className="text-[9px] font-black tracking-[0.2em] uppercase text-stone-900 mt-0.5 truncate max-w-[150px]">
+                {sellerName} Authentic
               </span>
             </div>
           </div>
@@ -423,26 +433,27 @@ const ProductDetail = () => {
 
         <div className="lg:col-span-5 flex flex-col justify-start pt-0 md:pr-4">
           
+          {/* 🔥 RESTORED TOP TAGS: Shows brand/category correctly so layout doesn't look empty */}
           <div className="flex items-center flex-wrap gap-2.5 mb-4">
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-900">
               {product?.brand || "Stylix"}
             </span>
-            <span className="w-1 h-1 bg-stone-300 rounded-full"></span>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">
+            <span className="w-1 h-1 bg-stone-300 rounded-full shrink-0"></span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400 shrink-0">
               {product?.subCategory || product?.category || "Archive"}
             </span>
             
             {(product?.isNew || product?.tags?.includes('new') || product?.tags?.includes('NEW')) && (
               <>
-                <span className="w-1 h-1 bg-stone-300 rounded-full ml-1"></span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-stone-900 bg-[#ccff00] px-2 py-0.5 ml-1">
+                <span className="w-1 h-1 bg-stone-300 rounded-full ml-1 shrink-0"></span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-stone-900 bg-[#ccff00] px-2 py-0.5 ml-1 shrink-0">
                   New Arrival
                 </span>
               </>
             )}
           </div>
 
-          <div className="flex justify-between items-start gap-6 mb-6">
+          <div className="flex justify-between items-start gap-6 mb-3">
             <h1 className="flex-1 text-3xl md:text-4xl lg:text-[2.5rem] font-black uppercase tracking-tighter leading-[1.1] text-stone-900 break-words">
               {displayTitle}
             </h1>
@@ -459,6 +470,17 @@ const ProductDetail = () => {
                 strokeWidth={2}
               />
             </button>
+          </div>
+
+          {/* 🔥 NEW, EXPLICIT "SOLD BY" UI EXACTLY LIKE AMAZON/MYNTRA */}
+          <div className="flex items-center gap-2 mb-6 text-[10px] md:text-[11px]">
+            <span className="font-bold text-stone-400 uppercase tracking-[0.1em]">Sold by:</span>
+            <div className="font-black text-stone-900 uppercase tracking-[0.15em] flex items-center gap-1.5 cursor-pointer group">
+              <Store size={13} className="text-stone-400 group-hover:text-stone-900 transition-colors" /> 
+              <span className="border-b border-stone-900/30 group-hover:border-stone-900 pb-[1px] transition-colors">
+                {sellerName}
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 mb-6 bg-white w-fit px-6 py-4 rounded-none border border-stone-100 shadow-sm">
@@ -606,62 +628,71 @@ const ProductDetail = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 py-6 border-t border-stone-200">
-            <div className="flex flex-col items-center justify-center text-center gap-2">
-              <Truck size={18} strokeWidth={1.5} className="text-stone-900" />
-              <span className="text-[8px] font-black uppercase tracking-widest text-stone-500">Free Shipping</span>
+          <div className="grid grid-cols-3 gap-2 py-6 border-t border-stone-200 text-center">
+            <div className="flex flex-col items-center gap-2">
+              <Truck size={20} strokeWidth={1.25} className="text-stone-400" />
+              <p className="text-[10px] uppercase tracking-tight text-stone-500">Free Shipping</p>
             </div>
-            <div className="flex flex-col items-center justify-center text-center gap-2 border-l border-stone-200">
-              <RefreshCcw size={18} strokeWidth={1.5} className="text-stone-900" />
-              <span className="text-[8px] font-black uppercase tracking-widest text-stone-500">14-Day Returns</span>
+            <div className="flex flex-col items-center gap-2 border-l border-stone-200">
+              <RefreshCcw size={20} strokeWidth={1.25} className="text-stone-400" />
+              <p className="text-[10px] uppercase tracking-tight text-stone-500">14-Day Returns</p>
             </div>
-            <div className="flex flex-col items-center justify-center text-center gap-2 border-l border-stone-200">
-              <ShieldCheck size={18} strokeWidth={1.5} className="text-stone-900" />
-              <span className="text-[8px] font-black uppercase tracking-widest text-stone-500">Secure Checkout</span>
+            <div className="flex flex-col items-center gap-2 border-l border-stone-200">
+              <ShieldCheck size={20} strokeWidth={1.25} className="text-stone-400" />
+              <p className="text-[10px] uppercase tracking-tight text-stone-500">Secure Checkout</p>
             </div>
           </div>
-          <Accordion
-            items={[
-              {
-                title: 'Materials & Care',
-                body: (
-                  <ul className="space-y-2">
-                    <li>• 100% Premium Heavyweight Cotton</li>
-                    <li>• 280 GSM Density for structural integrity</li>
-                    <li>• Machine wash cold, inside out</li>
-                    <li>• Do not iron directly on print</li>
-                  </ul>
-                )
-              },
-              {
-                title: 'Delivery Information',
-                body: (
-                  <>
-                    <p className="mb-2">All orders are processed and dispatched within 24-48 hours from our fulfillment center.</p>
+
+          <div className="mt-2 flex-1">
+            <Accordion
+              items={[
+                {
+                  title: 'Materials & Care',
+                  body: (
                     <ul className="space-y-2">
-                      <li>• Standard Shipping: 3-5 Business Days (Free)</li>
-                      <li>• Express Priority: 1-2 Business Days (Calculated at checkout)</li>
+                      <li>• 100% Premium Heavyweight Cotton</li>
+                      <li>• 280 GSM Density for structural integrity</li>
+                      <li>• Machine wash cold, inside out</li>
+                      <li>• Do not iron directly on print</li>
                     </ul>
-                  </>
-                )
-              },
-              {
-                title: 'Return Policy',
-                body: 'Unworn items with original tags attached can be returned within 14 days of delivery for a full refund or exchange. Final sale items are not eligible for returns.'
-              }
-            ]}
-          />
+                  )
+                },
+                {
+                  title: 'Delivery Information',
+                  body: (
+                    <>
+                      <p className="mb-2">All orders are processed and dispatched within 24-48 hours from our fulfillment center.</p>
+                      <ul className="space-y-2">
+                        <li>• Standard Shipping: 3-5 Business Days (Free)</li>
+                        <li>• Express Priority: 1-2 Business Days (Calculated at checkout)</li>
+                      </ul>
+                    </>
+                  )
+                },
+                {
+                  title: 'Return Policy',
+                  body: 'Unworn items with original tags attached can be returned within 14 days of delivery for a full refund or exchange. Final sale items are not eligible for returns.'
+                }
+              ]}
+            />
+          </div>
 
         </div>
       </div>
 
       <section className="pt-10 pb-16 bg-white border-t border-stone-200">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-          <ProductGrid
-            products={allProducts.filter((p) => getStrId(p._id) !== getStrId(product._id))}
-            title="Curated For You"
-            limit={4}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 flex flex-col gap-20">
+          
+          <RecommendedProducts 
+            currentProduct={product} 
+            allProducts={allProducts} 
           />
+
+          <RecentlyViewedProducts 
+            currentProductId={product?._id} 
+            allProducts={allProducts} 
+          />
+
         </div>
       </section>
     </div>

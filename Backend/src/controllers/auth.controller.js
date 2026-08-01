@@ -10,7 +10,7 @@ import crypto from "crypto";
 export const register = async (req, res, next) => {
   console.log(req.body);
   try {
-    const { email, contact, password, fullname, isSeller } = req.body;
+    const { email, contact, password, fullname, isSeller, storeName } = req.body;
 
     const existingUser = await userModel.findOne({
       $or: [{ email }, { contact }],
@@ -34,6 +34,7 @@ export const register = async (req, res, next) => {
       password,
       fullname,
       role: isSeller ? "seller" : "buyer",
+      storeName: isSeller ? (storeName || fullname) : undefined, 
     });
 
     return await sendTokens(user, res, "Registered successfully", 201);
@@ -123,13 +124,17 @@ export const getMe = async (req, res) => {
 // 1. UPDATE PROFILE (Name, Contact, and Optional Password)
 export const updateProfile = async (req, res) => {
   try {
-    const { fullname, contact, currentPassword, newPassword } = req.body;
+    const { fullname, contact, currentPassword, newPassword, storeName } = req.body;
     const user = await userModel.findById(req.user._id).select("+password");
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (fullname) user.fullname = fullname;
     if (contact) user.contact = contact;
+
+    if (user.role === "seller" && storeName) {
+      user.storeName = storeName;
+    }
 
     if (currentPassword && newPassword) {
       const isMatch = await bcrypt.compare(currentPassword, user.password);
