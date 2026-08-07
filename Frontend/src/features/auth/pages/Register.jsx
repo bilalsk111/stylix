@@ -15,7 +15,7 @@ export default function Register() {
     email: "",
     password: "",
     isSeller: false,
-    storeName: "", // 🔥 Added storeName to state
+    storeName: "", //  Added storeName to state
   });
   
   const [errors, setErrors] = useState({});
@@ -45,7 +45,7 @@ export default function Register() {
     if (step === 1) {
       if (!form.fullname.trim()) newErrors.fullname = "Full name is required";
       if (!form.contact.trim()) newErrors.contact = "Contact number is required";
-      // 🔥 Validate Store Name if Seller is selected
+      //  Validate Store Name if Seller is selected
       if (form.isSeller && !form.storeName.trim()) newErrors.storeName = "Store name is required for sellers";
     } else {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
@@ -281,7 +281,7 @@ export default function Register() {
                   </div>
                 </div>
 
-                {/* 🔥 STORE NAME INPUT: Only shows if user selects "Seller" */}
+                {/*  STORE NAME INPUT: Only shows if user selects "Seller" */}
                 {form.isSeller && (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                     <label className={labelStyle("storeName", errors.storeName)}>

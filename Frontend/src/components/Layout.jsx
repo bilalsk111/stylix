@@ -1,11 +1,11 @@
 // Layout.jsx
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import Footer from "../components/Footer"; // 🔥 Footer import kiya
+import Footer from "../components/Footer"; //  Footer import kiya
 
 const Layout = () => {
   return (
-    // 🔥 flex aur flex-col lagaya taaki footer hamesha bottom par push ho jaye
+    //  flex aur flex-col lagaya taaki footer hamesha bottom par push ho jaye
     <div className="min-h-screen flex flex-col bg-[#f7f6f4] font-sans text-stone-900">
       <Navbar /> 
       

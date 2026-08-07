@@ -9,7 +9,7 @@ export const QuickViewModal = ({ product, isOpen, onClose, onQuickAdd, wishliste
   const [selectedSize, setSelectedSize] = useState("");
   const [optimisticAdded, setOptimisticAdded] = useState(false);
 
-  // 🔥 FIXED STOCK LOGIC
+  //  FIXED STOCK LOGIC
   const totalStock = product?.variants?.length > 0
     ? product.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
     : (Number(product?.stock) || 0);

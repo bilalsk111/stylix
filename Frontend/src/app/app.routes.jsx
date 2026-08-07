@@ -10,7 +10,7 @@ import Layout from "../components/Layout";
 import SellerProductDetails from "../features/products/pages/SellerProductDeatails";
 import Cart from "../features/cart/pages/Cart";
 import ProtectedRoute from "../components/ProtectedRoute";
-import Chackout from "../features/products/pages/Checkout";
+import Chackout from "../features/order/pages/Checkout";
 import Success from "../features/cart/pages/Success";
 import SellerOrder from "../features/order/pages/SellerOrder";
 import Profile from "../features/products/pages/Profile";
@@ -23,7 +23,7 @@ import NotFound from "../components/NotFound";
 
 export const routes = createBrowserRouter([
   {
-    // 🔥 USER ROUTES: Navbar & Footer standard layout ke saath
+    //  USER ROUTES: Navbar & Footer standard layout ke saath
     element: <Layout />,
     children: [
       { path: "/", element: <AllProducts /> },
@@ -64,7 +64,7 @@ export const routes = createBrowserRouter([
     ],
   },
   
-  // 🔥 SELLER ROUTES
+  //  SELLER ROUTES
   {
     element: <ProtectedSellerRoute />,
     children: [
@@ -75,7 +75,7 @@ export const routes = createBrowserRouter([
     ],
   },
 
-  // 🔥 AUTH ROUTES
+  //  AUTH ROUTES
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
   { path: "/forgot-password", element: <ForgotPassword /> },

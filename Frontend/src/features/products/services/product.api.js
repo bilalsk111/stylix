@@ -18,7 +18,11 @@ productApi.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        await axios.post("/api/auth/refresh-token", {}, { withCredentials: true });
+        await axios.post(
+          "/api/auth/refresh-token",
+          {},
+          { withCredentials: true },
+        );
         return productApi(originalRequest);
       } catch {
         window.location.href = "/login";
@@ -26,11 +30,11 @@ productApi.interceptors.response.use(
     }
 
     return Promise.reject(err);
-  }
+  },
 );
 
 export async function createProduct(formData) {
-  const res = await productApi.post('/create', formData);
+  const res = await productApi.post("/create", formData);
   return res.data;
 }
 
@@ -40,12 +44,12 @@ export const updateProduct = async (productId, formData) => {
 };
 
 export async function getSellerProduct() {
-  const res = await productApi.get('/seller-products');
+  const res = await productApi.get("/seller-products");
   return res.data;
 }
 
 export async function getAllProducts() {
-  const res = await productApi.get('/');
+  const res = await productApi.get("/");
   return res.data;
 }
 
@@ -69,7 +73,10 @@ export async function addProductVariant(productId, newProductVariant) {
   formData.append("stock", newProductVariant.stock || 0);
   formData.append("priceAmount", newProductVariant.price?.amount || 0);
   formData.append("priceCurrency", newProductVariant.price?.currency || "INR");
-  formData.append("attributes", JSON.stringify(newProductVariant.attributes || {}));
+  formData.append(
+    "attributes",
+    JSON.stringify(newProductVariant.attributes || {}),
+  );
 
   const res = await productApi.post(`/${productId}/variant`, formData);
   return res.data;
@@ -91,7 +98,10 @@ export async function editVariant(productId, variantId, data) {
   formData.append("priceAmount", data.price?.amount || 0);
   formData.append("priceCurrency", data.price?.currency || "INR");
   formData.append("attributes", JSON.stringify(data.attributes || {}));
-  const res = await productApi.put(`/${productId}/variant/${variantId}`, formData);
+  const res = await productApi.put(
+    `/${productId}/variant/${variantId}`,
+    formData,
+  );
   return res.data;
 }
 
@@ -101,10 +111,11 @@ export const deleteProductApi = async (productId) => {
 };
 
 export const deleteVariantApi = async (productId, variantId) => {
-  const response = await productApi.delete(`/${productId}/variant/${variantId}`);
+  const response = await productApi.delete(
+    `/${productId}/variant/${variantId}`,
+  );
   return response.data;
 };
-
 
 let shopAbortController = null;
 
@@ -113,7 +124,7 @@ export async function getShopFilteredProducts(queryParams = "") {
   if (shopAbortController) {
     shopAbortController.abort();
   }
-  
+
   // Create a new controller for the current request
   shopAbortController = new AbortController();
 

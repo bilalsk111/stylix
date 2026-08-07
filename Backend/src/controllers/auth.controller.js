@@ -185,10 +185,10 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour expiry
     await user.save();
 
-    // 🔥 FIX: Updated Subject to sound more natural
+    //     Updated Subject to sound more natural
     const subject = "Stylix | Your Password Verification Code";
     
-    // 🔥 FIX: Ensure the sendEmail function in email.util.js uses 'html' not 'text'
+    //     Ensure the sendEmail function in email.util.js uses 'html' not 'text'
     const htmlMessage = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; color: #1c1917; background-color: #ffffff; border: 1px solid #e7e5e4; border-radius: 20px;">
         <h2 style="font-size: 28px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.05em; margin-bottom: 32px; color: #1c1917; margin-top: 0;">Stylix.</h2>
@@ -252,7 +252,7 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired verification token." });
     }
 
-    // 🔥 Assign new password (pre-save hook will hash it automatically)
+    //  Assign new password (pre-save hook will hash it automatically)
     user.password = safePassword;
     
     // Clear tokens

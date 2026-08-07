@@ -6,7 +6,7 @@ import { ShieldCheck, Terminal, Server } from 'lucide-react';
 const ProtectedSellerRoute = () => {
   const { currentUser, isAuthChecked } = useAuth();
 
-  // FIX: Make the loading state match your Stylix branding, not basic black/white
+  //    Make the loading state match your Stylix branding, not basic black/white
   if (!isAuthChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f6f4] text-stone-900 font-black uppercase tracking-widest text-[10px] animate-pulse">

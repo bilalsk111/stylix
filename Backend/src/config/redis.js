@@ -43,4 +43,4 @@ redis.on("reconnecting", () => console.log("🔄 Redis reconnecting..."));
 
 redis.on("end", () => console.log("❌ Redis connection closed"));
 
-redis.on("error", (err) => console.error("🔥 Redis error:", err));
+redis.on("error", (err) => console.error(" Redis error:", err));

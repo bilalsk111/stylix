@@ -15,46 +15,58 @@ import {
     AlertCircle
 } from "lucide-react";
 import { useCart } from "../hook/useCart";
-import { useRazorpay, RazorpayOrderOptions } from "react-razorpay";
+import { useRazorpay } from "react-razorpay";
 import toast from "react-hot-toast";
+
+// Stable memory reference for empty state
+const EMPTY_CART = []; 
+
+// 2: Global memory flag. Ye batayega ki is session me cart ek baar check ho chuka hai ya nahi
+let IS_CART_FETCHED = false;
 
 const Cart = () => {
     const navigate = useNavigate();
     const user = useSelector((state) => state.auth);
     const { error, isLoading, Razorpay } = useRazorpay();
     const { handleGetCart, handleUpdateItemQty, handleRemoveItem } = useCart();
-    const EMPTY_CART = []; // 🔥 Naya constant banaya
+
     const cartItems = useSelector((state) => state.cart?.items || EMPTY_CART);
-    const [loading, setLoading] = useState(true);
+
+    //3: Loading sirf tab true hogi jab pehli baar load ho raha ho aur items na hon
+    const [loading, setLoading] = useState(() => !IS_CART_FETCHED && cartItems.length === 0);
     const [promoCode, setPromoCode] = useState("");
-
-
-
-
 
     useEffect(() => {
         let isMounted = true;
         const fetchCart = async () => {
             try {
-                setLoading(true);
-                await handleGetCart();
+                // Sirf tab loader dikhao jab pehli baar fetch ho raha ho
+                if (!IS_CART_FETCHED && cartItems.length === 0) {
+                    setLoading(true);
+                }
+                
+                await handleGetCart(); // Background silent fetch
+                IS_CART_FETCHED = true; // Mark as fetched for 0ms load next time
+
             } catch (error) {
                 console.error("Failed to load cart", error);
             } finally {
                 if (isMounted) setLoading(false);
             }
         };
+        
         fetchCart();
+        
         return () => {
             isMounted = false;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const subtotal = cartItems.reduce((acc, item) => {
         const product = item.product || {};
         const variantId = typeof item.variant === "object" ? item.variant?._id : item.variant;
 
-        // 🔥 FIX 2: Bulletproof Variant Check (Handles both Array and Object from DB)
         const variantsList = Array.isArray(product?.variants)
             ? product.variants
             : (product?.variants ? [product.variants] : []);
@@ -90,20 +102,19 @@ const Cart = () => {
             console.error("Failed to remove item", e);
         }
     };
+
     const handleCheckout = () => {
-        // Agar cart khali hai toh rok do
         if (!cartItems || cartItems.length === 0) {
             toast.error("Your cart is empty!");
             return;
         }
-
-        // User ko Checkout page par bhej do jahan form aur payment logic likha hai
         navigate("/checkout");
     };
 
+    //Loader ab sirf life me ek baar dikhega jab user site khol kar pehli baar bag me aayega
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#f7f6f4] flex items-center justify-center">
+            <div className="min-h-[70vh] bg-[#f7f6f4] flex items-center justify-center pt-[100px] lg:pt-[130px]">
                 <div className="text-stone-900 text-[10px] font-black uppercase tracking-[0.6em] animate-pulse">
                     Retrieving Stylix Assets...
                 </div>
@@ -121,7 +132,7 @@ const Cart = () => {
                         to="/"
                         className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-900 transition-colors"
                     >
-                        <ChevronLeft size={14} strokeWidth={2.5}/> Continue Shopping
+                        <ChevronLeft size={14} strokeWidth={2.5} /> Continue Shopping
                     </Link>
                     <div>
                         <h1 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter italic text-stone-900">
@@ -184,6 +195,7 @@ const Cart = () => {
                                 const product = item.product || {};
                                 const safeProductId = typeof product === "object" ? product._id : product;
                                 const safeVariantId = typeof item.variant === "object" ? item.variant?._id : item.variant;
+
                                 const variantsList = Array.isArray(product?.variants)
                                     ? product.variants
                                     : (product?.variants ? [product.variants] : []);

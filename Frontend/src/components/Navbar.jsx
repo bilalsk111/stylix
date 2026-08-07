@@ -76,7 +76,7 @@ const Navbar = () => {
 
   const getInitials = (name) => (name ? name.charAt(0).toUpperCase() : "U");
 
-  // 🔥 SMART ACTIVE LOGIC: URLParams based checking instead of dumb string matching
+  //  SMART ACTIVE LOGIC: URLParams based checking instead of dumb string matching
   const isActive = (to) => {
     if (to.includes("?")) {
       const [path, searchStr] = to.split("?");

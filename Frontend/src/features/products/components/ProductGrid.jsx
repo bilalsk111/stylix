@@ -27,7 +27,7 @@ const ProductGrid = ({ products = [], title = "Curated For You", limit = 4 }) =>
     return products.slice(0, limit);
   }, [products, limit]);
 
-  // 🔥 OPTIMIZATION 2: Cleaned up check logic
+  // Cleaned up check logic
   const checkInCart = useCallback((productId) => {
     if (!cartItems?.length) return false;
     const targetId = String(productId);

@@ -1,11 +1,33 @@
-import { useDispatch, useSelector } from "react-redux";
-import { cancelMyOrderApi, deleteOrderApi, fetchAllAdminOrders, getMyOrdersApi, updateOrderStatusApi } from "../service/order.api";
-import { setAdminOrders, setLoading, setError, updateOrderStatusLocally, removeOrderLocally, setBuyerOrders, cancelBuyerOrderLocally } from "../state/order.slice";
+import {
+    useDispatch,
+    useSelector
+} from "react-redux";
+import {
+    cancelMyOrderApi,
+    deleteOrderApi,
+    fetchAllAdminOrders,
+    getMyOrdersApi,
+    updateOrderStatusApi
+} from "../service/order.api";
+import {
+    setAdminOrders,
+    setLoading,
+    setError,
+    updateOrderStatusLocally,
+    removeOrderLocally,
+    setBuyerOrders,
+    cancelBuyerOrderLocally
+} from "../state/order.slice";
 import toast from "react-hot-toast";
 
 export const useOrder = () => {
     const dispatch = useDispatch();
-    const { adminOrders, buyerOrders, isLoading, error } = useSelector((state) => state.order);
+    const {
+        adminOrders,
+        buyerOrders,
+        isLoading,
+        error
+    } = useSelector((state) => state.order);
 
     const handleFetchAllOrders = async () => {
         try {
@@ -25,8 +47,11 @@ export const useOrder = () => {
 
     const handleUpdateStatus = async (orderId, newStatus) => {
         // Optimistic update is fine here since it's an admin rapid-action
-        dispatch(updateOrderStatusLocally({ orderId, status: newStatus }));
-        
+        dispatch(updateOrderStatusLocally({
+            orderId,
+            status: newStatus
+        }));
+
         try {
             const data = await updateOrderStatusApi(orderId, newStatus);
             if (data.success) {
@@ -34,7 +59,7 @@ export const useOrder = () => {
             }
         } catch (err) {
             toast.error("Failed to update status. Reverting UI to match Database.");
-            handleFetchAllOrders(); 
+            handleFetchAllOrders();
         }
     };
 
@@ -43,7 +68,7 @@ export const useOrder = () => {
             dispatch(setLoading(true));
             // First wait for DB to confirm deletion
             const data = await deleteOrderApi(orderId);
-            
+
             if (data && data.success) {
                 // Only remove from Redux UI AFTER DB confirms it's gone
                 dispatch(removeOrderLocally(orderId));
@@ -60,9 +85,9 @@ export const useOrder = () => {
     const handleFetchMyOrders = async () => {
         try {
             dispatch(setLoading(true));
-            const data = await getMyOrdersApi(); 
-            const finalOrders = Array.isArray(data) ? data : (data?.orders || []);
-            dispatch(setBuyerOrders(finalOrders)); 
+            const data = await getMyOrdersApi();
+            const finalOrders = Array.isArray(data)?data : (data?.orders || []);
+            dispatch(setBuyerOrders(finalOrders));
         } catch (err) {
             const errorMsg = err.response?.data?.message || "Failed to fetch your orders";
             dispatch(setError(errorMsg));
@@ -76,7 +101,7 @@ export const useOrder = () => {
             dispatch(setLoading(true));
             // Wait for DB to confirm cancellation before updating UI
             const data = await cancelMyOrderApi(orderId);
-            
+
             if (data && data.success) {
                 dispatch(cancelBuyerOrderLocally(orderId));
                 toast.success("Order Cancelled successfully.");

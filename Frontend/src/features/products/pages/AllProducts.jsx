@@ -68,7 +68,7 @@ const onQuickAdd = useCallback(async (product, selectedSize = null, selectedColo
       return;
     }
 
-    // 🔥 FIX: Dynamically find the correct Variant ID based on user selection or stock availability
+    //     Dynamically find the correct Variant ID based on user selection or stock availability
     let targetVariantId = product.variants?.[0]?._id; 
 
     if (product.variants?.length > 0) {

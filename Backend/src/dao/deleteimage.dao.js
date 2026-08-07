@@ -1,6 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 
-// 🔥 OPTIMIZED HELPER: Uses Bulk Delete API
+//  OPTIMIZED HELPER: Uses Bulk Delete API
 export const deleteCloudinaryImages = async (images = []) => {
   const publicIds = images
     .map((img) => img?.public_id)

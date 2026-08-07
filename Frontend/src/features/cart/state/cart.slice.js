@@ -9,7 +9,7 @@ const cartSlice = createSlice({
   },
   reducers: {
     setCart: (state, action) => {
-      // 🔥 FIX: Smart Check - Agar array aa raha hai toh direct items mein dalo, warna object se nikalo
+      //     Smart Check - Agar array aa raha hai toh direct items mein dalo, warna object se nikalo
       if (Array.isArray(action.payload)) {
         state.items = action.payload;
       } else {

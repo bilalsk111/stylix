@@ -4,14 +4,48 @@ import { useOrder } from "../hook/UseOrder";
 import { useAuth } from "../../auth/hook/useAuth";
 import { Package, ArrowLeft, LogOut, LayoutGrid, Trash2, Search } from "lucide-react";
 
+//Global memory flag for 0ms revisit load
+let IS_ADMIN_ORDERS_FETCHED = false;
+
 const SellerOrder = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
-    const { adminOrders, isLoading, handleFetchAllOrders, handleUpdateStatus, handleDeleteOrder } = useOrder();
+    const { adminOrders, handleFetchAllOrders, handleUpdateStatus, handleDeleteOrder } = useOrder();
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, orderId: null });
 
+    //Hide all "Pending" (Abandoned/Failed) orders from the UI completely
+    const validOrders = Array.isArray(adminOrders) 
+        ? adminOrders.filter(order => order.paymentStatus?.toUpperCase() !== 'PENDING')
+        : [];
+
+    //Loading condition - Sirf pehli baar true hogi jab cache empty ho
+    const [loading, setLoading] = useState(() => !IS_ADMIN_ORDERS_FETCHED && validOrders.length === 0);
+
     useEffect(() => {
-        handleFetchAllOrders();
+        let isMounted = true;
+
+        const fetchOrders = async () => {
+            try {
+                if (!IS_ADMIN_ORDERS_FETCHED && validOrders.length === 0) {
+                    setLoading(true);
+                }
+                
+                await handleFetchAllOrders(); // Background silent fetch
+                IS_ADMIN_ORDERS_FETCHED = true; // Mark as fetched
+
+            } catch (error) {
+                console.error("Failed to fetch admin orders", error);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        fetchOrders();
+
+        return () => {
+            isMounted = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const getStatusStyle = (status) => {
@@ -24,7 +58,8 @@ const SellerOrder = () => {
         }
     };
 
-    if (isLoading && adminOrders.length === 0) {
+    //Loader tabhi aayega jab pehli baar session me fetch ho raha ho
+    if (loading && validOrders.length === 0) {
         return (
             <div className="h-screen bg-[#f7f6f4] flex items-center justify-center">
                 <div className="text-stone-900 text-[10px] font-black uppercase tracking-[0.4em] animate-pulse">
@@ -80,7 +115,7 @@ const SellerOrder = () => {
                         <Package size={18} className="text-stone-900" />
                         <div className="flex flex-col">
                             <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">Total Volumes</span>
-                            <span className="text-sm font-black text-stone-900 leading-none">{adminOrders.length} Orders</span>
+                            <span className="text-sm font-black text-stone-900 leading-none">{validOrders.length} Orders</span>
                         </div>
                     </div>
                 </div>
@@ -94,10 +129,8 @@ const SellerOrder = () => {
                         </div>
                     </div>
 
-                    {/* 🔥 SCROLLABLE WRAPPER (Vertical & Horizontal) */}
                     <div className="w-full overflow-x-auto overflow-y-auto max-h-[65vh] custom-scrollbar">
                         <table className="w-full text-left border-collapse min-w-[1000px]">
-                            {/* STICKY HEADER */}
                             <thead className="sticky top-0 z-20 bg-stone-50 shadow-[0_1px_0_#e5e7eb]">
                                 <tr className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">
                                     <th className="p-5 whitespace-nowrap bg-stone-50">Order ID</th>
@@ -111,8 +144,8 @@ const SellerOrder = () => {
                             </thead>
                             
                             <tbody className="text-sm font-medium">
-                                {adminOrders.length > 0 ? (
-                                    adminOrders.map((order) => (
+                                {validOrders.length > 0 ? (
+                                    validOrders.map((order) => (
                                         <tr key={order._id} className="border-b border-stone-100 hover:bg-stone-50/80 transition-colors group">
                                             <td className="p-5 font-black text-stone-900 text-xs">
                                                 #{order._id.slice(-8).toUpperCase()}
@@ -175,7 +208,6 @@ const SellerOrder = () => {
                                         </tr>
                                     ))
                                 ) : (
-                                    /* 🔥 FIX: Empty state correctly placed inside table */
                                     <tr>
                                         <td colSpan="7" className="p-16 bg-white">
                                             <div className="flex flex-col items-center justify-center w-full">
@@ -192,7 +224,7 @@ const SellerOrder = () => {
 
             </div>
 
-            {/* DELETE MODAL (Unchanged) */}
+            {/* DELETE MODAL */}
             {deleteModal.isOpen && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/40 backdrop-blur-sm px-4">
                     <div className="bg-white border border-stone-200 rounded-none p-6 lg:p-8 shadow-2xl max-w-sm w-full animate-fade-in-up">

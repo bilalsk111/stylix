@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useRef, useEffect } from "react";
+﻿import React, { useState, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux"; 
 import { ChevronRight, ChevronLeft, CreditCard, Lock, ShieldCheck } from "lucide-react";
@@ -16,10 +16,7 @@ const loadRazorpayScript = () => {
   });
 };
 
-//    Stable memory reference for empty state
-const EMPTY_CART = [];
-
-// InputField bahar rakha hai taaki form typing me focus loose na ho
+//InputField ko component ke BAHAR rakha taaki re-render par focus loose na ho
 const InputField = ({ label, ...props }) => (
   <div className="flex flex-col w-full">
     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-500 mb-1.5 ml-1">{label}</label>
@@ -35,44 +32,24 @@ const Checkout = () => {
   const navigate = useNavigate();
   
   const { user } = useSelector((state) => state.auth); 
-  const cartItems = useSelector((state) => state.cart?.items || EMPTY_CART);
+  const cartItems = useSelector((state) => state.cart?.items || []);
   
   const isBuyNow = location.state?.buyNowItem != null;
   const checkoutItems = isBuyNow ? [location.state.buyNowItem] : cartItems;
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
+    firstName: user?.fullname?.split(" ")[0] || "",
+    lastName: user?.fullname?.split(" ")[1] || "",
+    email: user?.email || "",
+    phone: user?.contact || "",
     address: "",
     city: "",
     state: "",
     pincode: "",
   });
 
-  // Agar Redux se User data thoda delay se aata hai, toh form auto-fill ho jayega (Empty nahi rahega)
-  useEffect(() => {
-    if (user && !formData.email) {
-      setFormData(prev => ({
-        ...prev,
-        firstName: prev.firstName || user?.fullname?.split(" ")[0] || "",
-        lastName: prev.lastName || user?.fullname?.split(" ")[1] || "",
-        email: prev.email || user?.email || "",
-        phone: prev.phone || user?.contact || "",
-      }));
-    }
-  }, [user]);
-
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isHydrating, setIsHydrating] = useState(true); // Redux flash bachane ke liye
   const isSubmittingRef = useRef(false);
-
-  // Redux hydration flash preventer
-  useEffect(() => {
-    const timer = setTimeout(() => setIsHydrating(false), 150);
-    return () => clearTimeout(timer);
-  }, []);
 
   const { subtotal, isStockAvailable } = useMemo(() => {
     let total = 0;
@@ -240,6 +217,7 @@ const Checkout = () => {
             isSubmittingRef.current = false;
             toast.error("Payment cancelled by user.");
             
+            //  Permanent Delete uncompleted ghost order in DB
             try {
               if (dbOrderId) await deleteOrderApi(dbOrderId);
             } catch (cleanupErr) {
@@ -257,6 +235,7 @@ const Checkout = () => {
         setIsProcessing(false); 
         isSubmittingRef.current = false;
         
+        //Permanent Delete uncompleted ghost order in DB
         try {
           if (dbOrderId) await deleteOrderApi(dbOrderId);
         } catch (cleanupErr) {
@@ -273,11 +252,6 @@ const Checkout = () => {
       isSubmittingRef.current = false;
     }
   };
-
-  // Prevent "No items" flash while Redux is loading for 0.1s
-  if (isHydrating && checkoutItems.length === 0) {
-    return <div className="min-h-screen bg-[#f7f6f4]" />;
-  }
 
   if (checkoutItems.length === 0) {
     return (
@@ -311,7 +285,6 @@ const Checkout = () => {
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
           
-          {/* LEFT SIDE: FORM */}
           <div className="w-full lg:w-[55%]">
             <form id="checkout-form" onSubmit={handlePayment} className="bg-white border border-stone-200 p-6 md:p-10 shadow-sm space-y-12">
               
@@ -351,7 +324,6 @@ const Checkout = () => {
             </form>
           </div>
 
-          {/* RIGHT SIDE: SUMMARY */}
           <div className="w-full lg:w-[45%]">
             <div className="bg-white border border-stone-200 rounded-none p-6 md:p-8 shadow-sm sticky top-28">
               <h2 className="text-sm font-black uppercase tracking-widest text-stone-900 mb-6 border-b border-stone-100 pb-4 flex items-center gap-2">
@@ -365,7 +337,7 @@ const Checkout = () => {
                   const variantsList = Array.isArray(product?.variants) ? product.variants : (product?.variants ? [product.variants] : []);
                   const variant = variantsList.find((v) => v._id?.toString() === variantId?.toString()) || item.variant || {};
                   
-                  const displayImage = variant?.images?.[0]?.url || product?.images?.[0]?.url || "https://via.placeholder.com/150";
+                  const displayImage = variant?.images?.[0]?.url || product?.images?.[0]?.url;
                   const price = variant?.price?.amount || product?.price?.amount || 0;
 
                   return (

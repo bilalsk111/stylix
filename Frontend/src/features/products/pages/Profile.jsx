@@ -29,6 +29,10 @@ const BUYER_TABS = [
   { id: "settings", icon: Settings, label: "Settings" },
 ];
 
+// RULE 4: Stable Memory References defined outside component
+const EMPTY_ARRAY = [];
+const EMPTY_OBJECT = {};
+
 const Profile = () => {
   const { buyerOrders, isLoading, handleFetchMyOrders, handleCancelMyOrder } = useOrder();
   const { handleToggleWishlist } = useWishlist();
@@ -42,12 +46,15 @@ const Profile = () => {
   // App State
   const [activeTab, setActiveTab] = useState(isSeller ? "dashboard" : "orders");
   const [cancelModalOpen, setCancelModalOpen] = useState(null);
-  const [wishlistData, setWishlistData] = useState([]);
-  const [loadingWishlist, setLoadingWishlist] = useState(false);
+  const [wishlistData, setWishlistData] = useState(EMPTY_ARRAY);
+  
+  // RULE 3: Localized Skeletons Only. Base initial loading on missing data.
+  const [loadingWishlist, setLoadingWishlist] = useState(() => wishlistData.length === 0);
+  
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Profile Form State 🔥 (Added storeName here)
+  // Profile Form State
   const [formData, setFormData] = useState({
     fullname: "",
     contact: "",
@@ -56,7 +63,9 @@ const Profile = () => {
     newPassword: "",
   });
 
-  // Sync form with current user 🔥 (Added storeName mapping)
+  const cachedOrders = buyerOrders || EMPTY_ARRAY;
+
+  // Sync form with current user
   useEffect(() => {
     if (currentUser) {
       setFormData((prev) => ({
@@ -68,21 +77,26 @@ const Profile = () => {
     }
   }, [currentUser]);
 
+  // RULE 2: Implement Stale-While-Revalidate & Background Fetching
   useEffect(() => {
-    if (!isSeller) handleFetchMyOrders();
+    // Only fetch if Redux cache is completely empty to prevent unmounts
+    if (!isSeller && cachedOrders.length === 0) {
+      handleFetchMyOrders();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSeller]);
+  }, [isSeller, cachedOrders.length]);
 
   // Fetch wishlist when the wishlist tab is opened
   useEffect(() => {
     if (activeTab !== "wishlist") return;
+    if (wishlistData.length > 0) return; // Prevent background re-fetch if data is already cached
 
     let isCancelled = false;
     const fetchDetailedWishlist = async () => {
-      setLoadingWishlist(true);
+      setLoadingWishlist(true); // Trigger localized skeleton only
       try {
         const data = await getWishlistApi();
-        if (!isCancelled && data.success) setWishlistData(data.wishlist);
+        if (!isCancelled && data.success) setWishlistData(data.wishlist || EMPTY_ARRAY);
       } catch (error) {
         console.error("Failed to load wishlist", error);
       } finally {
@@ -92,7 +106,7 @@ const Profile = () => {
 
     fetchDetailedWishlist();
     return () => { isCancelled = true; };
-  }, [activeTab]);
+  }, [activeTab, wishlistData.length]);
 
   // ── Handlers ──────────────────────────────────────────────
 
@@ -146,11 +160,15 @@ const Profile = () => {
 
   // ── Derived State ─────────────────────────────────────────
 
+  // Only trigger the order tracking skeleton if it's explicitly the very first fetch
+  const isInitialOrdersFetch = isLoading && cachedOrders.length === 0;
+
   const activeOrders = useMemo(() => {
-    return (Array.isArray(buyerOrders) ? buyerOrders : []).filter(
+    return (Array.isArray(cachedOrders) ? cachedOrders : EMPTY_ARRAY).filter(
       (order) => order.orderStatus === "Processing" || order.orderStatus === "Shipped"
     );
-  }, [buyerOrders]);
+  }, [cachedOrders]);
+  
   const hasActiveOrders = activeOrders.length > 0;
 
   // ── Reusable Settings Form ───────────────────────────────
@@ -184,7 +202,6 @@ const Profile = () => {
             />
           </div>
           
-          {/* 🔥 SELLER ONLY: STORE NAME INPUT */}
           {isSeller && (
             <div className="space-y-2 md:col-span-2">
               <label className="text-[9px] font-black uppercase tracking-widest text-stone-500 flex items-center gap-1.5">
@@ -239,6 +256,7 @@ const Profile = () => {
     </div>
   );
 
+  // RULE 1: REMOVE FULL-PAGE BLOCKERS. No early return `if (loading) <Spinner/>` allowed here.
   return (
     <div className="min-h-screen bg-[#f7f6f4] text-stone-900 pt-[120px] pb-24 px-6 lg:px-12 font-sans relative">
       <div className="max-w-[1200px] mx-auto">
@@ -267,7 +285,6 @@ const Profile = () => {
               
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  {/* 🔥 SELLER DYNAMIC HEADINGS */}
                   <h1 className="text-3xl font-black uppercase tracking-tighter italic truncate max-w-[250px] md:max-w-[400px]">
                     {isSeller ? (currentUser?.storeName || currentUser?.fullname) : currentUser?.fullname}
                   </h1>
@@ -277,7 +294,6 @@ const Profile = () => {
                   </span>
                 </div>
                 
-                {/* 🔥 If seller, show owner name underneath */}
                 {isSeller && (
                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                      <User size={10} /> Owner: {currentUser?.fullname}
@@ -362,7 +378,8 @@ const Profile = () => {
                       View All History <ArrowRight size={12} className="inline mb-0.5" />
                     </button>
                   </div>
-                  {isLoading && !hasActiveOrders ? (
+                  
+                  {isInitialOrdersFetch ? (
                     <div className="py-16 text-center text-[10px] font-black uppercase tracking-[0.4em] text-stone-400 animate-pulse">Tracking Assets...</div>
                   ) : !hasActiveOrders ? (
                     <div className="py-20 text-center">

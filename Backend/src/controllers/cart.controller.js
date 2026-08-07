@@ -16,7 +16,7 @@ export const addtocart = async (req, res) => {
         .json({ message: "Product not found", success: false });
     }
 
-    // 2. 🔥 SMART LOGIC: Product ke andar se exact variant dhundho
+    // 2.  SMART LOGIC: Product ke andar se exact variant dhundho
     const variant = product.variants.find(
       (v) => v._id.toString() === variantId,
     );

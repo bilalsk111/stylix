@@ -11,82 +11,72 @@ export function useShopFilters() {
     currentPage: 1,
     limit: 12,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // alag states banayi - Ek first load ke liye, ek background filter ke liye
+  const [isLoading, setIsLoading] = useState(true); 
+  const [isFetching, setIsFetching] = useState(false);
 
-  // Fetch data whenever URL query parameters change
+  const queryString = searchParams.toString();
+
   const fetchFilteredProducts = useCallback(async () => {
-    setIsLoading(true);
+    // Agar products already screen par hain, toh main loading band rakho, sirf fetching on karo
+    setIsFetching(true);
+    
     try {
-      const queryString = searchParams.toString() ? `?${searchParams.toString()}` : "";
-      const data = await getShopFilteredProducts(queryString);
+      const query = queryString ? `?${queryString}` : "";
+      const data = await getShopFilteredProducts(query);
 
-      // If data is null, it means the API request was aborted manually.
-      // Return immediately. DO NOT set isLoading(false) because the next request is already running.
       if (!data) return;
 
       if (data.success) {
         setProducts(data.products || []);
         setPagination(data.pagination || {});
       }
-      
-      // Request complete, stop loading
-      setIsLoading(false);
     } catch (error) {
       console.error("Filter Fetch Error:", error);
       setProducts([]);
-      setIsLoading(false); // Stop loading on actual errors
+    } finally {
+      setIsLoading(false); // Pehli baar ka loader band
+      setIsFetching(false); // Background update loader band
     }
-  }, [searchParams]);
+  }, [queryString]); 
 
   useEffect(() => {
     fetchFilteredProducts();
   }, [fetchFilteredProducts]);
 
-  // Helper function to update single or multiple query parameters
   const updateFilter = useCallback((key, value) => {
     setSearchParams((prevParams) => {
       const newParams = new URLSearchParams(prevParams);
-
       if (value === null || value === undefined || value === "") {
         newParams.delete(key);
       } else {
         newParams.set(key, value);
       }
-
-      // Filter change hone par initial page (1) pe reset kar do
-      if (key !== "page") {
-        newParams.set("page", "1");
-      }
-
+      if (key !== "page") newParams.set("page", "1");
       return newParams;
     });
   }, [setSearchParams]);
 
-  // Helper function multi-select toggles (e.g., categories, colors, sizes)
   const toggleArrayFilter = useCallback((key, item) => {
     setSearchParams((prevParams) => {
       const newParams = new URLSearchParams(prevParams);
       const existing = newParams.get(key) ? newParams.get(key).split(",") : [];
 
-      let updated;
-      if (existing.includes(item)) {
-        updated = existing.filter((i) => i !== item);
-      } else {
-        updated = [...existing, item];
-      }
+      const updated = existing.includes(item)
+        ? existing.filter((i) => i !== item)
+        : [...existing, item];
 
       if (updated.length > 0) {
         newParams.set(key, updated.join(","));
       } else {
         newParams.delete(key);
       }
-
       newParams.set("page", "1");
       return newParams;
     });
   }, [setSearchParams]);
 
-  // Clear all filters
   const resetFilters = useCallback(() => {
     setSearchParams(new URLSearchParams());
   }, [setSearchParams]);
@@ -98,6 +88,7 @@ export function useShopFilters() {
     resetFilters,
     products,
     pagination,
-    isLoading,
+    isLoading, // Initial page load ke liye
+    isFetching, // Filter pe click karne ke baad ke liye
   };
 }

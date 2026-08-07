@@ -73,7 +73,7 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
-    // 🔥 PAYMENT STATUS (Whole order context)
+    //  PAYMENT STATUS (Whole order context)
     paymentStatus: {
       type: String,
       enum: ["Pending", "Paid", "Failed"],
@@ -93,7 +93,7 @@ const orderSchema = new mongoose.Schema(
       },
     },
 
-    // 🔥 FULFILLMENT STATUS (Admin track karega)
+    //  FULFILLMENT STATUS (Admin track karega)
     orderStatus: {
       type: String,
       enum: ["Processing", "Shipped", "Delivered", "Cancelled"],

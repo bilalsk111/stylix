@@ -357,7 +357,7 @@ export const razorpayWebhook = async (req, res) => {
 
       let stockDeductedSuccessfully = true;
 
-      // 3. 🔥 YAHAN HOGA ATOMIC UPDATE (STOCK MINUS) 🔥
+      // 3.  YAHAN HOGA ATOMIC UPDATE (STOCK MINUS) 🔥
       for (const item of order.items) {
         const result = await productModel.updateOne(
           {

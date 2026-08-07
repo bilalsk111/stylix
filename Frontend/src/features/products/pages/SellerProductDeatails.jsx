@@ -27,6 +27,9 @@ const globalStyles = `
   .editorial-title { line-height: 1.1; letter-spacing: -0.03em; }
 `;
 
+//    Local Memory Cache banaya taaki instant render ho sake
+const SELLER_PRODUCT_CACHE = {};
+
 /* ─────────────────────────────────────────────────────────────────
    DELETE CONFIRM MODAL
 ───────────────────────────────────────────────────────────────── */
@@ -155,8 +158,10 @@ const SellerProductDetails = () => {
   const { id } = useParams();
   const { handleGetProductById, handleAddProductVariant, handleEditVariant, handleDeleteVariant } = useProduct();
 
-  const [product,      setProduct]      = useState(null);
-  const [loading,      setLoading]      = useState(true);
+  //  FIX 2: Check cache instantly to skip loading state
+  const [product,      setProduct]      = useState(() => SELLER_PRODUCT_CACHE[id] || null);
+  const [loading,      setLoading]      = useState(() => !SELLER_PRODUCT_CACHE[id]);
+  
   const [activeImg,    setActiveImg]    = useState(0);
   const [isModalOpen,  setIsModalOpen]  = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -166,25 +171,32 @@ const SellerProductDetails = () => {
 
   const thumbnailRef = useRef(null);
 
-  // ✅ Proper API Fetching inside useEffect avoiding infinite loops
+  // ✅ Proper API Fetching with Stale-While-Revalidate
   useEffect(() => {
     let mounted = true;
     if (id) {
+      if (!SELLER_PRODUCT_CACHE[id]) {
+        setLoading(true);
+      }
+
       handleGetProductById(id)
         .then(data => {
           if (mounted && data) { 
+            SELLER_PRODUCT_CACHE[id] = data; //  Save to Cache
             setProduct(data); 
-            setLoading(false); 
           }
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error(err);
+        })
+        .finally(() => {
           if (mounted) setLoading(false);
         });
     }
     return () => { mounted = false; };
   }, [id, handleGetProductById]);
 
-  // 🔥 MEMOIZED STOCK LOGIC - Super Fast Calculation
+  //  MEMOIZED STOCK LOGIC - Super Fast Calculation
   const { totalStock, isOutOfStock } = useMemo(() => {
     const stock = product?.variants?.length > 0 
       ? product.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) 
@@ -201,7 +213,13 @@ const SellerProductDetails = () => {
     try {
       const { index } = deleteTarget;
       await handleDeleteVariant(id, product.variants[index]._id);
-      setProduct(prev => ({ ...prev, variants: prev.variants.filter((_, i) => i !== index) }));
+      
+      setProduct(prev => {
+        const updatedProduct = { ...prev, variants: prev.variants.filter((_, i) => i !== index) };
+        SELLER_PRODUCT_CACHE[id] = updatedProduct; //  Update Cache on Delete
+        return updatedProduct;
+      });
+      
       toast.success("Variant node terminated.", { style: { background: '#1c1917', color: '#ccff00', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' } });
     } catch {
       toast.error("Failed to terminate node.", { style: { background: '#1c1917', color: '#ef4444', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' } });
@@ -248,13 +266,20 @@ const SellerProductDetails = () => {
         attributes: variantForm.attributes,
         images: variantForm.images
       };
+      
       const response = editingIndex !== null
         ? await handleEditVariant(id, product.variants[editingIndex]._id, payload)
         : await handleAddProductVariant(id, payload);
-      setProduct(response?.product || response?.data || response);
+        
+      const updatedProduct = response?.product || response?.data || response;
+      
+      SELLER_PRODUCT_CACHE[id] = updatedProduct; //  Update Cache on Save/Edit
+      setProduct(updatedProduct);
+      
       setVariantForm(DEFAULT_VARIANT_FORM);
       setIsModalOpen(false);
       setEditingIndex(null);
+      
       toast.success(editingIndex !== null ? "Node Protocol Updated." : "Node Cluster Deployed.", {
         style: { background: '#1c1917', color: '#ccff00', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }
       });
@@ -287,6 +312,7 @@ const SellerProductDetails = () => {
     setActiveImg((prev) => (prev - 1 + product.images.length) % product.images.length);
   };
 
+  //  Loading screen will only ever appear once per product
   if (loading) return (
     <div className="h-screen bg-[#f7f6f4] flex items-center justify-center text-stone-900 font-black text-[10px] tracking-[1em] animate-pulse">
       LOADING_NEXUS

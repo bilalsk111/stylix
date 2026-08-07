@@ -1,23 +1,50 @@
 ﻿import React, { useEffect, useState } from "react";
-import { useOrder } from "../../order/hook/UseOrder"; // Adjust path
+import { useOrder } from "../../order/hook/UseOrder"; 
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Clock, Package, XCircle, CheckCircle } from "lucide-react";
 
+let IS_ORDERS_FETCHED = false;
+
 const OrderHistory = () => {
-    const { buyerOrders, isLoading, handleFetchMyOrders } = useOrder();
+    const { buyerOrders, handleFetchMyOrders } = useOrder();
     const navigate = useNavigate();
     
-    // UI State for filter tabs
     const [filterStatus, setFilterStatus] = useState("ALL");
 
+    const safeOrders = Array.isArray(buyerOrders) ? buyerOrders : [];
+    
+    const [loading, setLoading] = useState(() => !IS_ORDERS_FETCHED && safeOrders.length === 0);
+
     useEffect(() => {
-        handleFetchMyOrders();
+        let isMounted = true;
+        const fetchOrders = async () => {
+            try {
+                if (!IS_ORDERS_FETCHED && safeOrders.length === 0) {
+                    setLoading(true);
+                }
+                
+                await handleFetchMyOrders(); // Silent background fetch
+                IS_ORDERS_FETCHED = true;    // Mark as fetched for 0ms load next time
+
+            } catch (error) {
+                console.error("Failed to load orders", error);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        fetchOrders();
+
+        return () => {
+            isMounted = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const safeOrders = Array.isArray(buyerOrders) ? buyerOrders : [];
 
-    // 🔥 LOGIC: Dynamic Filtering based on selected tab
-    const filteredOrders = safeOrders.filter((order) => {
+    const validOrders = safeOrders.filter(order => order.paymentStatus?.toUpperCase() !== 'PENDING');
+
+    const filteredOrders = validOrders.filter((order) => {
         if (filterStatus === "ALL") return true;
         if (filterStatus === "COMPLETED") return order.orderStatus === "Delivered";
         if (filterStatus === "CANCELLED") return order.orderStatus === "Cancelled";
@@ -35,7 +62,7 @@ const OrderHistory = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#f7f6f4] text-stone-900 pt-[120px] pb-24 px-6 lg:px-12 font-sans">
+        <div className="min-h-screen bg-[#f7f6f4] text-stone-900 pt-[120px] pb-24 px-6 lg:px-12 font-sans selection:bg-[#ccff00] selection:text-stone-900">
             <div className="max-w-[1000px] mx-auto animate-fade-in-up">
                 
                 {/* Header & Back Button */}
@@ -76,14 +103,24 @@ const OrderHistory = () => {
                         <XCircle size={14} /> Cancelled
                     </button>
                 </div>
-                {isLoading ? (
+
+
+                {loading ? (
                     <div className="py-20 text-center text-[10px] font-black uppercase tracking-[0.4em] text-stone-400 animate-pulse">
                         Accessing Database...
                     </div>
                 ) : filteredOrders.length === 0 ? (
-                    <div className="py-24 text-center bg-white border border-stone-200 rounded-none">
+                    <div className="py-24 text-center bg-white border border-stone-200 rounded-none shadow-sm">
                         <Package size={32} className="mx-auto text-stone-300 mb-4" />
-                        <p className="text-stone-400 text-[11px] uppercase tracking-[0.3em] font-black">No matching records found</p>
+                        <p className="text-stone-400 text-[11px] uppercase tracking-[0.3em] font-black mb-6">No matching records found</p>
+                        {filterStatus !== "ALL" && (
+                            <button 
+                                onClick={() => setFilterStatus("ALL")} 
+                                className="bg-stone-900 text-white px-8 py-3 rounded-none text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#ccff00] hover:text-stone-900 transition-all duration-300 shadow-md"
+                            >
+                                View All Orders
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-6">

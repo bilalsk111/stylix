@@ -28,7 +28,7 @@ const App = () => {
     };
 
     initAuth();
-  }, [dispatch, handleGetCart]);
+  }, [dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="w-full min-h-screen">
       <Toaster position="top-right" reverseOrder={false} />

@@ -63,7 +63,7 @@ const Footer = () => {
             © {new Date().getFullYear()} Stylix Corp. All Rights Reserved.
           </div>
           
-          {/* 🔥 ICONS HATA DIYE, TEXT LINKS LAGA DIYE 🔥 */}
+          {/*  ICONS HATA DIYE, TEXT LINKS LAGA DIYE  */}
           <div className="flex items-center gap-6 text-[9px] font-black uppercase tracking-[0.3em] text-stone-400">
             <a href="#" className="hover:text-stone-900 transition-colors">Instagram</a>
             <a href="#" className="hover:text-stone-900 transition-colors">Twitter</a>

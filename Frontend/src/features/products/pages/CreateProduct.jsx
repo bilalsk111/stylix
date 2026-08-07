@@ -93,10 +93,10 @@ const CreateProduct = () => {
     <div className="min-h-screen w-full bg-[#f7f6f4] text-stone-900 flex flex-col lg:flex-row font-sans selection:bg-[#c8ff00] selection:text-stone-900">
 
       {/* LEFT PANEL: ASSET GALLERY */}
-      {/* 🔥 FIX: Outer section freely stretches to the full height of the parent. No sticky or h-screen here. */}
+      {/*     Outer section freely stretches to the full height of the parent. No sticky or h-screen here. */}
       <section className="w-full lg:w-[42%] bg-white border-b lg:border-b-0 lg:border-r border-stone-200 shrink-0 z-10">
         
-        {/* 🔥 FIX: Inner div handles the sticky behavior and viewport height so background doesn't cut off */}
+        {/*     Inner div handles the sticky behavior and viewport height so background doesn't cut off */}
         <div className="lg:sticky lg:top-0 lg:h-screen flex flex-col w-full">
           <div className="p-4 lg:p-6 flex justify-between items-center bg-white/90 backdrop-blur-2xl z-20 sticky top-0 border-b border-stone-100">
             <div className="flex items-center gap-3">

@@ -50,10 +50,10 @@ router.post(
   createProduct,
 );
 router.put(
-  "/update/:productId", 
-  authenticateSeller, 
-  requireSeller, 
-  updateProduct
+  "/update/:productId",
+  authenticateSeller,
+  requireSeller,
+  updateProduct,
 );
 router.get(
   "/seller-products",

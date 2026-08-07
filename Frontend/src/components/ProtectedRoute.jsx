@@ -4,9 +4,7 @@ import { useSelector } from "react-redux";
 const ProtectedRoute = ({children}) => {
     const { user, loading, isAuthChecked } = useSelector((state) => state.auth);
     const location = useLocation();
-
-    // Jab tak check nahi hota ya loading true hai, ruk jao
-    if (!isAuthChecked || loading) {
+    if (!isAuthChecked) {
         return (
             <div className="h-screen w-full bg-[#f7f6f4] flex items-center justify-center">
                 <div className="text-stone-900 text-[10px] font-black uppercase tracking-[0.5em] animate-pulse">

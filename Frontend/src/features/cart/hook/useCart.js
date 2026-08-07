@@ -1,4 +1,3 @@
-// features/cart/hook/useCart.js
 import { 
   addItem as addItemAPI, 
   getCart, 

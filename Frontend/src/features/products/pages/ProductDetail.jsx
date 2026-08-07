@@ -17,7 +17,7 @@ import {
   Minus,
   Plus, 
   Heart,
-  Store // 🔥 Store icon for seller branding
+  Store 
 } from "lucide-react";
 import { useProduct } from "../hook/useProduct";
 import ProductGrid from "../components/ProductGrid";
@@ -29,48 +29,50 @@ import { useWishlist } from "../../wishlist/hook/useWishList";
 import { Accordion } from "../components/Accordion"; 
 import { RecommendedProducts } from "../components/RecommendedProducts";
 import { RecentlyViewedProducts } from "../components/RecentlyViewedProducts";
+import { getShopFilteredProducts } from "../services/product.api"; 
+import ProductDetailSkeleton from "../components/ProductDetailSkeleton";
+
+// Stable constants and Memory Cache to achieve 0ms load on revisit
+const EMPTY_CART = [];
+const PRODUCT_CACHE = {}; 
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { handleGetProductById, handleGetAllProduct } = useProduct();
+  const { handleGetProductById } = useProduct(); 
   const { handleToggleWishlist, isWishlisted } = useWishlist();
   const { handleAddItem } = useCart();
-  const EMPTY_CART = [];
   const { currentUser } = useAuth();
   const cartItems = useSelector((state) => state.cart?.items || EMPTY_CART);
-
-  const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState(() => PRODUCT_CACHE[id] || null);
+  const [loading, setLoading] = useState(() => !PRODUCT_CACHE[id]);
+  
   const [activeImg, setActiveImg] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [allProducts, setAllProducts] = useState([]);
-
   const [selectedAttributes, setSelectedAttributes] = useState({});
   const [currentVariant, setCurrentVariant] = useState(null);
-
   const [isAdding, setIsAdding] = useState(false);
   const [localCart, setLocalCart] = useState([]);
-
   const [buyQty, setBuyQty] = useState(1);
 
-  const getProductByIdRef = useRef(handleGetProductById);
-  const getAllProductRef = useRef(handleGetAllProduct);
   const thumbnailRef = useRef(null);
 
-  useEffect(() => {
-    getProductByIdRef.current = handleGetProductById;
-    getAllProductRef.current = handleGetAllProduct;
-  });
-
+  // 1. Fetch Main Product Details
   useEffect(() => {
     let isMounted = true;
+    
     const fetchProduct = async () => {
       if (!id) return;
+      
       try {
-        setLoading(true);
-        const data = await getProductByIdRef.current(id);
-        if (isMounted) {
-          
+        // Sirf tabhi loading screen dikhao jab cache mein data nahi hai
+        if (!PRODUCT_CACHE[id]) {
+          setLoading(true);
+        }
+
+        const data = await handleGetProductById(id);
+        
+        if (isMounted && data) {
           if (data?.variants?.length > 0) {
             const globalFallbackAttributes = {};
             
@@ -97,10 +99,11 @@ const ProductDetail = () => {
               return { ...v, attributes: patchedAttrs };
             });
 
+            // Save to memory cache for 0ms load next time
+            PRODUCT_CACHE[id] = data;
             setProduct(data); 
 
             const initialAttrs = { ...globalFallbackAttributes };
-            
             let bestVariant = data.variants[0];
             const exactMatch = data.variants.find(v => {
               let isMatch = true;
@@ -114,32 +117,43 @@ const ProductDetail = () => {
             setCurrentVariant(exactMatch || bestVariant);
             setSelectedAttributes(exactMatch ? exactMatch.attributes : initialAttrs);
           } else {
+             PRODUCT_CACHE[id] = data;
              setProduct(data);
           }
         }
       } catch (err) {
-        console.error(err);
+        console.error("Product fetch error:", err);
       } finally {
         if (isMounted) setLoading(false);
       }
     };
+
     fetchProduct();
     return () => { isMounted = false; };
-  }, [id]);
+  }, [id, handleGetProductById]);
 
+  // 2. Fetch Recommendations
   useEffect(() => {
     let isMounted = true;
-    const fetchAll = async () => {
+    const fetchRecommendations = async () => {
       try {
-        const data = await getAllProductRef.current();
-        if (isMounted) setAllProducts(data || []);
+        const categoryQuery = product?.category ? `category=${product.category}&` : '';
+        const query = `?${categoryQuery}limit=8`; 
+        
+        const data = await getShopFilteredProducts(query);
+        if (isMounted) {
+            setAllProducts(data?.products || []);
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load recommendations", err);
       }
     };
-    fetchAll();
+
+    if (product) {
+        fetchRecommendations();
+    }
     return () => { isMounted = false; };
-  }, []);
+  }, [product]);
 
   useEffect(() => {
     setBuyQty(1);
@@ -314,14 +328,7 @@ const ProductDetail = () => {
     toast.error(`Please select ${missingOptions.join(" & ")}`, { position: "bottom-center" });
   };
 
-  if (loading)
-    return (
-      <div className="h-screen bg-[#f7f6f4] flex items-center justify-center">
-        <div className="text-stone-900 text-[10px] font-black uppercase tracking-[0.6em] animate-pulse">
-          Loading Asset...
-        </div>
-      </div>
-    );
+  if (loading) return <ProductDetailSkeleton />;
 
   if (!product)
     return (
@@ -433,7 +440,6 @@ const ProductDetail = () => {
 
         <div className="lg:col-span-5 flex flex-col justify-start pt-0 md:pr-4">
           
-          {/* 🔥 RESTORED TOP TAGS: Shows brand/category correctly so layout doesn't look empty */}
           <div className="flex items-center flex-wrap gap-2.5 mb-4">
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-900">
               {product?.brand || "Stylix"}
@@ -472,7 +478,6 @@ const ProductDetail = () => {
             </button>
           </div>
 
-          {/* 🔥 NEW, EXPLICIT "SOLD BY" UI EXACTLY LIKE AMAZON/MYNTRA */}
           <div className="flex items-center gap-2 mb-6 text-[10px] md:text-[11px]">
             <span className="font-bold text-stone-400 uppercase tracking-[0.1em]">Sold by:</span>
             <div className="font-black text-stone-900 uppercase tracking-[0.15em] flex items-center gap-1.5 cursor-pointer group">

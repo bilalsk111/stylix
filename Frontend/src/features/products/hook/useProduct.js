@@ -4,13 +4,13 @@ import toast from "react-hot-toast";
 import {
   createProduct,
   getSellerProduct,
-  getAllProducts,
   getProductDetail,
   addProductVariant,
   editVariant,
   deleteVariantApi,
   deleteProductApi,
   updateProduct,
+  getShopFilteredProducts
 } from "../services/product.api";
 import { 
   removeProductLocally, 
@@ -24,8 +24,6 @@ export function useProduct() {
   const dispatch = useDispatch();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // ✅ Wrapped ALL functions in useCallback to prevent Infinite Re-renders
-
   const handleCreateProduct = useCallback(async (formData) => {
     const data = await createProduct(formData);
     return data.product;
@@ -35,7 +33,7 @@ export function useProduct() {
     try {
       const res = await updateProduct(productId, data);
       dispatch(updateProductLocally(res.product));
-      toast.success("Main protocol updated.");
+      toast.success("Product updated.");
       return res.product;
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update product.");
@@ -55,10 +53,10 @@ export function useProduct() {
     }
   }, [dispatch]);
 
-  const handleGetAllProduct = useCallback(async () => {
+  const handleGetAllProduct = useCallback(async (query = "?limit=12") => {
     try {
-      const data = await getAllProducts();
-      const products = data.product || data.products || data;
+      const data = await getShopFilteredProducts(query); 
+      const products = data?.products || [];
       dispatch(setAllProducts(products));
       return products;
     } catch (error) {

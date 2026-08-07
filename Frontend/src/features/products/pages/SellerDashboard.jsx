@@ -12,27 +12,64 @@ import { logoutApi } from "../../auth/services/auth.api";
 import { DeleteProductModal } from "../components/DeleteProductModal";
 import EditProductModal from "../components/EditProductModal";
 
+//    Stable Empty Array reference
+const EMPTY_ARRAY = [];
+
+const DashboardSkeleton = () => (
+  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
+    {[...Array(8)].map((_, i) => (
+      <div key={i} className="bg-white border border-stone-100 shadow-sm animate-pulse">
+        <div className="aspect-[4/5] bg-stone-200"></div>
+        <div className="p-3 sm:p-4 md:p-6 space-y-4">
+          <div className="h-3 bg-stone-200 w-3/4"></div>
+          <div className="h-2 bg-stone-200 w-full"></div>
+          <div className="h-2 bg-stone-200 w-5/6"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 /* ─── Main Dashboard ───────────────────────────────────────────── */
 const SellerDashboard = () => {
-  const { handleGetSellerProduct, handleDeleteProduct } = useProduct();
-  const [editTargetId, setEditTargetId] = useState(null);
-  const { currentUser } = useAuth();
-  const sellerProduct = useSelector((state) => state.product.sellerProducts);
-  const [loading, setLoading] = useState(true);
-  const [deleteTarget, setDeleteTarget] = useState(null); 
   const navigate = useNavigate();
-  const displayProducts = sellerProduct || [];
+  const { handleGetSellerProduct, handleDeleteProduct } = useProduct();
+  const { currentUser } = useAuth();
+  
+  // Check Redux cache directly
+  const cachedProducts = useSelector((state) => state.product?.sellerProducts || EMPTY_ARRAY);
+  
+  const [loading, setLoading] = useState(() => cachedProducts.length === 0);
+  const [editTargetId, setEditTargetId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null); 
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // Background Sync without UI blocking
   useEffect(() => {
+    let isMounted = true;
+    
     const fetch = async () => {
-      try { await handleGetSellerProduct(); }
-      finally { setLoading(false); }
+      try {
+        if (cachedProducts.length === 0) {
+          setLoading(true);
+        }
+        await handleGetSellerProduct(); // Silent background fetch
+      } catch (error) {
+        console.error("Failed to load seller products", error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
+    
     fetch();
-  }, [handleGetSellerProduct]);
+    
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -69,19 +106,13 @@ const SellerDashboard = () => {
     }
   };
 
-  if (loading) return (
-    <div className="h-screen bg-[#f7f6f4] flex items-center justify-center">
-      <div className="text-stone-900 text-[10px] font-black uppercase tracking-[0.4em] animate-pulse">Initializing Vault...</div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen w-full bg-[#f7f6f4] text-stone-900 font-sans selection:bg-stone-900 selection:text-white">
       <Toaster position="top-right" />
 
       {/* Navbar - Fixed at h-20 (80px) */}
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-[#f7f6f4]/90 backdrop-blur-xl border-b border-stone-200 px-4 lg:px-10 h-20 flex items-center justify-between">
-        <button onClick={() => navigate("/")}
+        <button onClick={() => navigate(-1)}
           className="flex items-center gap-3 text-stone-500 hover:text-stone-900 transition-all group">
           <div className="w-9 h-9 rounded-full border border-stone-300 bg-white flex items-center justify-center group-hover:border-stone-900 group-hover:bg-stone-100 transition-colors shrink-0">
             <ArrowLeft size={16} />
@@ -124,7 +155,7 @@ const SellerDashboard = () => {
                 {currentUser?.fullname || "Authorized User"}
               </h1>
               <div className="flex flex-wrap gap-2 md:gap-4 pt-1 md:pt-2">
-                <span className="text-[9px] md:text-[10px] font-black uppercase text-stone-400 tracking-widest">{displayProducts.length} Active Assets</span>
+                <span className="text-[9px] md:text-[10px] font-black uppercase text-stone-400 tracking-widest">{cachedProducts.length} Active Assets</span>
                 <span className="text-stone-300 hidden sm:block">|</span>
                 <span className="text-[9px] md:text-[10px] font-black uppercase text-stone-400 tracking-widest">Premium Tier 01</span>
               </div>
@@ -151,15 +182,17 @@ const SellerDashboard = () => {
             <div className="h-px flex-1 bg-gradient-to-r from-stone-300 to-transparent" />
           </div>
 
-          {displayProducts.length === 0 ? (
+          {/* Safe rendering directly from cachedProducts */}
+          {loading && cachedProducts.length === 0 ? (
+            <DashboardSkeleton />
+          ) : cachedProducts.length === 0 ? (
             <div className="h-[40vh] flex flex-col items-center justify-center border-2 border-dashed border-stone-200 bg-white rounded-none">
               <p className="text-stone-400 text-[10px] uppercase tracking-[0.5em] font-black italic">Vault currently empty</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
-              {displayProducts.map((product) => {
+              {cachedProducts.map((product) => {
                 
-                // 🔥 DYNAMIC STOCK LOGIC INJECTED HERE
                 const totalStock = product?.variants?.length > 0 
                   ? product.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) 
                   : (Number(product?.stock) || 0);
